@@ -7,90 +7,69 @@
 #include <ompl/config.h>
 #include <iostream>
 
-
-class OmplPlanner
-{
-
-public:
-
-    OmplPlanner();
-
-private:
-
-};
-
-
 #include <ompl/base/Constraint.h>
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
 #include <ompl/base/ConstrainedSpaceInformation.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <matlogger2/matlogger2.h>
 
+#include <XBotInterface/ModelInterface.h>
+#include <RobotInterfaceROS/ConfigFromParam.h>
+#include <ros/ros.h>
+
+#include <sensor_msgs/JointState.h>
+#include <visualization_msgs/MarkerArray.h>
+
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
-class Manifold : public ob::Constraint
+
+int main(int argc, char ** argv)
 {
 
-public:
+    ros::init(argc, argv, "ompl_test_node");
+    ros::NodeHandle nh;
+    auto opt = XBot::ConfigOptionsFromParamServer();
+    auto model = XBot::ModelInterface::getModel(opt);
+    Eigen::VectorXd qmin, qmax;
+    model->getJointLimits(qmin, qmax);
+    const int nq = model->getJointNum();
 
-    Manifold():
-        Constraint(3, 1)
-    {
-    }
-
-    virtual void function(const Eigen::Ref<const Eigen::VectorXd> &x,
-                          Eigen::Ref<Eigen::VectorXd> out) const override
-    {
-        out[0] = x[0] - 0.9;
-    }
-
-    void jacobian(const Eigen::Ref<const Eigen::VectorXd> & x,
-                  Eigen::Ref<Eigen::MatrixXd> out) const override
-    {
-        out << 1.0, 0.0, 0.0;
-    }
-
-//    bool project(Eigen::Ref<Eigen::VectorXd> x) const override
-//    {
-//        x[0] = 0.9;
-//    }
-
-};
-
-
-OmplPlanner::OmplPlanner()
-{
     // construct the state space we are planning in
-    auto space = std::make_shared<ob::RealVectorStateSpace>(3);
+    auto space = std::make_shared<ob::RealVectorStateSpace>(nq);
 
     // set the bounds for the R^3 space
-    ob::RealVectorBounds bounds(3);
-    bounds.setLow(-1);
-    bounds.setHigh(1);
-
+    ob::RealVectorBounds bounds(nq);
+    Eigen::VectorXd::Map(bounds.low.data(), nq) = qmin;
+    Eigen::VectorXd::Map(bounds.high.data(), nq) = qmax;
     space->setBounds(bounds);
 
     // construct an instance of  space information from this state space
     auto space_info = std::make_shared<ob::SpaceInformation>(space);
 
-    // Create our sphere constraint.
-    auto constraint = std::make_shared<Manifold>();
+//    auto constraint = std::make_shared<Manifold>();
 
     // Combine the ambient space and the constraint into a constrained state space.
-    auto css = std::make_shared<ob::ProjectedStateSpace>(space, constraint);
+//    auto css = std::make_shared<ob::ProjectedStateSpace>(space, constraint);
 
     // Define the constrained space information for this constrained state space.
-    auto csi = std::make_shared<ob::ConstrainedSpaceInformation>(css);
+//    auto csi = std::make_shared<ob::ConstrainedSpaceInformation>(css);
 
     // state validity check
-    auto isStateValid = [](const ob::State * state)
+    auto isStateValid = [nq, model](const ob::State * state)
     {
-        // cast the abstract state type to the type we expect
-        const Eigen::Map<Eigen::VectorXd>& r3state = *state->as<ob::ConstrainedStateSpace::StateType>();
+        Eigen::VectorXd q = Eigen::VectorXd::Map(state->as<ob::RealVectorStateSpace::StateType>()->values, nq);
+        model->setJointPosition(q);
+        model->update();
+
+        Eigen::Affine3d Tee;
+        model->getPose("TCP", "base_link", Tee);
+
+        Eigen::Vector3d sphere_origin(0.5, 0.0, 0.8);
+        const double radius = 0.2;
 
         // check validity of state defined by pos & rot
-        if(std::fabs(r3state[1]) < 0.3 && std::fabs(r3state[2] + 0.7) > 0.1)
+        if((Tee.translation() - sphere_origin).norm() < radius)
         {
             return false;
         }
@@ -99,33 +78,32 @@ OmplPlanner::OmplPlanner()
         return true;
     };
 
-    csi->setStateValidityChecker(isStateValid);
+    space_info->setStateValidityChecker(isStateValid);
 
     // create a random start state
-    Eigen::VectorXd sv(3), gv(3);
-    sv << 0.9, 0.9, 0.9;
-    gv << 0.9, -0.9, 0.9;
+    Eigen::VectorXd sv(nq), gv(nq);
+    model->getRobotState("home", sv);
+    gv = (qmin + qmax)/2.0;
 
     // Scoped states that we will add to simple setup.
-    ob::ScopedState<> start(css);
-    ob::ScopedState<> goal(css);
+    ob::ScopedState<> start(space);
+    ob::ScopedState<> goal(space);
 
     // Copy the values from the vectors into the start and goal states.
-    start->as<ob::ConstrainedStateSpace::StateType>()->copy(sv);
-    goal->as<ob::ConstrainedStateSpace::StateType>()->copy(gv);
-
+    Eigen::VectorXd::Map(start->as<ob::RealVectorStateSpace::StateType>()->values, nq) = sv;
+    Eigen::VectorXd::Map(goal->as<ob::RealVectorStateSpace::StateType>()->values, nq) = gv;
 
     // create a problem instance
-    auto pdef = std::make_shared<ob::ProblemDefinition>(csi);
+    auto pdef = std::make_shared<ob::ProblemDefinition>(space_info);
 
     // set the start and goal states
     pdef->setStartAndGoalStates(start, goal);
 
     // objective function
-    pdef->setOptimizationObjective(std::make_shared<ob::PathLengthOptimizationObjective>(csi));
+    pdef->setOptimizationObjective(std::make_shared<ob::PathLengthOptimizationObjective>(space_info));
 
     // create a planner for the defined space
-    auto planner = std::make_shared<og::RRTstar>(csi);
+    auto planner = std::make_shared<og::RRTstar>(space_info);
 
     // set the problem we are trying to solve for the planner
     planner->setProblemDefinition(pdef);
@@ -140,7 +118,7 @@ OmplPlanner::OmplPlanner()
     pdef->print(std::cout);
 
     // attempt to solve the problem within one second of planning time
-    ob::PlannerStatus solved = planner->ob::Planner::solve(5.0);
+    ob::PlannerStatus solved = planner->ob::Planner::solve(1.0);
 
     if (solved)
     {
@@ -155,11 +133,56 @@ OmplPlanner::OmplPlanner()
 
 
         auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_logger");
+        ros::Publisher pub = nh.advertise<sensor_msgs::JointState>("joint_states",
+                                                                   10);
+        sensor_msgs::JointState msg;
+
+        ros::Publisher pub_marker = nh.advertise<visualization_msgs::MarkerArray>("obstacles",
+                                                                                  10);
+
+
+        msg.name = model->getEnabledJointNames();
 
         for(int i = 0; i < path->as<og::PathGeometric>()->getStateCount(); i++)
         {
-            auto * r3state = path->as<og::PathGeometric>()->getState(i)->as<ob::ConstrainedStateSpace::StateType>();
-            logger->add("state", *r3state);
+            auto * state_i = path->as<og::PathGeometric>()->getState(i)->as<ob::RealVectorStateSpace::StateType>();
+            logger->add("state", Eigen::VectorXd::Map(state_i->values, nq));
+        }
+
+        int i = 0;
+        while(ros::ok())
+        {
+            auto * state_i = path->as<og::PathGeometric>()->getState(i)->as<ob::RealVectorStateSpace::StateType>();
+            logger->add("state", Eigen::VectorXd::Map(state_i->values, nq));
+
+            msg.position.assign(state_i->values, state_i->values + nq);
+            msg.header.stamp = ros::Time::now();
+            pub.publish(msg);
+
+            visualization_msgs::Marker sphere;
+            sphere.header.frame_id = "base_link";
+            sphere.header.stamp = ros::Time::now();
+            sphere.type = visualization_msgs::Marker::SPHERE;
+            sphere.action = visualization_msgs::Marker::ADD;
+            sphere.pose.position.x = 0.5;
+            sphere.pose.position.z = 0.8;
+            sphere.pose.orientation.w = 1.0;
+            sphere.scale.x = 0.4;
+            sphere.scale.y = 0.4;
+            sphere.scale.z = 0.4;
+            sphere.color.a = 1.0;
+            sphere.color.r = 1.0;
+
+            visualization_msgs::MarkerArray ob_msg;
+            ob_msg.markers.push_back(sphere);
+
+            pub_marker.publish(ob_msg);
+
+            ros::Duration(0.02).sleep();
+
+            i++;
+            i = i % path->as<og::PathGeometric>()->getStateCount();
+
         }
 
     }

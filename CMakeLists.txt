@@ -10,11 +10,16 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   cartesian_interface
   roscpp
+  rosconsole
 )
 
 find_package(Eigen3 REQUIRED)
 
 find_package(ompl 1.5.0 REQUIRED)
+
+find_package(XBotInterface REQUIRED)
+
+find_package(matlogger2 REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -122,11 +127,14 @@ include_directories(
 )
 
 # Declare a C++ library
-add_library(ompl_test
+add_executable(ompl_test
     src/ompl_test.cpp
     )
 
-target_link_libraries(ompl_test ${OMPL_LIBRARIES})
+target_link_libraries(ompl_test ${OMPL_LIBRARIES}
+    ${XBotInterface_LIBRARIES}
+    ${catkin_LIBRARIES}
+    matlogger2::matlogger2)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
