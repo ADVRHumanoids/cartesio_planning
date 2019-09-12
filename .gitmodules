@@ -1,0 +1,3 @@
+[submodule "ompl"]
+	path = ompl
+	url = git@github.com:ompl/ompl.git
