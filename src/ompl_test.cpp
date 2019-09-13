@@ -1,16 +1,6 @@
-#include <ompl/base/SpaceInformation.h>
-#include <ompl/base/spaces/SE3StateSpace.h>
-#include <ompl/geometric/planners/rrt/RRTConnect.h>
-#include <ompl/geometric/planners/rrt/RRTstar.h>
-#include <ompl/geometric/SimpleSetup.h>
-
-#include <ompl/config.h>
 #include <iostream>
 
-#include <ompl/base/Constraint.h>
-#include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
-#include <ompl/base/ConstrainedSpaceInformation.h>
-#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+
 #include <matlogger2/matlogger2.h>
 
 #include <XBotInterface/ModelInterface.h>
@@ -27,20 +17,17 @@
 #include <cartesian_interface/utils/LoadConfig.h>
 #include <std_srvs/Trigger.h>
 
+#include "planner/cartesio_ompl_planner.h"
 
-namespace ob = ompl::base;
-namespace og = ompl::geometric;
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
 
-std::shared_ptr<og::RRTstar> planner; ///TODO: global NO
-ob::PlannerStatus solved = ob::PlannerStatus::UNKNOWN; ///TODO: global NO
+
+std::shared_ptr<Planning::OMPLPlanner<ompl::geometric::RRTstar> > planner;
 
 bool planner_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
-    solved = planner->ob::Planner::solve(1.0);
-
-    return true;
+    return planner->solve(1.0);
 }
 
 
@@ -83,24 +70,15 @@ int main(int argc, char ** argv)
     }
 
 
-    XBot::Cartesian::Planning::PositionCartesianSolver solver(ci, {"TCP"}); // tbd: from parameter
+    XBot::Cartesian::Planning::PositionCartesianSolver solver(ci, {"teleop_link5"}); // tbd: from parameter
     RosServerClass ros_server(ci, model);
 
     Eigen::VectorXd qmin, qmax;
     model->getJointLimits(qmin, qmax);
     const int nq = model->getJointNum();
 
-    // construct the state space we are planning in
-    auto space = std::make_shared<ob::RealVectorStateSpace>(nq);
+    planner = std::make_shared<Planning::OMPLPlanner<ompl::geometric::RRTstar> >(qmin, qmax);
 
-    // set the bounds for the R^3 space
-    ob::RealVectorBounds bounds(nq);
-    Eigen::VectorXd::Map(bounds.low.data(), nq) = qmin;
-    Eigen::VectorXd::Map(bounds.high.data(), nq) = qmax;
-    space->setBounds(bounds);
-
-    // construct an instance of  space information from this state space
-    auto space_info = std::make_shared<ob::SpaceInformation>(space);
 
 //    auto constraint = std::make_shared<Manifold>();
 
@@ -111,9 +89,9 @@ int main(int argc, char ** argv)
 //    auto csi = std::make_shared<ob::ConstrainedSpaceInformation>(css);
 
     // state validity check
-    auto isStateValid = [nq, model](const ob::State * state)
+    auto isStateValid = [nq, model](const ompl::base::State * state)
     {
-        Eigen::VectorXd q = Eigen::VectorXd::Map(state->as<ob::RealVectorStateSpace::StateType>()->values, nq);
+        Eigen::VectorXd q = Eigen::VectorXd::Map(state->as<ompl::base::RealVectorStateSpace::StateType>()->values, nq);
         model->setJointPosition(q);
         model->update();
 
@@ -133,7 +111,7 @@ int main(int argc, char ** argv)
         return true;
     };
 
-    space_info->setStateValidityChecker(isStateValid);
+    planner->setStateValidityChecker(isStateValid);
 
     // create a random start state
     Eigen::VectorXd sv(nq), gv(nq);
@@ -141,38 +119,17 @@ int main(int argc, char ** argv)
     gv = (qmin + qmax)/2.0;
 
     // Scoped states that we will add to simple setup.
-    ob::ScopedState<> start(space);
-    ob::ScopedState<> goal(space);
+        ompl::base::ScopedState<> start(planner->getSpace());
+        ompl::base::ScopedState<> goal(planner->getSpace());
+
+        // Copy the values from the vectors into the start and goal states.
+            Eigen::VectorXd::Map(start->as<ompl::base::RealVectorStateSpace::StateType>()->values, nq) = sv;
+            Eigen::VectorXd::Map(goal->as<ompl::base::RealVectorStateSpace::StateType>()->values, nq) = gv;
 
 
-    // Copy the values from the vectors into the start and goal states.
-    Eigen::VectorXd::Map(start->as<ob::RealVectorStateSpace::StateType>()->values, nq) = sv;
-    Eigen::VectorXd::Map(goal->as<ob::RealVectorStateSpace::StateType>()->values, nq) = gv;
+    planner->setStartAndGoalStates(start, goal);
 
-    // create a problem instance
-    auto pdef = std::make_shared<ob::ProblemDefinition>(space_info);
-
-    // set the start and goal states
-    pdef->setStartAndGoalStates(start, goal);
-
-    // objective function
-    pdef->setOptimizationObjective(std::make_shared<ob::PathLengthOptimizationObjective>(space_info));
-
-    // create a planner for the defined space
-    planner = std::make_shared<og::RRTstar>(space_info);
-
-    // set the problem we are trying to solve for the planner
-    planner->setProblemDefinition(pdef);
-
-    // perform setup steps for the planner
-    planner->setup();
-
-    // print the settings for this space
-    space_info->printSettings(std::cout);
-
-    // print the problem settings
-    pdef->print(std::cout);
-
+    planner->print();
 
     ros::ServiceServer service = nh.advertiseService("planner_service", planner_service);
 
@@ -186,8 +143,8 @@ while (ros::ok())
 
     solver.solve();
     model->getJointPosition(gv);
-    Eigen::VectorXd::Map(goal->as<ob::RealVectorStateSpace::StateType>()->values, nq) = gv;
-    pdef->setStartAndGoalStates(start, goal);
+Eigen::VectorXd::Map(goal->as<ompl::base::RealVectorStateSpace::StateType>()->values, nq) = gv;
+    planner->setStartAndGoalStates(start, goal);
 
     visualization_msgs::Marker sphere;
     sphere.header.frame_id = "base_link";
@@ -209,16 +166,16 @@ while (ros::ok())
     pub_marker.publish(ob_msg);
 
 
-    if (solved)
+    if (planner->getPlannerStatus())
     {
         // get the goal representation from the problem definition (not the same as the goal state)
         // and inquire about the found path
-        ob::PathPtr path = pdef->getSolutionPath();
+        ompl::base::PathPtr path = planner->getSolutionPath();
         std::cout << "Found solution:" << std::endl;
 
         // print the path to screen
-        path->as<og::PathGeometric>()->interpolate(100);
-        path->as<og::PathGeometric>()->printAsMatrix(std::cout);
+        path->as<ompl::geometric::PathGeometric>()->interpolate(100);
+        path->as<ompl::geometric::PathGeometric>()->printAsMatrix(std::cout);
 
 
         auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_logger");
@@ -231,16 +188,16 @@ while (ros::ok())
 
         msg.name = model->getEnabledJointNames();
 
-        for(int i = 0; i < path->as<og::PathGeometric>()->getStateCount(); i++)
+        for(int i = 0; i < path->as<ompl::geometric::PathGeometric>()->getStateCount(); i++)
         {
-            auto * state_i = path->as<og::PathGeometric>()->getState(i)->as<ob::RealVectorStateSpace::StateType>();
+            auto * state_i = path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::RealVectorStateSpace::StateType>();
             logger->add("state", Eigen::VectorXd::Map(state_i->values, nq));
         }
 
         int i = 0;
         while(ros::ok())
         {
-            auto * state_i = path->as<og::PathGeometric>()->getState(i)->as<ob::RealVectorStateSpace::StateType>();
+            auto * state_i = path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::RealVectorStateSpace::StateType>();
             logger->add("state", Eigen::VectorXd::Map(state_i->values, nq));
 
             msg.position.assign(state_i->values, state_i->values + nq);
@@ -269,7 +226,7 @@ while (ros::ok())
             ros::Duration(0.02).sleep();
 
             i++;
-            i = i % path->as<og::PathGeometric>()->getStateCount();
+            i = i % path->as<ompl::geometric::PathGeometric>()->getStateCount();
 
         }
 
