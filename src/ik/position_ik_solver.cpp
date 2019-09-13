@@ -60,7 +60,7 @@ bool PositionCartesianSolver::solve()
         tol_satisfied = error.norm() < _err_tol*_n_task;
 //        tol_satisfied = tol_satisfied && dq.norm() < 1e-3;
 
-        printf("Error at iter #%d is %f \n", iter, error.norm());
+        //printf("Error at iter #%d is %f \n", iter, error.norm());
         iter++;
 
         _iter_callback();
