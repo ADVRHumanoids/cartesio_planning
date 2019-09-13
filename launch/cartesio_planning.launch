@@ -3,6 +3,7 @@
      <!-- send the cogimon robot XML to param server -->
      <param name="robot_description" command="$(find xacro)/xacro.py '$(find teleop_urdf)/urdf/teleop_fixed_base.urdf'" />
      <param name="robot_description_semantic" textfile="$(find teleop_srdf)/srdf/teleop_fixed_base.srdf" />   
+     <param name="cartesian/problem_description" textfile="$(find teleop_cartesio)/teleop_simple_stack.yaml"/>
         
     <!-- start robot state publisher -->
     <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen" >
@@ -12,49 +13,16 @@
     <arg name="is_model_floating_base" default="false"/>
 
     <!-- start planner -->
-    <node pkg="cartesio_planning" type="ompl_test" name="cartesio_planning" args="_is_model_floating_base:=$(arg is_model_floating_base)" output="screen" />
+    <node pkg="cartesio_planning" type="ompl_test" name="cartesio_planning" args="_is_model_floating_base:=$(arg is_model_floating_base)" output="screen">
+	
+    </node>
 
 
-    <!-- CartesI/O-->
-    <param name="cartesian/problem_description" textfile="$(find teleop_cartesio)/teleop_simple_stack.yaml"/>
-
-
-    <arg name="solver" default="OpenSot"/>
-    <arg name="prefix" default=""/>
-    <arg name="use_xbot_config" default="false"/>
-    <arg name="rate" default="100.0"/>
-    <arg name="tf_prefix" default="ci"/>
-    <arg name="markers" default="true"/>
-    <arg name="namespace" default="/"/> 
-    
-    <arg name="xbot" default="false"/>
        
-    <group ns="$(arg namespace)">
+    <!-- Interactive Markers -->
+    <node if="$(arg markers)" pkg="cartesian_interface" type="marker_spawner" name="interactive_markers" output="screen">
+    	<param name="tf_prefix" value="$(arg tf_prefix)"/>
+    </node>
+
     
-        <remap if="$(arg xbot)" from="robot_description" to="xbotcore/robot_description"/>
-    
-        <node pkg="cartesian_interface" type="ros_server_node" 
-                                        name="ros_server_node" 
-                                        output="screen" 
-                                        launch-prefix="$(arg prefix)"
-                                        rosmon-stop-timeout="1000">
-                                        
-            <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
-            <param name="model_type" value="RBDL"/>
-            <param name="solver" value="$(arg solver)"/>
-            <param name="use_xbot_config" value="$(arg use_xbot_config)"/>
-            <param name="rate" value="$(arg rate)"/>
-            <param name="tf_prefix" value="$(arg tf_prefix)"/>
-            
-        </node>
-
-        <node if="$(arg markers)" pkg="cartesian_interface" type="marker_spawner" name="interactive_markers" output="screen">
-            <param name="tf_prefix" value="$(arg tf_prefix)"/>
-        </node>
-
-    </group>
-
-
-    <node pkg="tf" type="static_transform_publisher" name="base_link_static_transform" args="0 0 0 0 0 0 base_link ci/world_odom 100" />
-
 </launch>
