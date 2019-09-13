@@ -4,24 +4,16 @@
      <param name="robot_description" command="$(find xacro)/xacro.py '$(find teleop_urdf)/urdf/teleop_fixed_base.urdf'" />
      <param name="robot_description_semantic" textfile="$(find teleop_srdf)/srdf/teleop_fixed_base.srdf" />   
      <param name="cartesian/problem_description" textfile="$(find teleop_cartesio)/teleop_simple_stack.yaml"/>
-        
-    <!-- start robot state publisher -->
-    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen" >
-        <param name="publish_frequency" type="double" value="250.0" />
-    </node>
-
-    <arg name="is_model_floating_base" default="false"/>
 
     <!-- start planner -->
-    <node pkg="cartesio_planning" type="ompl_test" name="cartesio_planning" args="_is_model_floating_base:=$(arg is_model_floating_base)" output="screen">
-	
+    <node pkg="cartesio_planning" type="ompl_test" name="cartesio_planning" output="screen">
+        <param name="is_model_floating_base" value="false"/>
     </node>
 
 
        
     <!-- Interactive Markers -->
-    <node if="$(arg markers)" pkg="cartesian_interface" type="marker_spawner" name="interactive_markers" output="screen">
-    	<param name="tf_prefix" value="$(arg tf_prefix)"/>
+    <node pkg="cartesian_interface" type="marker_spawner" name="interactive_markers" output="screen">
     </node>
 
     

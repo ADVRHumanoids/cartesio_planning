@@ -17,7 +17,6 @@ PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci,
     for(auto ee : planning_ee)
     {
         Task t;
-        _ci->getCurrentPose(ee, t.des_pose);
         _task_map[ee] = t;
         _n_task += 6;
     }

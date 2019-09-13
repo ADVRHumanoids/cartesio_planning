@@ -22,9 +22,16 @@
 
 #include <std_srvs/Empty.h>
 
+#include "ik/position_ik_solver.h"
+#include <cartesian_interface/ros/RosServerClass.h>
+#include <cartesian_interface/utils/LoadConfig.h>
+#include <std_srvs/Trigger.h>
+
+
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
-
+using namespace XBot::Cartesian;
+using namespace XBot::Cartesian::Utils;
 
 std::shared_ptr<og::RRTstar> planner; ///TODO: global NO
 ob::PlannerStatus solved = ob::PlannerStatus::UNKNOWN; ///TODO: global NO
@@ -42,8 +49,43 @@ int main(int argc, char ** argv)
 
     ros::init(argc, argv, "ompl_test_node");
     ros::NodeHandle nh;
-    auto opt = XBot::ConfigOptionsFromParamServer();
-    auto model = XBot::ModelInterface::getModel(opt);
+
+    auto cfg = LoadOptions(LoadFrom::PARAM);
+
+    auto model = XBot::ModelInterface::getModel(cfg);
+
+    Eigen::VectorXd qhome;
+    model->getRobotState("home", qhome);
+    model->setJointPosition(qhome);
+    model->update();
+
+    auto ik_yaml = LoadProblemDescription(LoadFrom::PARAM);
+    auto ik_prob = ProblemDescription(ik_yaml, model);
+
+    std::string impl_name = "OpenSot";
+    std::string path_to_shared_lib = XBot::Utils::FindLib("libCartesian" + impl_name + ".so", "LD_LIBRARY_PATH");
+    if (path_to_shared_lib == "")
+    {
+        throw std::runtime_error("libCartesian" + impl_name + ".so must be listed inside LD_LIBRARY_PATH");
+    }
+
+    auto ci = SoLib::getFactoryWithArgs<CartesianInterfaceImpl>(path_to_shared_lib,
+                                                                impl_name + "Impl",
+                                                                model, ik_prob);
+
+    if(!ci)
+    {
+        throw std::runtime_error("Unable to load solver '" + impl_name + "'");
+    }
+    else
+    {
+        XBot::Logger::success("Loaded solver '%s'\n", impl_name.c_str());
+    }
+
+
+    XBot::Cartesian::Planning::PositionCartesianSolver solver(ci, {"TCP"}); // tbd: from parameter
+    RosServerClass ros_server(ci, model);
+
     Eigen::VectorXd qmin, qmax;
     model->getJointLimits(qmin, qmax);
     const int nq = model->getJointNum();
@@ -134,8 +176,39 @@ int main(int argc, char ** argv)
 
     ros::ServiceServer service = nh.advertiseService("planner_service", planner_service);
 
+    ros::Publisher pub_marker = nh.advertise<visualization_msgs::MarkerArray>("obstacles",
+                                                                              10);
+
 while (ros::ok())
 {
+
+    ros_server.run();
+
+    solver.solve();
+    model->getJointPosition(gv);
+    Eigen::VectorXd::Map(goal->as<ob::RealVectorStateSpace::StateType>()->values, nq) = gv;
+    pdef->setStartAndGoalStates(start, goal);
+
+    visualization_msgs::Marker sphere;
+    sphere.header.frame_id = "base_link";
+    sphere.header.stamp = ros::Time::now();
+    sphere.type = visualization_msgs::Marker::SPHERE;
+    sphere.action = visualization_msgs::Marker::ADD;
+    sphere.pose.position.x = 0.5;
+    sphere.pose.position.z = 0.8;
+    sphere.pose.orientation.w = 1.0;
+    sphere.scale.x = 0.4;
+    sphere.scale.y = 0.4;
+    sphere.scale.z = 0.4;
+    sphere.color.a = 1.0;
+    sphere.color.r = 1.0;
+
+    visualization_msgs::MarkerArray ob_msg;
+    ob_msg.markers.push_back(sphere);
+
+    pub_marker.publish(ob_msg);
+
+
     if (solved)
     {
         // get the goal representation from the problem definition (not the same as the goal state)
@@ -153,8 +226,7 @@ while (ros::ok())
                                                                    10);
         sensor_msgs::JointState msg;
 
-        ros::Publisher pub_marker = nh.advertise<visualization_msgs::MarkerArray>("obstacles",
-                                                                                  10);
+
 
 
         msg.name = model->getEnabledJointNames();
@@ -202,6 +274,8 @@ while (ros::ok())
         }
 
     }
+
+    ros::Duration(0.1).sleep();
     ros::spinOnce();
 }
 //    else
