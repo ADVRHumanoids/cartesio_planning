@@ -102,6 +102,7 @@ int main(int argc, char ** argv)
     ob::ScopedState<> start(space);
     ob::ScopedState<> goal(space);
 
+
     // Copy the values from the vectors into the start and goal states.
     Eigen::VectorXd::Map(start->as<ob::RealVectorStateSpace::StateType>()->values, nq) = sv;
     Eigen::VectorXd::Map(goal->as<ob::RealVectorStateSpace::StateType>()->values, nq) = gv;

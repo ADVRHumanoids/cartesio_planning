@@ -126,12 +126,33 @@ include_directories(
   ${catkin_INCLUDE_DIRS} # note: must be the last in the include list
 )
 
-# Declare a C++ library
+# Main library
+add_library(cartesio_planning SHARED
+    src/ik/position_ik_solver.cpp)
+
+target_link_libraries(cartesio_planning
+    ${OMPL_LIBRARIES}
+    ${cartesian_interface_LIBRARIES})
+
+# Test executable
 add_executable(ompl_test
     src/ompl_test.cpp
     )
 
 target_link_libraries(ompl_test ${OMPL_LIBRARIES}
+    ${XBotInterface_LIBRARIES}
+    ${catkin_LIBRARIES}
+    matlogger2::matlogger2)
+
+# Ik test
+add_executable(ik_test
+    src/ik/position_ik_test.cpp
+    )
+
+target_link_libraries(ik_test ${OMPL_LIBRARIES}
+    yaml-cpp
+    dl
+    cartesio_planning
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
