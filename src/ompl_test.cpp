@@ -20,8 +20,21 @@
 #include <sensor_msgs/JointState.h>
 #include <visualization_msgs/MarkerArray.h>
 
+#include <std_srvs/Empty.h>
+
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
+
+
+std::shared_ptr<og::RRTstar> planner; ///TODO: global NO
+ob::PlannerStatus solved = ob::PlannerStatus::UNKNOWN; ///TODO: global NO
+
+bool planner_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+    solved = planner->ob::Planner::solve(1.0);
+
+    return true;
+}
 
 
 int main(int argc, char ** argv)
@@ -103,7 +116,7 @@ int main(int argc, char ** argv)
     pdef->setOptimizationObjective(std::make_shared<ob::PathLengthOptimizationObjective>(space_info));
 
     // create a planner for the defined space
-    auto planner = std::make_shared<og::RRTstar>(space_info);
+    planner = std::make_shared<og::RRTstar>(space_info);
 
     // set the problem we are trying to solve for the planner
     planner->setProblemDefinition(pdef);
@@ -117,9 +130,11 @@ int main(int argc, char ** argv)
     // print the problem settings
     pdef->print(std::cout);
 
-    // attempt to solve the problem within one second of planning time
-    ob::PlannerStatus solved = planner->ob::Planner::solve(1.0);
 
+    ros::ServiceServer service = nh.advertiseService("planner_service", planner_service);
+
+while (ros::ok())
+{
     if (solved)
     {
         // get the goal representation from the problem definition (not the same as the goal state)
@@ -186,6 +201,8 @@ int main(int argc, char ** argv)
         }
 
     }
-    else
-        std::cout << "No solution found" << std::endl;
+    ros::spinOnce();
+}
+//    else
+//        std::cout << "No solution found" << std::endl;
 }
