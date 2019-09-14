@@ -23,7 +23,7 @@ using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
 
 
-std::shared_ptr<Planning::OMPLPlanner<ompl::geometric::RRTstar> > planner;
+std::shared_ptr<Planning::OmplPlanner> planner;
 
 bool planner_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
@@ -70,28 +70,27 @@ int main(int argc, char ** argv)
     }
 
 
-    XBot::Cartesian::Planning::PositionCartesianSolver solver(ci, {"teleop_link5"}); // tbd: from parameter
+    XBot::Cartesian::Planning::PositionCartesianSolver solver(ci, {"TCP"}); // tbd: from parameter
     RosServerClass ros_server(ci, model);
 
     Eigen::VectorXd qmin, qmax;
     model->getJointLimits(qmin, qmax);
     const int nq = model->getJointNum();
 
-    planner = std::make_shared<Planning::OMPLPlanner<ompl::geometric::RRTstar> >(qmin, qmax);
+    planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax);
 
 
-//    auto constraint = std::make_shared<Manifold>();
+    //    auto constraint = std::make_shared<Manifold>();
 
     // Combine the ambient space and the constraint into a constrained state space.
-//    auto css = std::make_shared<ob::ProjectedStateSpace>(space, constraint);
+    //    auto css = std::make_shared<ob::ProjectedStateSpace>(space, constraint);
 
     // Define the constrained space information for this constrained state space.
-//    auto csi = std::make_shared<ob::ConstrainedSpaceInformation>(css);
+    //    auto csi = std::make_shared<ob::ConstrainedSpaceInformation>(css);
 
     // state validity check
-    auto isStateValid = [nq, model](const ompl::base::State * state)
+    auto isStateValid = [model](const Eigen::VectorXd& q)
     {
-        Eigen::VectorXd q = Eigen::VectorXd::Map(state->as<ompl::base::RealVectorStateSpace::StateType>()->values, nq);
         model->setJointPosition(q);
         model->update();
 
@@ -118,16 +117,7 @@ int main(int argc, char ** argv)
     model->getRobotState("home", sv);
     gv = (qmin + qmax)/2.0;
 
-    // Scoped states that we will add to simple setup.
-        ompl::base::ScopedState<> start(planner->getSpace());
-        ompl::base::ScopedState<> goal(planner->getSpace());
-
-        // Copy the values from the vectors into the start and goal states.
-            Eigen::VectorXd::Map(start->as<ompl::base::RealVectorStateSpace::StateType>()->values, nq) = sv;
-            Eigen::VectorXd::Map(goal->as<ompl::base::RealVectorStateSpace::StateType>()->values, nq) = gv;
-
-
-    planner->setStartAndGoalStates(start, goal);
+    planner->setStartAndGoalStates(sv, gv);
 
     planner->print();
 
@@ -136,105 +126,87 @@ int main(int argc, char ** argv)
     ros::Publisher pub_marker = nh.advertise<visualization_msgs::MarkerArray>("obstacles",
                                                                               10);
 
-while (ros::ok())
-{
-
-    ros_server.run();
-
-    solver.solve();
-    model->getJointPosition(gv);
-Eigen::VectorXd::Map(goal->as<ompl::base::RealVectorStateSpace::StateType>()->values, nq) = gv;
-    planner->setStartAndGoalStates(start, goal);
-
-    visualization_msgs::Marker sphere;
-    sphere.header.frame_id = "base_link";
-    sphere.header.stamp = ros::Time::now();
-    sphere.type = visualization_msgs::Marker::SPHERE;
-    sphere.action = visualization_msgs::Marker::ADD;
-    sphere.pose.position.x = 0.5;
-    sphere.pose.position.z = 0.8;
-    sphere.pose.orientation.w = 1.0;
-    sphere.scale.x = 0.4;
-    sphere.scale.y = 0.4;
-    sphere.scale.z = 0.4;
-    sphere.color.a = 1.0;
-    sphere.color.r = 1.0;
-
-    visualization_msgs::MarkerArray ob_msg;
-    ob_msg.markers.push_back(sphere);
-
-    pub_marker.publish(ob_msg);
-
-
-    if (planner->getPlannerStatus())
+    while (ros::ok())
     {
-        // get the goal representation from the problem definition (not the same as the goal state)
-        // and inquire about the found path
-        ompl::base::PathPtr path = planner->getSolutionPath();
-        std::cout << "Found solution:" << std::endl;
 
-        // print the path to screen
-        path->as<ompl::geometric::PathGeometric>()->interpolate(100);
-        path->as<ompl::geometric::PathGeometric>()->printAsMatrix(std::cout);
+        ros_server.run();
+
+        solver.solve();
+        model->getJointPosition(gv);
+        planner->setStartAndGoalStates(sv, gv);
+
+        visualization_msgs::Marker sphere;
+        sphere.header.frame_id = "base_link";
+        sphere.header.stamp = ros::Time::now();
+        sphere.type = visualization_msgs::Marker::SPHERE;
+        sphere.action = visualization_msgs::Marker::ADD;
+        sphere.pose.position.x = 0.5;
+        sphere.pose.position.z = 0.8;
+        sphere.pose.orientation.w = 1.0;
+        sphere.scale.x = 0.4;
+        sphere.scale.y = 0.4;
+        sphere.scale.z = 0.4;
+        sphere.color.a = 1.0;
+        sphere.color.r = 1.0;
+
+        visualization_msgs::MarkerArray ob_msg;
+        ob_msg.markers.push_back(sphere);
+
+        pub_marker.publish(ob_msg);
 
 
-        auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_logger");
-        ros::Publisher pub = nh.advertise<sensor_msgs::JointState>("joint_states",
-                                                                   10);
-        sensor_msgs::JointState msg;
-
-
-
-
-        msg.name = model->getEnabledJointNames();
-
-        for(int i = 0; i < path->as<ompl::geometric::PathGeometric>()->getStateCount(); i++)
+        if (planner->getPlannerStatus())
         {
-            auto * state_i = path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::RealVectorStateSpace::StateType>();
-            logger->add("state", Eigen::VectorXd::Map(state_i->values, nq));
+            auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_logger");
+            ros::Publisher pub = nh.advertise<sensor_msgs::JointState>("joint_states",
+                                                                       10);
+            sensor_msgs::JointState msg;
+            msg.name = model->getEnabledJointNames();
+
+            for(auto x : planner->getSolutionPath())
+            {
+                logger->add("state", x);
+            }
+
+            int i = 0;
+            while(ros::ok())
+            {
+                auto q_i = planner->getSolutionPath().at(i);
+                msg.position.assign(q_i.data(), q_i.data() + q_i.size());
+                msg.header.stamp = ros::Time::now();
+                pub.publish(msg);
+
+                visualization_msgs::Marker sphere;
+                sphere.header.frame_id = "base_link";
+                sphere.header.stamp = ros::Time::now();
+                sphere.type = visualization_msgs::Marker::SPHERE;
+                sphere.action = visualization_msgs::Marker::ADD;
+                sphere.pose.position.x = 0.5;
+                sphere.pose.position.z = 0.8;
+                sphere.pose.orientation.w = 1.0;
+                sphere.scale.x = 0.4;
+                sphere.scale.y = 0.4;
+                sphere.scale.z = 0.4;
+                sphere.color.a = 1.0;
+                sphere.color.r = 1.0;
+
+                visualization_msgs::MarkerArray ob_msg;
+                ob_msg.markers.push_back(sphere);
+
+                pub_marker.publish(ob_msg);
+
+                ros::Duration(0.02).sleep();
+
+                i++;
+                i = i % planner->getSolutionPath().size();
+
+            }
+
         }
 
-        int i = 0;
-        while(ros::ok())
-        {
-            auto * state_i = path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::RealVectorStateSpace::StateType>();
-            logger->add("state", Eigen::VectorXd::Map(state_i->values, nq));
-
-            msg.position.assign(state_i->values, state_i->values + nq);
-            msg.header.stamp = ros::Time::now();
-            pub.publish(msg);
-
-            visualization_msgs::Marker sphere;
-            sphere.header.frame_id = "base_link";
-            sphere.header.stamp = ros::Time::now();
-            sphere.type = visualization_msgs::Marker::SPHERE;
-            sphere.action = visualization_msgs::Marker::ADD;
-            sphere.pose.position.x = 0.5;
-            sphere.pose.position.z = 0.8;
-            sphere.pose.orientation.w = 1.0;
-            sphere.scale.x = 0.4;
-            sphere.scale.y = 0.4;
-            sphere.scale.z = 0.4;
-            sphere.color.a = 1.0;
-            sphere.color.r = 1.0;
-
-            visualization_msgs::MarkerArray ob_msg;
-            ob_msg.markers.push_back(sphere);
-
-            pub_marker.publish(ob_msg);
-
-            ros::Duration(0.02).sleep();
-
-            i++;
-            i = i % path->as<ompl::geometric::PathGeometric>()->getStateCount();
-
-        }
-
+        ros::Duration(0.1).sleep();
+        ros::spinOnce();
     }
-
-    ros::Duration(0.1).sleep();
-    ros::spinOnce();
-}
-//    else
-//        std::cout << "No solution found" << std::endl;
+    //    else
+    //        std::cout << "No solution found" << std::endl;
 }
