@@ -6,19 +6,29 @@
 namespace XBot { namespace Cartesian { namespace Planning {
 
 /**
- * @brief The PositionCartesianSolver class
+ * @brief The PositionCartesianSolver class implements a position-level IK
+ * solver on top of a CartesianInterface object (provided by the user)
+ * which solves differential IK. This is done by iterating the local solution
+ * and integrating the model state until suitable termination conditions are
+ * satisfied.
  */
 class PositionCartesianSolver
 {
 
 public:
 
+    /**
+     * @brief DEFAULT_ERR_TOL is the default tolerance on the error norm.
+     */
     static const double DEFAULT_ERR_TOL;
 
+    /**
+     * @brief DEFAULT_MAX_ITER is the default maximum number of iterations.
+     */
     static const int DEFAULT_MAX_ITER;
 
     /**
-     * @brief PositionCartesianSolver
+     * @brief PositionCartesianSolver constructor.
      * @param ci
      * @param constrained_ee
      */
