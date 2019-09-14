@@ -1,5 +1,5 @@
-#ifndef _CARTESIO_OMPL_PLANNER_H_
-#define _CARTESIO_OMPL_PLANNER_H_
+#ifndef __CARTESIO_PLANNING_OMPL_PLANNER_H__
+#define __CARTESIO_PLANNING_OMPL_PLANNER_H__
 
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/SE3StateSpace.h>
@@ -17,34 +17,39 @@
 
 namespace XBot { namespace Cartesian { namespace Planning {
 
-/**
- * T has to derive from ompl::base::Planner
- */
-template <typename T> class OMPLPlanner
+class OmplPlanner
 {
+
 public:
-    OMPLPlanner(const Eigen::VectorXd& bounds_min, const Eigen::VectorXd& bounds_max);
 
-    bool setBounds(const Eigen::VectorXd& bounds_min, const Eigen::VectorXd& bounds_max);
-    void setStateValidityChecker(const ompl::base::StateValidityCheckerPtr &svc);
-    void setStateValidityChecker(const ompl::base::StateValidityCheckerFn &svc);
+    typedef std::function<bool(const Eigen::VectorXd&)> StateValidityPredicate;
 
-    bool setStartAndGoalStates(ompl::base::ScopedState<> start, ompl::base::ScopedState<> goal);
+    OmplPlanner(const Eigen::VectorXd& bounds_min,
+                const Eigen::VectorXd& bounds_max);
+
+    void setBounds(const Eigen::VectorXd& bounds_min,
+                   const Eigen::VectorXd& bounds_max);
+
+    void setStateValidityChecker(StateValidityPredicate svc);
+
+    void setStartAndGoalStates(const Eigen::VectorXd& start,
+                               const Eigen::VectorXd& goal);
 
     void print();
 
-    bool solve(const unsigned int t);
-    const ompl::base::PlannerStatus& getPlannerStatus() const {return _solved;}
-    std::shared_ptr<ompl::base::RealVectorStateSpace> getSpace(){return _space;}
+    bool solve(double timeout);
 
-    ompl::base::PathPtr getSolutionPath();
+    ompl::base::PlannerStatus getPlannerStatus() const;
+
+    std::vector<Eigen::VectorXd> getSolutionPath() const;
 
 private:
+
     ompl::base::RealVectorBounds _bounds;
     std::shared_ptr<ompl::base::RealVectorStateSpace> _space;
     std::shared_ptr<ompl::base::SpaceInformation> _space_info;
     std::shared_ptr<ompl::base::ProblemDefinition> _pdef;
-    std::shared_ptr<T> _planner;
+    std::shared_ptr<ompl::base::Planner> _planner;
     ompl::base::PlannerStatus _solved;
 
 
