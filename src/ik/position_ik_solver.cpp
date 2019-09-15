@@ -3,7 +3,7 @@
 using namespace XBot::Cartesian::Planning;
 
 const double PositionCartesianSolver::DEFAULT_ERR_TOL = 1e-4;
-const int PositionCartesianSolver::DEFAULT_MAX_ITER = 100;
+const int PositionCartesianSolver::DEFAULT_MAX_ITER = 60;
 
 PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci,
                                                  std::vector<std::string> planning_ee):
@@ -41,10 +41,11 @@ bool PositionCartesianSolver::solve()
     // main solver loop
     bool tol_satisfied = false;
     int iter = 0;
+    const double step_size = 1.0;
     while(!tol_satisfied && iter < _max_iter)
     {
 
-        double dt = 0.1; // dummy dt
+        double dt = 1.0; // dummy dt
         if(!_ci->update(0.0, dt))
         {
             return false;
@@ -52,7 +53,7 @@ bool PositionCartesianSolver::solve()
 
         _model->getJointPosition(q);
         _model->getJointVelocity(dq);
-        q += dq*dt;
+        q += step_size*dq;
         _model->setJointPosition(q);
         _model->update();
 
@@ -60,13 +61,13 @@ bool PositionCartesianSolver::solve()
         tol_satisfied = error.norm() < _err_tol*_n_task;
 //        tol_satisfied = tol_satisfied && dq.norm() < 1e-3;
 
-        //printf("Error at iter #%d is %f \n", iter, error.norm());
         iter++;
 
         _iter_callback();
 
     }
 
+//    printf("Error at iter #%d is %f \n", iter, error.norm());
     return tol_satisfied;
 
 }
