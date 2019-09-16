@@ -68,6 +68,8 @@ private:
                    const Eigen::VectorXd& bounds_max);
     void setConstraint(ompl::base::ConstraintPtr constraint);
 
+    std::shared_ptr<StateWrapper> _sw;
+
 };
 
 }
