@@ -14,21 +14,10 @@
 #include <ompl/base/Constraint.h>
 
 #include <Eigen/Dense>
+#include "state_wrapper.h"
 
 
 namespace XBot { namespace Cartesian { namespace Planning {
-
-class StateWrapper
-{
-public:
-    StateWrapper(const bool is_state_space_constrained);
-
-    bool setState(ompl::base::ScopedState<> state, const Eigen::VectorXd& value);
-    bool getState(const ompl::base::ScopedState<> state, Eigen::VectorXd& value);
-private:
-
-    bool _is_constrained;
-};
 
 class OmplPlanner
 {

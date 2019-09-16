@@ -129,6 +129,7 @@ include_directories(
 # Main library
 add_library(cartesio_planning SHARED
     src/planner/cartesio_ompl_planner.cpp
+    src/planner/state_wrapper.cpp
     src/ik/position_ik_solver.cpp)
 
 target_link_libraries(cartesio_planning

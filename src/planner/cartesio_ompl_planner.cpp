@@ -160,32 +160,6 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
 }
 
 
-bool OmplPlanner::setState(ompl::base::ScopedState<> state, const Eigen::VectorXd& value)
-{
-    if(value.size() != _size)
-        return false;
-
-    if(_css) //state space is constrained
-        Eigen::VectorXd::Map(state->as<ompl::base::ConstrainedStateSpace::StateType>()->values, _size) = value;
-    else //state space is not constrained
-        Eigen::VectorXd::Map(state->as<ompl::base::RealVectorStateSpace::StateType>()->values, _size) = value;
-
-    return true;
-}
-
-bool OmplPlanner::getState(const ompl::base::ScopedState<> state, Eigen::VectorXd& value)
-{
-    if(value.size() != _size)
-        return false;
-
-    if(_css)
-
-    else
-        value = Eigen::VectorXd::Map(state->values, _size);
-
-}
-
-
 bool OmplPlanner::solve(double t)
 {
     print();
