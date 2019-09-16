@@ -143,3 +143,5 @@ XBot::ModelInterface::Ptr PositionCartesianSolver::getModel() const
 {
     return _model;
 }
+
+double PositionCartesianSolver::getErrorThreshold() const { return _err_tol * _n_task; }

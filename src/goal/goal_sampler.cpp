@@ -9,11 +9,24 @@ GoalSampler::GoalSampler(ompl::base::SpaceInformationPtr space_info,
     _ik_solver(ik_solver),
     _state_wrapper(state_wrapper)
 {
-
+    setThreshold(ik_solver->getErrorThreshold());
 }
 
 double GoalSampler::distanceGoal(const ompl::base::State * st) const
 {
+    // get model
+    auto model = _ik_solver->getModel();
+
+    // set state into model
+    Eigen::VectorXd q;
+    _state_wrapper.getState(st, q);
+    model->setJointPosition(q);
+    model->update();
+
+    Eigen::VectorXd error;
+    _ik_solver->getError(error);
+
+    return error.norm();
 
 }
 
@@ -37,12 +50,15 @@ void GoalSampler::sampleGoal(ompl::base::State * st) const
 
     }
 
-
+    Eigen::VectorXd q;
+    model->getJointPosition(q);
+    _state_wrapper.setState(st, q);
 
 }
 
 unsigned int GoalSampler::maxSampleCount() const
 {
+    return std::numeric_limits<unsigned int>::max();
 }
 
 Eigen::VectorXd GoalSampler::generateRandomSeed() const

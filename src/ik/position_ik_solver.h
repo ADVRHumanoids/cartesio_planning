@@ -20,7 +20,7 @@ public:
     typedef std::shared_ptr<PositionCartesianSolver> Ptr;
 
     /**
-     * @brief DEFAULT_ERR_TOL is the default tolerance on the error norm.
+     * @brief DEFAULT_ERR_TOL is the default tolerance on the error norm for a single constraint.
      */
     static const double DEFAULT_ERR_TOL;
 
@@ -80,6 +80,12 @@ public:
      * @return
      */
     ModelInterface::Ptr getModel() const;
+
+    /**
+     * @brief getErrorThreshold
+     * @return
+     */
+    double getErrorThreshold() const;
 
 private:
 
