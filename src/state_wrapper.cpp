@@ -2,9 +2,9 @@
 
 using namespace XBot::Cartesian::Planning;
 
-StateWrapper::StateWrapper(const bool is_state_space_constrained,
-                           const unsigned int size):
-    _is_constrained(is_state_space_constrained),
+StateWrapper::StateWrapper(StateSpaceType state_space_type,
+                           int size):
+    _state_space_type(state_space_type),
     _size(size)
 {
 
@@ -18,11 +18,11 @@ void StateWrapper::setState(ompl::base::State * state,
         throw std::out_of_range("Value size does not match state space dimension");
     }
 
-    if(_is_constrained) //state space is constrained
+    if(_state_space_type == StateSpaceType::CONSTRAINED) //state space is constrained
     {
         state->as<ompl::base::ConstrainedStateSpace::StateType>()->copy(value);
     }
-    else //state space is not constrained7
+    else //state space is not constrained
     {
         Eigen::VectorXd::Map(state->as<ompl::base::RealVectorStateSpace::StateType>()->values, _size) = value;
     }
@@ -33,7 +33,7 @@ void StateWrapper::getState(const ompl::base::State * state,
                             Eigen::VectorXd& value) const
 {
 
-    if(_is_constrained)
+    if(_state_space_type == StateSpaceType::CONSTRAINED)
     {
         value = *state->as<ompl::base::ConstrainedStateSpace::StateType>();
     }

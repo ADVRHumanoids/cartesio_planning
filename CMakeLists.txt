@@ -8,10 +8,10 @@ add_compile_options(-std=c++11)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  cartesian_interface
-  roscpp
-  rosconsole
-)
+    cartesian_interface
+    roscpp
+    rosconsole
+    )
 
 find_package(Eigen3 REQUIRED)
 
@@ -107,11 +107,11 @@ find_package(matlogger2 REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES cartesio_planning
-#  CATKIN_DEPENDS cartesian_interface roscpp
-#  DEPENDS system_lib
-)
+    #  INCLUDE_DIRS include
+    #  LIBRARIES cartesio_planning
+    #  CATKIN_DEPENDS cartesian_interface roscpp
+    #  DEPENDS system_lib
+    )
 
 ###########
 ## Build ##
@@ -120,11 +120,12 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
-  ${OMPL_INCLUDE_DIRS}
-  ${EIGEN3_INCLUDE_DIRS}
-  ${catkin_INCLUDE_DIRS} # note: must be the last in the include list
-)
+    src/
+    include
+    ${OMPL_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS} # note: must be the last in the include list
+    )
 
 # Main library
 add_library(cartesio_planning SHARED
@@ -203,23 +204,23 @@ target_link_libraries(ik_test ${OMPL_LIBRARIES}
 
 ## Mark executables and/or libraries for installation
 install(TARGETS ompl_test
-   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
- )
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
 
 install(TARGETS cartesio_planning
-   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
- )
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
 
 # Mark cpp header files for installation
- install(DIRECTORY launch/
-   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-   FILES_MATCHING PATTERN "*.launch"
-   PATTERN ".svn" EXCLUDE
- )
+install(DIRECTORY launch/
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+    FILES_MATCHING PATTERN "*.launch"
+    PATTERN ".svn" EXCLUDE
+    )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES

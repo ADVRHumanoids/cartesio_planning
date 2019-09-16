@@ -3,8 +3,8 @@
 
 #include <ompl/base/goals/GoalSampleableRegion.h>
 
-#include "../ik/position_ik_solver.h"
-#include "../state_wrapper.h"
+#include "ik/position_ik_solver.h"
+#include "state_wrapper.h"
 
 namespace XBot { namespace Cartesian { namespace Planning {
 
@@ -12,6 +12,8 @@ class GoalSampler : public ompl::base::GoalSampleableRegion
 {
 
 public:
+
+    typedef std::shared_ptr<GoalSampler> Ptr;
 
     GoalSampler(ompl::base::SpaceInformationPtr space_info,
                 PositionCartesianSolver::Ptr ik_solver,

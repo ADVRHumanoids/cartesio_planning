@@ -9,7 +9,8 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN)
 {
-    _sw = std::make_shared<StateWrapper>(false, _size);
+    _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::REALVECTOR,
+                                         _size);
 
     // create euclidean state space
     _space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
@@ -40,7 +41,8 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN)
 {
-    _sw = std::make_shared<StateWrapper>(true, _size);
+    _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::CONSTRAINED,
+                                         _size);
 
     // create euclidean state space
     _space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);

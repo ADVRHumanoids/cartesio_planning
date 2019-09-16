@@ -23,8 +23,10 @@ class StateWrapper
 
 public:
 
-    StateWrapper(const bool is_state_space_constrained,
-                 const unsigned int size);
+    enum class StateSpaceType { REALVECTOR, CONSTRAINED };
+
+    StateWrapper(StateSpaceType state_space_type,
+                 int size);
 
     void setState(ompl::base::State * state,
                   const Eigen::VectorXd& value) const;
@@ -34,8 +36,8 @@ public:
 
 private:
 
-    bool _is_constrained;
-    unsigned int _size;
+    StateSpaceType _state_space_type;
+    int _size;
 };
 
 }
