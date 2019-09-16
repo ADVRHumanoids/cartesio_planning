@@ -27,10 +27,10 @@ public:
                  const unsigned int size);
 
     void setState(ompl::base::State * state,
-                  const Eigen::VectorXd& value);
+                  const Eigen::VectorXd& value) const;
 
     void getState(const ompl::base::State * state,
-                  Eigen::VectorXd& value);
+                  Eigen::VectorXd& value) const;
 
 private:
 

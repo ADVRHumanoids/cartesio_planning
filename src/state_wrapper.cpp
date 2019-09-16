@@ -11,7 +11,7 @@ StateWrapper::StateWrapper(const bool is_state_space_constrained,
 }
 
 void StateWrapper::setState(ompl::base::State * state,
-                            const Eigen::VectorXd& value)
+                            const Eigen::VectorXd& value) const
 {
     if(value.size() != _size)
     {
@@ -30,7 +30,7 @@ void StateWrapper::setState(ompl::base::State * state,
 }
 
 void StateWrapper::getState(const ompl::base::State * state,
-                            Eigen::VectorXd& value)
+                            Eigen::VectorXd& value) const
 {
 
     if(_is_constrained)

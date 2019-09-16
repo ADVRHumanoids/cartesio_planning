@@ -9,6 +9,8 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN)
 {
+    _sw = std::make_shared<StateWrapper>(false, _size);
+
     // create euclidean state space
     _space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
 
@@ -38,6 +40,8 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN)
 {
+    _sw = std::make_shared<StateWrapper>(true, _size);
+
     // create euclidean state space
     _space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
 
@@ -79,11 +83,10 @@ std::vector<Eigen::VectorXd> OmplPlanner::getSolutionPath() const
 
     geom_path->interpolate(path_count);
 
+
+
     for(int i = 0; i < path_count; i++)
-    {
-        auto * state_i = geom_path->getState(i)->as<ompl::base::RealVectorStateSpace::StateType>();
-        path[i] = Eigen::VectorXd::Map(state_i->values, _size);
-    }
+        _sw->getState(geom_path->getState(i), path[i]);
 
     return path;
 
@@ -116,13 +119,12 @@ void OmplPlanner::setBounds(const Eigen::VectorXd& bounds_min,
 
 void OmplPlanner::setStateValidityChecker(StateValidityPredicate svp)
 {
-    const int size = _size;
+    auto sw = _sw;
 
-    auto ompl_svc = [size, svp](const ompl::base::State * state)
+    auto ompl_svc = [sw, svp](const ompl::base::State * state)
     {
-        const auto * state_rn = state->as<ompl::base::RealVectorStateSpace::StateType>();
-
-        Eigen::VectorXd x = Eigen::VectorXd::Map(state_rn->values, size);
+        Eigen::VectorXd x;
+        sw->getState(state, x);
 
         return svp(x);
     };
@@ -146,13 +148,10 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
     ompl::base::ScopedState<> ompl_start(_space);
     ompl::base::ScopedState<> ompl_goal(_space);
 
-    // cast to Rn
-    auto * ompl_start_rn = ompl_start->as<ompl::base::RealVectorStateSpace::StateType>();
-    auto * ompl_goal_rn = ompl_goal->as<ompl::base::RealVectorStateSpace::StateType>();
 
-    // fill from input
-    Eigen::VectorXd::Map(ompl_start_rn->values, _size) = start;
-    Eigen::VectorXd::Map(ompl_goal_rn->values, _size) = goal;
+    _sw->setState(ompl_start.get(), start);
+    _sw->setState(ompl_goal.get(), goal);
+
 
     // set start and goal
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal);
