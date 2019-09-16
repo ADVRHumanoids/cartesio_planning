@@ -20,15 +20,20 @@ namespace XBot { namespace Cartesian { namespace Planning {
 
 class StateWrapper
 {
-public:
-    StateWrapper(const bool is_state_space_constrained, const unsigned int size):
-        _is_constrained(is_state_space_constrained),
-        _size(size){}
 
-    bool setState(ompl::base::ScopedState<> state, const Eigen::VectorXd& value);
-    bool getState(const ompl::base::ScopedState<> state, Eigen::VectorXd& value);
+public:
+
+    StateWrapper(const bool is_state_space_constrained,
+                 const unsigned int size);
+
+    void setState(ompl::base::State * state,
+                  const Eigen::VectorXd& value);
+
+    void getState(const ompl::base::State * state,
+                  Eigen::VectorXd& value);
 
 private:
+
     bool _is_constrained;
     unsigned int _size;
 };

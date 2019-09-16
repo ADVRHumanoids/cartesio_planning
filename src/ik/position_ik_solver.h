@@ -17,6 +17,8 @@ class PositionCartesianSolver
 
 public:
 
+    typedef std::shared_ptr<PositionCartesianSolver> Ptr;
+
     /**
      * @brief DEFAULT_ERR_TOL is the default tolerance on the error norm.
      */
@@ -72,6 +74,12 @@ public:
      * @param f
      */
     void setIterCallback(std::function<void(void)> f);
+
+    /**
+     * @brief getModel
+     * @return
+     */
+    ModelInterface::Ptr getModel() const;
 
 private:
 

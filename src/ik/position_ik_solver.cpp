@@ -138,3 +138,8 @@ void PositionCartesianSolver::setIterCallback(std::function<void ()> f)
 {
     _iter_callback = f;
 }
+
+XBot::ModelInterface::Ptr PositionCartesianSolver::getModel() const
+{
+    return _model;
+}

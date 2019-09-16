@@ -14,7 +14,8 @@
 #include <ompl/base/Constraint.h>
 
 #include <Eigen/Dense>
-#include "state_wrapper.h"
+
+#include "../state_wrapper.h"
 
 
 namespace XBot { namespace Cartesian { namespace Planning {
