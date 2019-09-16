@@ -31,6 +31,43 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
 }
 
+OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
+            const Eigen::VectorXd& bounds_max,
+            ompl::base::ConstraintPtr constraint):
+    _bounds(bounds_min.size()),
+    _size(bounds_min.size()),
+    _solved(ompl::base::PlannerStatus::UNKNOWN)
+{
+    // create euclidean state space
+    _space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
+
+    // set bounds to state space
+    setBounds(bounds_min, bounds_max);
+
+    setConstraint(constraint);
+}
+
+void OmplPlanner::setConstraint(ompl::base::ConstraintPtr constraint)
+{
+    _css = std::make_shared<ompl::base::ProjectedStateSpace>(_space, constraint);
+
+    _csi = std::make_shared<ompl::base::ConstrainedSpaceInformation>(_css);
+
+    // create space information
+    _space_info = std::make_shared<ompl::base::SpaceInformation>(_css);
+
+    // create problem definition
+    _pdef = std::make_shared<ompl::base::ProblemDefinition>(_csi);
+
+    // set optimization objective (todo: provide choice to user)
+    _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(_csi));
+
+    // create planner (todo: provide choice to user)
+    _planner = std::make_shared<ompl::geometric::RRTstar>(_csi);
+    _planner->setProblemDefinition(_pdef);
+    _planner->setup();
+}
+
 
 std::vector<Eigen::VectorXd> OmplPlanner::getSolutionPath() const
 {
@@ -128,9 +165,24 @@ bool OmplPlanner::setState(ompl::base::ScopedState<> state, const Eigen::VectorX
     if(value.size() != _size)
         return false;
 
-    Eigen::VectorXd::Map(state->as<ompl::base::RealVectorStateSpace::StateType>()->values, _size) = value;
+    if(_css) //state space is constrained
+        Eigen::VectorXd::Map(state->as<ompl::base::ConstrainedStateSpace::StateType>()->values, _size) = value;
+    else //state space is not constrained
+        Eigen::VectorXd::Map(state->as<ompl::base::RealVectorStateSpace::StateType>()->values, _size) = value;
 
     return true;
+}
+
+bool OmplPlanner::getState(const ompl::base::ScopedState<> state, Eigen::VectorXd& value)
+{
+    if(value.size() != _size)
+        return false;
+
+    if(_css)
+
+    else
+        value = Eigen::VectorXd::Map(state->values, _size);
+
 }
 
 

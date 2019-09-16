@@ -11,11 +11,24 @@
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
 #include <ompl/base/ConstrainedSpaceInformation.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+#include <ompl/base/Constraint.h>
 
 #include <Eigen/Dense>
 
 
 namespace XBot { namespace Cartesian { namespace Planning {
+
+class StateWrapper
+{
+public:
+    StateWrapper(const bool is_state_space_constrained);
+
+    bool setState(ompl::base::ScopedState<> state, const Eigen::VectorXd& value);
+    bool getState(const ompl::base::ScopedState<> state, Eigen::VectorXd& value);
+private:
+
+    bool _is_constrained;
+};
 
 class OmplPlanner
 {
@@ -27,8 +40,11 @@ public:
     OmplPlanner(const Eigen::VectorXd& bounds_min,
                 const Eigen::VectorXd& bounds_max);
 
-    void setBounds(const Eigen::VectorXd& bounds_min,
-                   const Eigen::VectorXd& bounds_max);
+    OmplPlanner(const Eigen::VectorXd& bounds_min,
+                const Eigen::VectorXd& bounds_max,
+                ompl::base::ConstraintPtr constraint);
+
+
 
     void setStateValidityChecker(StateValidityPredicate svc);
 
@@ -52,10 +68,15 @@ private:
     std::shared_ptr<ompl::base::Planner> _planner;
     ompl::base::PlannerStatus _solved;
 
+    std::shared_ptr<ompl::base::ProjectedStateSpace> _css;
+    std::shared_ptr<ompl::base::ConstrainedSpaceInformation> _csi;
+
 
     unsigned int _size;
 
-    bool setState(ompl::base::ScopedState<> state, const Eigen::VectorXd& value);
+    void setBounds(const Eigen::VectorXd& bounds_min,
+                   const Eigen::VectorXd& bounds_max);
+    void setConstraint(ompl::base::ConstraintPtr constraint);
 
 };
 
