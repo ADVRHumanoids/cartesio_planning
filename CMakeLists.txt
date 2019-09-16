@@ -152,11 +152,11 @@ target_link_libraries(ompl_test ${OMPL_LIBRARIES}
     matlogger2::matlogger2)
 
 # Ik test
-add_executable(ik_test
+add_executable(goal_generation_test
     src/ik/position_ik_test.cpp
     )
 
-target_link_libraries(ik_test ${OMPL_LIBRARIES}
+target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
     yaml-cpp
     dl
     cartesio_planning
@@ -209,6 +209,12 @@ install(TARGETS ompl_test
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
+install(TARGETS goal_generation_test
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ )
+
 install(TARGETS cartesio_planning
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -241,3 +247,5 @@ install(DIRECTORY launch/
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+add_subdirectory(examples/)
