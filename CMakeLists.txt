@@ -4,6 +4,8 @@ project(cartesio_planning)
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
 
+option(COMPILE_TESTS "Compile internal tests" FALSE)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -250,3 +252,10 @@ install(DIRECTORY launch/
 # catkin_add_nosetests(test)
 
 add_subdirectory(examples/)
+
+# compilation flags
+option(COMPILE_TESTS "Compile internal tests" FALSE)
+if(COMPILE_TESTS)
+  enable_testing()
+    add_subdirectory(tests)
+endif()
