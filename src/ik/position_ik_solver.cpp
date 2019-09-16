@@ -92,7 +92,7 @@ void PositionCartesianSolver::getError(Eigen::VectorXd& error) const
     for(auto pair : _task_map)
     {
         auto t = pair.second;
-        t->update(_ci, _model);
+        t->update(_ci, _model); // tbd: optimize
 
         error.segment(error_idx, t->size) = t->error;
         error_idx += t->size;
@@ -108,6 +108,7 @@ void PositionCartesianSolver::getJacobian(Eigen::MatrixXd & J) const
     for(auto pair : _task_map)
     {
         auto t = pair.second;
+        t->update(_ci, _model); // tbd: optimize
 
         J.middleRows(jac_idx, t->size) = t->J;
         jac_idx += t->size;
