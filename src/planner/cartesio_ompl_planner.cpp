@@ -85,10 +85,10 @@ std::vector<Eigen::VectorXd> OmplPlanner::getSolutionPath() const
 
     geom_path->interpolate(path_count);
 
-
-
     for(int i = 0; i < path_count; i++)
+    {
         _sw->getState(geom_path->getState(i), path[i]);
+    }
 
     return path;
 
