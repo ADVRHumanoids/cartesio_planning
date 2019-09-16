@@ -10,6 +10,7 @@ GoalSampler::GoalSampler(ompl::base::SpaceInformationPtr space_info,
     _state_wrapper(state_wrapper)
 {
     setThreshold(ik_solver->getErrorThreshold());
+    ik_solver->getModel()->getJointLimits(_qmin, _qmax);
 }
 
 double GoalSampler::distanceGoal(const ompl::base::State * st) const
@@ -54,6 +55,11 @@ void GoalSampler::sampleGoal(ompl::base::State * st) const
     model->getJointPosition(q);
     _state_wrapper.setState(st, q);
 
+    if(!isSatisfied(st))
+    {
+        throw std::runtime_error("Something went wrong with random goal generation");
+    }
+
 }
 
 unsigned int GoalSampler::maxSampleCount() const
@@ -72,7 +78,11 @@ Eigen::VectorXd GoalSampler::generateRandomSeed() const
     qrand = (qrand.array() + 1)/2.0; // uniform in 0 < x < 1
 
     qrand = _qmin + qrand.cwiseProduct(_qmax - _qmin); // uniform in qmin < x < qmax
-    qrand.head<6>().setRandom(); // we keep virtual joints between -1 and 1 (todo: improve)
+
+    if(model->isFloatingBase())
+    {
+        qrand.head<6>().setRandom(); // we keep virtual joints between -1 and 1 (todo: improve)
+    }
 
     return qrand;
 }
