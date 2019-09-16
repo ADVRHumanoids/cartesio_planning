@@ -3,7 +3,7 @@
      <!-- send the cogimon robot XML to param server -->
      <param name="robot_description" command="$(find xacro)/xacro.py '$(find teleop_urdf)/urdf/teleop_fixed_base.urdf'" />
      <param name="robot_description_semantic" textfile="$(find teleop_srdf)/srdf/teleop_fixed_base.srdf" />   
-     <param name="cartesian/problem_description" textfile="$(find teleop_cartesio)/teleop_simple_stack.yaml"/>
+     <param name="cartesian/problem_description" textfile="$(find cartesio_planning)/configs/problem/teleop_goal_generation_stack.yaml"/>
 
     <!-- start planner -->
     <node pkg="cartesio_planning" type="ompl_test" name="cartesio_planning" output="screen">
@@ -15,6 +15,9 @@
     <!-- Interactive Markers -->
     <node pkg="cartesian_interface" type="marker_spawner" name="interactive_markers" output="screen">
     </node>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
+
 
     
 </launch>
