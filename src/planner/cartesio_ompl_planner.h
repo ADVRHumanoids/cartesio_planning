@@ -34,9 +34,7 @@ public:
                 const Eigen::VectorXd& bounds_max,
                 ompl::base::ConstraintPtr constraint);
 
-
-
-    void setStateValidityChecker(StateValidityPredicate svc);
+    void setStateValidityPredicate(StateValidityPredicate svc);
 
     void setStartAndGoalStates(const Eigen::VectorXd& start,
                                const Eigen::VectorXd& goal);

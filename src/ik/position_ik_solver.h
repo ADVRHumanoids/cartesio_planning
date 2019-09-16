@@ -35,7 +35,7 @@ public:
      * @param constrained_ee
      */
     PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci,
-                            std::vector<std::string> constrained_ee);
+                            ProblemDescription ik_problem);
 
     /**
      * @brief setDesiredPose
@@ -89,14 +89,40 @@ public:
 
 private:
 
-    struct Task
+    struct TaskData
     {
+        typedef std::shared_ptr<TaskData> Ptr;
+
+        TaskData(int size);
+
+        const int size;
+        Eigen::MatrixXd J;
+        Eigen::VectorXd error;
+
+        virtual void update(CartesianInterfaceImpl::Ptr ci,
+                            ModelInterface::Ptr model) = 0;
+
+        virtual ~TaskData();
+    };
+
+    struct CartesianTaskData : TaskData
+    {
+        CartesianTaskData(std::string distal_link,
+                          std::string base_link,
+                          std::vector<int> indices);
+
+        std::string distal_link;
+        std::string base_link;
+        std::vector<int> indices;
+
+        void update(CartesianInterfaceImpl::Ptr ci,
+                    ModelInterface::Ptr model) override;
     };
 
     int _n_task;
     CartesianInterfaceImpl::Ptr _ci;
     ModelInterface::Ptr _model;
-    std::map<std::string, Task> _task_map;
+    std::map<std::string, TaskData::Ptr> _task_map;
     int _max_iter;
     double _err_tol;
 

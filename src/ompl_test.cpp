@@ -70,7 +70,7 @@ int main(int argc, char ** argv)
     }
 
 
-    XBot::Cartesian::Planning::PositionCartesianSolver solver(ci, {"TCP"}); // tbd: from parameter
+    XBot::Cartesian::Planning::PositionCartesianSolver solver(ci, ik_prob); // tbd: from parameter
     RosServerClass ros_server(ci, model);
 
     Eigen::VectorXd qmin, qmax;
@@ -110,7 +110,7 @@ int main(int argc, char ** argv)
         return true;
     };
 
-    planner->setStateValidityChecker(isStateValid);
+    planner->setStateValidityPredicate(isStateValid);
 
     // create a random start state
     Eigen::VectorXd sv(nq), gv(nq);

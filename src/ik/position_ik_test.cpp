@@ -42,7 +42,7 @@ int main(int argc, char ** argv)
     }
 
     // construct position-level ik solver
-    XBot::Cartesian::Planning::PositionCartesianSolver solver(ci, {"TCP_L", "TCP_R", "l_sole", "r_sole"});
+    XBot::Cartesian::Planning::PositionCartesianSolver solver(ci, ik_prob);
 
     // construct ros server class (mainly for markers and to publish TFs)
     RosServerClass ros_server(ci, model);

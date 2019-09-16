@@ -6,7 +6,7 @@ const double PositionCartesianSolver::DEFAULT_ERR_TOL = 1e-4;
 const int PositionCartesianSolver::DEFAULT_MAX_ITER = 60;
 
 PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci,
-                                                 std::vector<std::string> planning_ee):
+                                                 ProblemDescription ik_problem):
     _n_task(0),
     _ci(ci),
     _model(ci->getModel()),
@@ -14,11 +14,23 @@ PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci,
     _err_tol(DEFAULT_ERR_TOL),
     _iter_callback([](){})
 {
-    for(auto ee : planning_ee)
+    for(auto t : ik_problem.getTask(0))
     {
-        Task t;
-        _task_map[ee] = t;
-        _n_task += 6;
+        if(t->type == "Cartesian")
+        {
+            auto cart_data = GetAsCartesian(t);
+            auto tdata = std::make_shared<CartesianTaskData>(cart_data->distal_link,
+                                                             cart_data->base_link,
+                                                             cart_data->indices);
+            _n_task += tdata->size;
+
+            _task_map[cart_data->distal_link] = tdata;
+
+            printf("[PositionCartesianSolver] adding cartesian task '%s' to '%s', size is %d \n",
+                   cart_data->base_link.c_str(),
+                   cart_data->distal_link.c_str(),
+                   tdata->size);
+        }
     }
 }
 
@@ -79,24 +91,11 @@ void PositionCartesianSolver::getError(Eigen::VectorXd& error) const
     int error_idx = 0;
     for(auto pair : _task_map)
     {
+        auto t = pair.second;
+        t->update(_ci, _model);
 
-        std::string distal_frame = pair.first;
-        std::string base_frame = _ci->getBaseLink(distal_frame);
-
-        Eigen::Affine3d T, Tdes;
-        _ci->getCurrentPose(distal_frame, T);
-        _ci->getPoseReference(distal_frame, Tdes);
-
-        Eigen::Vector3d pos_error = T.translation() - Tdes.translation();
-
-        Eigen::Vector3d rot_error;
-        XBot::Utils::computeOrientationError(Tdes.linear(),
-                                             T.linear(),
-                                             rot_error);
-
-        error.segment<6>(error_idx) << pos_error, rot_error;
-        error_idx += 6;
-
+        error.segment(error_idx, t->size) = t->error;
+        error_idx += t->size;
     }
 
 }
@@ -108,24 +107,10 @@ void PositionCartesianSolver::getJacobian(Eigen::MatrixXd & J) const
     int jac_idx = 0;
     for(auto pair : _task_map)
     {
+        auto t = pair.second;
 
-        std::string distal_frame = pair.first;
-        std::string base_frame = _ci->getBaseLink(distal_frame);
-
-        Eigen::MatrixXd Ji;
-
-        if(base_frame == "world")
-        {
-            _model->getJacobian(distal_frame, Ji);
-        }
-        else
-        {
-            _model->getJacobian(distal_frame, base_frame, Ji);
-        }
-
-        J.middleRows<6>(jac_idx) = Ji;
-        jac_idx += 6;
-
+        J.middleRows(jac_idx, t->size) = t->J;
+        jac_idx += t->size;
     }
 }
 
@@ -144,4 +129,73 @@ XBot::ModelInterface::Ptr PositionCartesianSolver::getModel() const
     return _model;
 }
 
-double PositionCartesianSolver::getErrorThreshold() const { return _err_tol * _n_task; }
+double PositionCartesianSolver::getErrorThreshold() const
+{
+    return _err_tol * _n_task;
+}
+
+PositionCartesianSolver::TaskData::TaskData(int a_size):
+    size(a_size)
+{
+    error.setZero(size);
+    J.setZero(size, 0);
+}
+
+PositionCartesianSolver::TaskData::~TaskData()
+{
+
+}
+
+PositionCartesianSolver::CartesianTaskData::CartesianTaskData(std::string a_distal_link,
+                                                              std::string a_base_link,
+                                                              std::vector<int> a_indices):
+    TaskData(a_indices.size()),
+    distal_link(a_distal_link),
+    base_link(a_base_link),
+    indices(a_indices)
+{
+
+}
+
+void PositionCartesianSolver::CartesianTaskData::update(XBot::Cartesian::CartesianInterfaceImpl::Ptr ci,
+                                                        XBot::ModelInterface::Ptr model)
+{
+    /* Error computation */
+    Eigen::Affine3d T, Tdes;
+    ci->getCurrentPose(distal_link, T);
+    ci->getPoseReference(distal_link, Tdes);
+
+    Eigen::Vector3d pos_error = T.translation() - Tdes.translation();
+
+    Eigen::Vector3d rot_error;
+    XBot::Utils::computeOrientationError(Tdes.linear(),
+                                         T.linear(),
+                                         rot_error);
+
+    Eigen::Vector6d error6d;
+    error6d << pos_error, rot_error;
+
+    for(int i = 0; i < size; i++)
+    {
+        error[i] = error6d[indices[i]];
+    }
+
+    /* Jacobian computation */
+    J.setZero(size, model->getJointNum());
+    Eigen::MatrixXd Ji;
+
+    if(base_link == "world")
+    {
+        model->getJacobian(distal_link, Ji);
+    }
+    else
+    {
+        model->getJacobian(distal_link, base_link, Ji);
+    }
+
+    for(int i = 0; i < size; i++)
+    {
+        J.row(i) = Ji.row(indices[i]);
+    }
+
+}

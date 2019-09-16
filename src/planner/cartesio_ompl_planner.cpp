@@ -119,7 +119,7 @@ void OmplPlanner::setBounds(const Eigen::VectorXd& bounds_min,
 }
 
 
-void OmplPlanner::setStateValidityChecker(StateValidityPredicate svp)
+void OmplPlanner::setStateValidityPredicate(StateValidityPredicate svp)
 {
     auto sw = _sw;
 
