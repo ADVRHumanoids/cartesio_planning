@@ -39,6 +39,9 @@ public:
     void setStartAndGoalStates(const Eigen::VectorXd& start,
                                const Eigen::VectorXd& goal);
 
+    void setStartAndGoalStates(const Eigen::VectorXd& start,
+                               ompl::base::GoalPtr goal);
+
     void print();
 
     bool solve(double timeout);
@@ -46,6 +49,10 @@ public:
     ompl::base::PlannerStatus getPlannerStatus() const;
 
     std::vector<Eigen::VectorXd> getSolutionPath() const;
+
+    ompl::base::SpaceInformationPtr getSpaceInfo() const { return _space_info; }
+
+    StateWrapper getStateWrapper() const { return *_sw; }
 
 private:
 

@@ -160,6 +160,26 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
 
 }
 
+void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start, ompl::base::GoalPtr goal)
+{
+    if(start.size() != _size)
+    {
+        throw std::invalid_argument("Invalid start/goal size: "
+                                    "start size is " + std::to_string(start.size()) +
+                                    ", expected size is " + std::to_string(_size));
+    }
+
+    // create ompl start and goal variables
+    ompl::base::ScopedState<> ompl_start(_space);
+    _sw->setState(ompl_start.get(), start);
+
+
+    // set start and goal
+    _pdef->clearStartStates();
+    _pdef->addStartState(ompl_start);
+    _pdef->setGoal(goal);
+}
+
 
 bool OmplPlanner::solve(double t)
 {
