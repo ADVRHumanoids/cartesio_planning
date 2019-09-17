@@ -20,6 +20,8 @@ public: // Constraint interface
     void jacobian(const Eigen::Ref<const Eigen::VectorXd>& x,
                   Eigen::Ref<Eigen::MatrixXd> out) const override;
 
+    bool project(Eigen::Ref<Eigen::VectorXd> x) const;
+
 private:
 
     PositionCartesianSolver::Ptr _ik_solver;
