@@ -18,20 +18,20 @@
 #include <std_srvs/Trigger.h>
 
 #include "planner/cartesio_ompl_planner.h"
-
+#include "goal/goal_sampler.h"
 #include "constraints/cartesian_constraint.h"
 
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
 
-
+XBot::Cartesian::Planning::GoalSampler::Ptr g_goal_region;
 std::shared_ptr<Planning::OmplPlanner> planner;
 Eigen::VectorXd sv, gv;
 
 bool planner_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
     planner->setStartAndGoalStates(sv, gv);
-    return planner->solve(5.0);
+    return planner->solve(15.0);
 }
 
 
@@ -50,8 +50,10 @@ int main(int argc, char ** argv)
     model->setJointPosition(qhome);
     model->update();
 
-    auto ik_yaml = LoadProblemDescription(LoadFrom::PARAM);
-    auto ik_prob = ProblemDescription(ik_yaml, model);
+    auto ik_yaml_constraint = LoadProblemDescription(LoadFrom::PARAM, "problem_description_constraint");
+    auto ik_yaml_goal = LoadProblemDescription(LoadFrom::PARAM, "problem_description_goal");
+    auto ik_prob_constraint = ProblemDescription(ik_yaml_constraint, model);
+    auto ik_prob_goal = ProblemDescription(ik_yaml_goal, model);
 
     std::string impl_name = "OpenSot";
     std::string path_to_shared_lib = XBot::Utils::FindLib("libCartesian" + impl_name + ".so", "LD_LIBRARY_PATH");
@@ -60,44 +62,34 @@ int main(int argc, char ** argv)
         throw std::runtime_error("libCartesian" + impl_name + ".so must be listed inside LD_LIBRARY_PATH");
     }
 
-    auto ci = SoLib::getFactoryWithArgs<CartesianInterfaceImpl>(path_to_shared_lib,
-                                                                impl_name + "Impl",
-                                                                model, ik_prob);
+    auto ci_constraint = SoLib::getFactoryWithArgs<CartesianInterfaceImpl>(path_to_shared_lib,
+                                                                           impl_name + "Impl",
+                                                                           model, ik_prob_constraint);
 
-    if(!ci)
-    {
-        throw std::runtime_error("Unable to load solver '" + impl_name + "'");
-    }
-    else
-    {
-        XBot::Logger::success("Loaded solver '%s'\n", impl_name.c_str());
-    }
+    auto ci_goal = SoLib::getFactoryWithArgs<CartesianInterfaceImpl>(path_to_shared_lib,
+                                                                     impl_name + "Impl",
+                                                                     model, ik_prob_goal);
 
 
-    XBot::Cartesian::Planning::PositionCartesianSolver solver(ci, ik_prob); // tbd: from parameter
-    RosServerClass ros_server(ci, model);
+    auto solver_constraint = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(ci_constraint,
+                                                                                                  ik_prob_constraint); // tbd: from parameter
+
+    auto solver_goal = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(ci_goal,
+                                                                                            ik_prob_goal); // tbd: from parameter
 
     Eigen::VectorXd qmin, qmax;
     model->getJointLimits(qmin, qmax);
-    const int nq = model->getJointNum();
+    qmin.head<6>() << -1, -1, -1, -2, -2, -2;
+    qmax.head<6>() << -qmin.head<6>();
 
-    auto constraint_model = XBot::ModelInterface::getModel(cfg);
-    constraint_model->setJointPosition(qhome);
-    constraint_model->update();
-    CartesianTask::Ptr manifold = std::make_shared<CartesianTask>("TCP", "base_link", 1, "Cartesian");
-    std::vector<int> id{4};
-    manifold->indices = id;
-    ProblemDescription constraint_problem(manifold);
-    auto constraint_ci = SoLib::getFactoryWithArgs<CartesianInterfaceImpl>(path_to_shared_lib,
-                                                                impl_name + "Impl",
-                                                                constraint_model, constraint_problem);
-    XBot::Cartesian::Planning::PositionCartesianSolver::Ptr solver_constraint =
-            std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(constraint_ci, constraint_problem);
     auto constraint = std::make_shared<XBot::Cartesian::Planning::CartesianConstraint>(solver_constraint);
-
     planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, constraint);
-    //planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax);
 
+    RosServerClass ros_server(ci_goal, model);
+
+//    g_goal_region = std::make_shared<XBot::Cartesian::Planning::GoalSampler>(planner->getSpaceInfo(),
+//                                                                                solver_goal,
+//                                                                                planner->getStateWrapper());
 
     // state validity check
     auto isStateValid = [model](const Eigen::VectorXd& q)
@@ -106,9 +98,9 @@ int main(int argc, char ** argv)
         model->update();
 
         Eigen::Affine3d Tee;
-        model->getPose("TCP", "base_link", Tee);
+        model->getPose("TCP_L", Tee);
 
-        Eigen::Vector3d sphere_origin(0.5, 0.0, 0.4);
+        Eigen::Vector3d sphere_origin(0.4, 0.1, -0.20);
         const double radius = 0.2;
 
         // check validity of state defined by pos & rot
@@ -123,12 +115,8 @@ int main(int argc, char ** argv)
 
     planner->setStateValidityPredicate(isStateValid);
 
-    // create a random start state
     model->getRobotState("home", sv);
     gv = sv;
-    planner->setStartAndGoalStates(sv, gv);
-
-    planner->print();
 
     ros::ServiceServer service = nh.advertiseService("planner_service", planner_service);
 
@@ -136,20 +124,19 @@ int main(int argc, char ** argv)
 
     while (ros::ok())
     {
-
         ros_server.run();
 
-        solver.solve();
+        solver_goal->solve();
         model->getJointPosition(gv);
 
-
         visualization_msgs::Marker sphere;
-        sphere.header.frame_id = "base_link";
+        sphere.header.frame_id = "ci/world_odom";
         sphere.header.stamp = ros::Time::now();
         sphere.type = visualization_msgs::Marker::SPHERE;
         sphere.action = visualization_msgs::Marker::ADD;
-        sphere.pose.position.x = 0.5;
-        sphere.pose.position.z = 0.4;
+        sphere.pose.position.x = 0.4;
+        sphere.pose.position.y = 0.1;
+        sphere.pose.position.z = -0.2;
         sphere.pose.orientation.w = 1.0;
         sphere.scale.x = 0.4;
         sphere.scale.y = 0.4;
@@ -163,15 +150,12 @@ int main(int argc, char ** argv)
         pub_marker.publish(ob_msg);
 
 
-        if (planner->getPlannerStatus() == ompl::base::PlannerStatus::EXACT_SOLUTION ||
-            planner->getPlannerStatus() == ompl::base::PlannerStatus::APPROXIMATE_SOLUTION)
+        if (planner->getPlannerStatus())
         {
             auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_logger");
             ros::Publisher pub = nh.advertise<sensor_msgs::JointState>("joint_states", 10);
             sensor_msgs::JointState msg;
             msg.name = model->getEnabledJointNames();
-
-
 
             for(auto x : planner->getSolutionPath())
             {
@@ -182,17 +166,19 @@ int main(int argc, char ** argv)
             while(ros::ok())
             {
                 auto q_i = planner->getSolutionPath().at(i);
-                msg.position.assign(q_i.data(), q_i.data() + q_i.size());
-                msg.header.stamp = ros::Time::now();
-                pub.publish(msg);
+
+                model->setJointPosition(q_i);
+                model->update();
+                ros_server.run();
 
                 visualization_msgs::Marker sphere;
-                sphere.header.frame_id = "base_link";
+                sphere.header.frame_id = "ci/world_odom";
                 sphere.header.stamp = ros::Time::now();
                 sphere.type = visualization_msgs::Marker::SPHERE;
                 sphere.action = visualization_msgs::Marker::ADD;
-                sphere.pose.position.x = 0.5;
-                sphere.pose.position.z = 0.4;
+                sphere.pose.position.x = 0.4;
+                sphere.pose.position.y = 0.1;
+                sphere.pose.position.z = -0.20;
                 sphere.pose.orientation.w = 1.0;
                 sphere.scale.x = 0.4;
                 sphere.scale.y = 0.4;
