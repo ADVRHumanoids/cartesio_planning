@@ -22,8 +22,8 @@ set(TestLibs cartesio_planning ${GTEST_BOTH_LIBRARIES})
 include_directories(${GTEST_INCLUDE_DIRS})
 link_directories(${GTEST_LIB_DIRS})
 
-#add_executable(TestApi TestApi.cpp)
-#target_link_libraries(TestApi ${TestLibs})
-#add_dependencies(TestApi GTest-ext cartesio_planning)
-#add_test(NAME TestApi COMMAND TestApi)
+add_executable(TestApi TestApi.cpp)
+target_link_libraries(TestApi ${TestLibs})
+add_dependencies(TestApi GTest-ext cartesio_planning)
+add_test(NAME TestApi COMMAND TestApi)
 
