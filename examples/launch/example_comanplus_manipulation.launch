@@ -1,0 +1,26 @@
+<launch>
+
+    <arg name="solver" default="OpenSot"/>
+    <arg name="prefix" default=""/>
+    <param name="robot_description"
+        textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
+    <param name="robot_description_semantic"
+        textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
+    <param name="cartesian/problem_description_constraint"
+        textfile="$(find cartesio_planning)/configs/problem/comanplus_constraint_stack.yaml"/>
+    <param name="cartesian/problem_description_goal"
+        textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
+
+
+    <node pkg="cartesio_planning" type="ompl_test" name="cartesio_planning" output="screen">
+        <param name="solver" value=""/>
+        <param name="is_model_floating_base" value="true"/>
+    </node>
+
+
+    <node pkg="cartesian_interface" type="marker_spawner" name="interactive_markers" output="screen"/>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
+
+
+</launch>
