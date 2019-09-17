@@ -13,10 +13,12 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                                          _size);
 
     // create euclidean state space
-    _space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
+    _ambient_space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
 
     // set bounds to state space
     setBounds(bounds_min, bounds_max);
+
+    _space = _ambient_space;
 
     // create space information
     _space_info = std::make_shared<ompl::base::SpaceInformation>(_space);
@@ -45,7 +47,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                                          _size);
 
     // create euclidean state space
-    _space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
+    _ambient_space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
 
     // set bounds to state space
     setBounds(bounds_min, bounds_max);
@@ -55,12 +57,12 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
 void OmplPlanner::setConstraint(ompl::base::ConstraintPtr constraint)
 {
-    _css = std::make_shared<ompl::base::ProjectedStateSpace>(_space, constraint);
+    _space = std::make_shared<ompl::base::ProjectedStateSpace>(_ambient_space, constraint);
 
-    _csi = std::make_shared<ompl::base::ConstrainedSpaceInformation>(_css);
+    _csi = std::make_shared<ompl::base::ConstrainedSpaceInformation>(_space);
 
     // create space information
-    _space_info = std::make_shared<ompl::base::SpaceInformation>(_css);
+    _space_info = std::make_shared<ompl::base::SpaceInformation>(_space);
 
     // create problem definition
     _pdef = std::make_shared<ompl::base::ProblemDefinition>(_csi);
@@ -77,15 +79,10 @@ void OmplPlanner::setConstraint(ompl::base::ConstraintPtr constraint)
 
 std::vector<Eigen::VectorXd> OmplPlanner::getSolutionPath() const
 {
-    const int path_count = 100; // todo: from user
-
-    std::vector<Eigen::VectorXd> path(path_count);
-
     auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
-    geom_path->interpolate(path_count);
-
-    for(int i = 0; i < path_count; i++)
+    std::vector<Eigen::VectorXd> path(geom_path->getStateCount());
+    for(int i = 0; i < geom_path->getStateCount(); i++)
     {
         _sw->getState(geom_path->getState(i), path[i]);
     }
@@ -114,7 +111,7 @@ void OmplPlanner::setBounds(const Eigen::VectorXd& bounds_min,
     Eigen::VectorXd::Map(_bounds.low.data(), _size) = bounds_min;
     Eigen::VectorXd::Map(_bounds.high.data(), _size) = bounds_max;
 
-    _space->setBounds(_bounds);
+    _ambient_space->setBounds(_bounds);
 
 }
 
@@ -186,6 +183,16 @@ bool OmplPlanner::solve(double t)
     print();
 
     _solved = _planner->ompl::base::Planner::solve(t);
+
+    if(_solved)
+    {
+        auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+
+        geom_path->interpolate();
+
+        if(!geom_path->check())
+            return false;
+    }
 
     return _solved;
 }

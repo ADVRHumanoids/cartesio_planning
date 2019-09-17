@@ -57,13 +57,13 @@ public:
 private:
 
     ompl::base::RealVectorBounds _bounds;
-    std::shared_ptr<ompl::base::RealVectorStateSpace> _space;
+    std::shared_ptr<ompl::base::RealVectorStateSpace> _ambient_space;
     std::shared_ptr<ompl::base::SpaceInformation> _space_info;
     std::shared_ptr<ompl::base::ProblemDefinition> _pdef;
     std::shared_ptr<ompl::base::Planner> _planner;
     ompl::base::PlannerStatus _solved;
 
-    std::shared_ptr<ompl::base::ProjectedStateSpace> _css;
+    std::shared_ptr<ompl::base::StateSpace> _space;
     std::shared_ptr<ompl::base::ConstrainedSpaceInformation> _csi;
 
 

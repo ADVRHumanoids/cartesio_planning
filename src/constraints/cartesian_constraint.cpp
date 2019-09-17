@@ -7,7 +7,7 @@ CartesianConstraint::CartesianConstraint(PositionCartesianSolver::Ptr ik_solver)
                            ik_solver->getSize()),                // num constraints
     _ik_solver(ik_solver)
 {
-
+    setTolerance(_ik_solver->getErrorThreshold());
 }
 
 void CartesianConstraint::function(const Eigen::Ref<const Eigen::VectorXd>& x,

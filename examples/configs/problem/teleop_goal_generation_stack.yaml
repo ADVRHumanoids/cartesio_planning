@@ -3,7 +3,7 @@ solver_options:
     back_end: "odys"
 
 stack:
-    - ["ArmPosition"]
+    - ["ArmPosition", "ArmOrientation"]
 
     
 constraints: ["JointLimits", "VelocityLimits"]
@@ -20,8 +20,8 @@ ArmOrientation:
     distal_link: "TCP"
     base_link: "base_link"
     lambda: 0.1
-    indices: [3,4,5]
-    use_body_jacobian: true
+    indices: [4]
+#    use_body_jacobian: true
     
 
 ArmEE:

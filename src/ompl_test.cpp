@@ -19,14 +19,18 @@
 
 #include "planner/cartesio_ompl_planner.h"
 
+#include "constraints/cartesian_constraint.h"
+
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
 
 
 std::shared_ptr<Planning::OmplPlanner> planner;
+Eigen::VectorXd sv, gv;
 
 bool planner_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
+    planner->setStartAndGoalStates(sv, gv);
     return planner->solve(1.0);
 }
 
@@ -77,16 +81,23 @@ int main(int argc, char ** argv)
     model->getJointLimits(qmin, qmax);
     const int nq = model->getJointNum();
 
-    planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax);
+    auto constraint_model = XBot::ModelInterface::getModel(cfg);
+    constraint_model->setJointPosition(qhome);
+    constraint_model->update();
+    CartesianTask::Ptr manifold = std::make_shared<CartesianTask>("TCP", "base_link", 1, "Cartesian");
+    std::vector<int> id{4};
+    manifold->indices = id;
+    ProblemDescription constraint_problem(manifold);
+    auto constraint_ci = SoLib::getFactoryWithArgs<CartesianInterfaceImpl>(path_to_shared_lib,
+                                                                impl_name + "Impl",
+                                                                constraint_model, constraint_problem);
+    XBot::Cartesian::Planning::PositionCartesianSolver::Ptr solver_constraint =
+            std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(constraint_ci, constraint_problem);
+    auto constraint = std::make_shared<XBot::Cartesian::Planning::CartesianConstraint>(solver_constraint);
 
+    planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, constraint);
+    //planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax);
 
-    //    auto constraint = std::make_shared<Manifold>();
-
-    // Combine the ambient space and the constraint into a constrained state space.
-    //    auto css = std::make_shared<ob::ProjectedStateSpace>(space, constraint);
-
-    // Define the constrained space information for this constrained state space.
-    //    auto csi = std::make_shared<ob::ConstrainedSpaceInformation>(css);
 
     // state validity check
     auto isStateValid = [model](const Eigen::VectorXd& q)
@@ -113,10 +124,8 @@ int main(int argc, char ** argv)
     planner->setStateValidityPredicate(isStateValid);
 
     // create a random start state
-    Eigen::VectorXd sv(nq), gv(nq);
     model->getRobotState("home", sv);
-    gv = (qmin + qmax)/2.0;
-
+    gv = sv;
     planner->setStartAndGoalStates(sv, gv);
 
     planner->print();
@@ -133,7 +142,7 @@ int main(int argc, char ** argv)
 
         solver.solve();
         model->getJointPosition(gv);
-        planner->setStartAndGoalStates(sv, gv);
+
 
         visualization_msgs::Marker sphere;
         sphere.header.frame_id = "base_link";
@@ -155,13 +164,16 @@ int main(int argc, char ** argv)
         pub_marker.publish(ob_msg);
 
 
-        if (planner->getPlannerStatus())
+        if (planner->getPlannerStatus() == ompl::base::PlannerStatus::EXACT_SOLUTION ||
+            planner->getPlannerStatus() == ompl::base::PlannerStatus::APPROXIMATE_SOLUTION)
         {
             auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_logger");
             ros::Publisher pub = nh.advertise<sensor_msgs::JointState>("joint_states",
                                                                        10);
             sensor_msgs::JointState msg;
             msg.name = model->getEnabledJointNames();
+
+
 
             for(auto x : planner->getSolutionPath())
             {
@@ -204,9 +216,8 @@ int main(int argc, char ** argv)
 
         }
 
-        ros::Duration(0.1).sleep();
+        ros::Duration(0.01).sleep();
         ros::spinOnce();
     }
-    //    else
-    //        std::cout << "No solution found" << std::endl;
+
 }
