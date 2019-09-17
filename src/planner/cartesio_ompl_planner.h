@@ -42,7 +42,7 @@ public:
     void setStartAndGoalStates(const Eigen::VectorXd& start,
                                ompl::base::GoalPtr goal);
 
-    void print();
+    void print(std::ostream &out = std::cout);
 
     bool solve(double timeout);
 
@@ -50,28 +50,29 @@ public:
 
     std::vector<Eigen::VectorXd> getSolutionPath() const;
 
-    ompl::base::SpaceInformationPtr getSpaceInfo() const { return _space_info; }
+    ompl::base::SpaceInformationPtr getSpaceInfo() const;
 
-    StateWrapper getStateWrapper() const { return *_sw; }
+    StateWrapper getStateWrapper() const;
 
 private:
 
     ompl::base::RealVectorBounds _bounds;
     std::shared_ptr<ompl::base::RealVectorStateSpace> _ambient_space;
     std::shared_ptr<ompl::base::SpaceInformation> _space_info;
+
     std::shared_ptr<ompl::base::ProblemDefinition> _pdef;
     std::shared_ptr<ompl::base::Planner> _planner;
     ompl::base::PlannerStatus _solved;
 
     std::shared_ptr<ompl::base::StateSpace> _space;
-    std::shared_ptr<ompl::base::ConstrainedSpaceInformation> _csi;
 
 
     unsigned int _size;
 
     void setBounds(const Eigen::VectorXd& bounds_min,
                    const Eigen::VectorXd& bounds_max);
-    void setConstraint(ompl::base::ConstraintPtr constraint);
+
+    void setUp();
 
     std::shared_ptr<StateWrapper> _sw;
 

@@ -31,7 +31,7 @@ Eigen::VectorXd sv, gv;
 bool planner_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
     planner->setStartAndGoalStates(sv, gv);
-    return planner->solve(1.0);
+    return planner->solve(5.0);
 }
 
 
@@ -108,7 +108,7 @@ int main(int argc, char ** argv)
         Eigen::Affine3d Tee;
         model->getPose("TCP", "base_link", Tee);
 
-        Eigen::Vector3d sphere_origin(0.5, 0.0, 0.8);
+        Eigen::Vector3d sphere_origin(0.5, 0.0, 0.4);
         const double radius = 0.2;
 
         // check validity of state defined by pos & rot
@@ -132,8 +132,7 @@ int main(int argc, char ** argv)
 
     ros::ServiceServer service = nh.advertiseService("planner_service", planner_service);
 
-    ros::Publisher pub_marker = nh.advertise<visualization_msgs::MarkerArray>("obstacles",
-                                                                              10);
+    ros::Publisher pub_marker = nh.advertise<visualization_msgs::MarkerArray>("obstacles", 10);
 
     while (ros::ok())
     {
@@ -150,7 +149,7 @@ int main(int argc, char ** argv)
         sphere.type = visualization_msgs::Marker::SPHERE;
         sphere.action = visualization_msgs::Marker::ADD;
         sphere.pose.position.x = 0.5;
-        sphere.pose.position.z = 0.8;
+        sphere.pose.position.z = 0.4;
         sphere.pose.orientation.w = 1.0;
         sphere.scale.x = 0.4;
         sphere.scale.y = 0.4;
@@ -168,8 +167,7 @@ int main(int argc, char ** argv)
             planner->getPlannerStatus() == ompl::base::PlannerStatus::APPROXIMATE_SOLUTION)
         {
             auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_logger");
-            ros::Publisher pub = nh.advertise<sensor_msgs::JointState>("joint_states",
-                                                                       10);
+            ros::Publisher pub = nh.advertise<sensor_msgs::JointState>("joint_states", 10);
             sensor_msgs::JointState msg;
             msg.name = model->getEnabledJointNames();
 
@@ -194,7 +192,7 @@ int main(int argc, char ** argv)
                 sphere.type = visualization_msgs::Marker::SPHERE;
                 sphere.action = visualization_msgs::Marker::ADD;
                 sphere.pose.position.x = 0.5;
-                sphere.pose.position.z = 0.8;
+                sphere.pose.position.z = 0.4;
                 sphere.pose.orientation.w = 1.0;
                 sphere.scale.x = 0.4;
                 sphere.scale.y = 0.4;
@@ -207,7 +205,7 @@ int main(int argc, char ** argv)
 
                 pub_marker.publish(ob_msg);
 
-                ros::Duration(0.02).sleep();
+                ros::Duration(0.05).sleep();
 
                 i++;
                 i = i % planner->getSolutionPath().size();
