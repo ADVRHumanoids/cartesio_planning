@@ -10,8 +10,6 @@
 #include <sensor_msgs/JointState.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include <std_srvs/Empty.h>
-
 #include "ik/position_ik_solver.h"
 #include <cartesian_interface/ros/RosServerClass.h>
 #include <cartesian_interface/utils/LoadConfig.h>
@@ -21,6 +19,8 @@
 #include "goal/goal_sampler.h"
 #include "constraints/cartesian_constraint.h"
 
+#include "cartesio_planning/CartesioPlanner.h"
+
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
 
@@ -28,10 +28,15 @@ XBot::Cartesian::Planning::GoalSampler::Ptr g_goal_region;
 std::shared_ptr<Planning::OmplPlanner> planner;
 Eigen::VectorXd sv, gv;
 
-bool planner_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+bool planner_service(cartesio_planning::CartesioPlanner::Request& req,
+                     cartesio_planning::CartesioPlanner::Response& res)
 {
     planner->setStartAndGoalStates(sv, gv);
-    return planner->solve(15.0);
+    bool a =  planner->solve(req.time);
+
+    res.status.val = ompl::base::PlannerStatus::StatusType(planner->getPlannerStatus());
+
+    return a;
 }
 
 
