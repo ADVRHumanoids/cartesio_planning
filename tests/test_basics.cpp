@@ -8,7 +8,6 @@
 using namespace  XBot::Cartesian::Planning;
 namespace ob = ompl::base;
 
-std::shared_ptr<OmplPlanner> planner;
 
 
 class SphereConstraint : public ob::Constraint
@@ -30,16 +29,16 @@ public:
 };
 
 
-class TestApi: public ::testing::Test {
+class TestBasics: public ::testing::Test {
     
 
 protected:
 
-     TestApi(){
+     TestBasics(){
          
      }
 
-     virtual ~TestApi() {
+     virtual ~TestBasics() {
      }
 
      virtual void SetUp() {
@@ -53,7 +52,7 @@ protected:
 };
 
 
-TEST_F(TestApi, testStateWrapper)
+TEST_F(TestBasics, testStateWrapper)
 {
 
     // Create the ambient space state space for the problem.
