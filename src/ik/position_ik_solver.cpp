@@ -167,11 +167,12 @@ void PositionCartesianSolver::CartesianTaskData::update(XBot::Cartesian::Cartesi
     ci->getPoseReference(distal_link, Tdes);
 
     Eigen::Vector3d pos_error = T.translation() - Tdes.translation();
-
     Eigen::Vector3d rot_error;
-    XBot::Utils::computeOrientationError(Tdes.linear(),
-                                         T.linear(),
-                                         rot_error);
+    Eigen::Matrix3d L;
+    compute_orientation_error(Tdes.linear(),
+                              T.linear(),
+                              rot_error,
+                              L);
 
     Eigen::Vector6d error6d;
     error6d << pos_error, rot_error;
@@ -194,9 +195,23 @@ void PositionCartesianSolver::CartesianTaskData::update(XBot::Cartesian::Cartesi
         model->getJacobian(distal_link, base_link, Ji);
     }
 
+    Ji.bottomRows<3>() = L * Ji.bottomRows<3>();
+
     for(int i = 0; i < size; i++)
     {
         J.row(i) = Ji.row(indices[i]);
     }
 
 }
+
+void PositionCartesianSolver::CartesianTaskData::compute_orientation_error(const Eigen::Matrix3d & Rd,
+                                                                           const Eigen::Matrix3d & Re,
+                                                                           Eigen::Vector3d & e_o,
+                                                                           Eigen::Matrix3d & L)
+{
+    auto S = XBot::Utils::skewSymmetricMatrix;
+
+    e_o = 0.5 * (Re.col(0).cross(Rd.col(0)) + Re.col(1).cross(Rd.col(1)) + Re.col(2).cross(Rd.col(2)));
+    L = 0.5 * ( S(Rd.col(0))*S(Re.col(0)) + S(Rd.col(1))*S(Re.col(1)) + S(Rd.col(2))*S(Re.col(2)));
+}
+

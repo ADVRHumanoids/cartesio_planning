@@ -117,6 +117,11 @@ private:
 
         void update(CartesianInterfaceImpl::Ptr ci,
                     ModelInterface::Ptr model) override;
+
+        static void compute_orientation_error(const Eigen::Matrix3d& Rd,
+                                              const Eigen::Matrix3d& Re,
+                                              Eigen::Vector3d& e_o,
+                                              Eigen::Matrix3d& L);
     };
 
     int _n_task;
