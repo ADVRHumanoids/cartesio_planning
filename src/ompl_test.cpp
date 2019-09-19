@@ -69,6 +69,9 @@ int main(int argc, char ** argv)
     model->getRobotState("home", qhome);
     model->setJointPosition(qhome);
     model->update();
+    Eigen::Vector3d Com0;
+    model->getCOM(Com0);
+
 
     auto ik_yaml_constraint = LoadProblemDescription(LoadFrom::PARAM, "problem_description_constraint");
     auto ik_yaml_goal = LoadProblemDescription(LoadFrom::PARAM, "problem_description_goal");
@@ -111,8 +114,8 @@ int main(int argc, char ** argv)
 //                                                                                solver_goal,
 //                                                                                planner->getStateWrapper());
 
-    // state validity check
-    auto isStateValid = [model](const Eigen::VectorXd& q)
+    // sphere validity check
+    auto sphere_validity_check = [model](const Eigen::VectorXd& q)
     {
         model->setJointPosition(q);
         model->update();
@@ -133,7 +136,43 @@ int main(int argc, char ** argv)
         return true;
     };
 
-    planner->setStateValidityPredicate(isStateValid);
+
+
+    // Com validity check
+    auto com_validity_check = [model, Com0](const Eigen::VectorXd& q)
+    {
+        model->setJointPosition(q);
+        model->update();
+
+        Eigen::Vector3d Com;
+        model->getCOM(Com);
+
+        const double delta = 0.1;
+
+        if( (std::abs(Com[0] - Com0[0]) > delta) ||  std::abs((Com[1] - Com0[1]) > delta))
+        {
+            return false;
+        }
+
+        return true;
+    };
+
+    // validity check
+    auto validity_check = [sphere_validity_check,com_validity_check](const Eigen::VectorXd& q)
+    {
+
+        if( sphere_validity_check(q) && com_validity_check(q) )
+        {
+            return true;
+        }
+
+        return false;
+
+    };
+
+
+    planner->setStateValidityPredicate(validity_check);
+
 
     model->getRobotState("home", sv);
     gv = sv;

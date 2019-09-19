@@ -5,6 +5,7 @@ solver_options:
 
 stack:
     - ["LeftFoot", "RightFoot"]
+    #- ["Waist"]
 
 constraints: ["JointLimits"]
 
@@ -15,6 +16,17 @@ LeftFoot:
 RightFoot:
     type: "Cartesian"
     distal_link: "r_sole"
+
+Waist:
+    type: "Cartesian"
+    distal_link: "Waist"
+    lambda: 0.1
+    indices: [3, 4, 5]
+
+Com:
+    type: "Com"
+    lambda: 0.1
+    indices: [0, 1]
 
 Postural:
     type: "Postural"

@@ -40,6 +40,8 @@ void CartesianConstraint::jacobian(const Eigen::Ref<const Eigen::VectorXd>& x,
 
 bool CartesianConstraint::project(Eigen::Ref<Eigen::VectorXd> x) const
 {
+    return Constraint::project(x);
+
     auto model = _ik_solver->getModel();
 
     // set it to the model
