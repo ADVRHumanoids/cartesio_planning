@@ -24,9 +24,14 @@
 #include <ompl/config.h>
 #include <ompl/base/Constraint.h>
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
+#include <ompl/base/spaces/constraint/AtlasStateSpace.h>
 #include <ompl/base/ConstrainedSpaceInformation.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+#include <ompl/base/objectives/MaximizeMinClearanceObjective.h>
 #include <ompl/base/Constraint.h>
+#include <ompl/base/ValidStateSampler.h>
+#include <ompl/base/samplers/UniformValidStateSampler.h>
+#include <ompl/base/samplers/ObstacleBasedValidStateSampler.h>
 
 #include <Eigen/Dense>
 
@@ -34,41 +39,6 @@
 
 
 namespace XBot { namespace Cartesian { namespace Planning {
-
-static std::shared_ptr<ompl::base::Planner> plannerFactory(const std::string& planner_type,
-                                                           std::shared_ptr<ompl::base::SpaceInformation> space_info)
-{
-    if(planner_type == "BiTRRT")
-        return std::make_shared<ompl::geometric::BiTRRT>(space_info);
-    else if(planner_type == "InformedRRTstar")
-        return std::make_shared<ompl::geometric::InformedRRTstar>(space_info);
-    else if(planner_type == "LazyLBTRRT")
-        return std::make_shared<ompl::geometric::LazyLBTRRT>(space_info);
-    else if(planner_type == "LazyRRT")
-        return std::make_shared<ompl::geometric::LazyRRT>(space_info);
-    else if(planner_type == "LBTRRT")
-        return std::make_shared<ompl::geometric::LBTRRT>(space_info);
-    else if(planner_type == "pRRT")
-        return std::make_shared<ompl::geometric::pRRT>(space_info);
-    else if(planner_type == "RRT")
-        return std::make_shared<ompl::geometric::RRT>(space_info);
-    else if(planner_type == "RRTConnect")
-        return std::make_shared<ompl::geometric::RRTConnect>(space_info);
-    else if(planner_type == "RRTsharp")
-        return std::make_shared<ompl::geometric::RRTsharp>(space_info);
-    else if(planner_type == "RRTstar")
-        return std::make_shared<ompl::geometric::RRTstar>(space_info);
-    else if(planner_type == "RRTXstatic")
-        return std::make_shared<ompl::geometric::RRTXstatic>(space_info);
-    else if(planner_type == "SORRTstar")
-        return std::make_shared<ompl::geometric::SORRTstar>(space_info);
-    else if(planner_type == "TRRT")
-        return std::make_shared<ompl::geometric::TRRT>(space_info);
-//    else if(planner_type == "VFRRT")
-//        return std::make_shared<ompl::geometric::VFRRT>(space_info); ///TODO: implement options in factory
-    else
-        throw std::runtime_error("Planner type not valid!");
-}
 
 
 class OmplPlanner
@@ -125,12 +95,14 @@ private:
 
     void setUpProblemDefinition();
 
+    std::shared_ptr<ompl::base::Planner> plannerFactory(const std::string& planner_type);
+
     std::shared_ptr<StateWrapper> _sw;
 
 };
 
 }
-}
-}
+                                     }
+               }
 
 #endif

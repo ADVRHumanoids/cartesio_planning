@@ -41,7 +41,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     // set bounds to state space
     setBounds(bounds_min, bounds_max);
 
-    _space = std::make_shared<ompl::base::ProjectedStateSpace>(_ambient_space, constraint);
+    _space = std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, constraint);
 
     _space_info = std::make_shared<ompl::base::ConstrainedSpaceInformation>(_space);
 
@@ -73,6 +73,15 @@ void OmplPlanner::setBounds(const Eigen::VectorXd& bounds_min,
 
 void OmplPlanner::setUpProblemDefinition()
 {
+     auto vss_alloc = [](const ompl::base::SpaceInformation * si)
+     {
+         auto vss = std::make_shared<ompl::base::UniformValidStateSampler>(si);
+         vss->setNrAttempts(10000);
+         return vss;
+     };
+
+     _space_info->setValidStateSamplerAllocator(vss_alloc);
+
     // create problem definition
     _pdef = std::make_shared<ompl::base::ProblemDefinition>(_space_info);
 
@@ -140,6 +149,13 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
     // set start and goal
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal);
 
+    auto atlas_ss = std::dynamic_pointer_cast<ompl::base::AtlasStateSpace>(_space);
+    if(atlas_ss)
+    {
+        atlas_ss->anchorChart(ompl_start.get());
+        atlas_ss->anchorChart(ompl_goal.get());
+    }
+
 }
 
 void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start, ompl::base::GoalPtr goal)
@@ -166,9 +182,11 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start, ompl::bas
 bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 {
 
-    try{
-        _planner = plannerFactory(planner_type, _space_info);
-    } catch(std::exception& e)
+    try
+    {
+        _planner = plannerFactory(planner_type);
+    }
+    catch(std::exception& e)
     {
         std::cout<<e.what()<<std::endl;
     }
@@ -213,3 +231,43 @@ ompl::base::PlannerStatus OmplPlanner::getPlannerStatus() const
 }
 
 
+
+std::shared_ptr<ompl::base::Planner> OmplPlanner::plannerFactory(const std::string &planner_type)
+{
+    if(planner_type == "BiTRRT")
+        return std::make_shared<ompl::geometric::BiTRRT>(_space_info);
+    else if(planner_type == "InformedRRTstar")
+        return std::make_shared<ompl::geometric::InformedRRTstar>(_space_info);
+    else if(planner_type == "LazyLBTRRT")
+        return std::make_shared<ompl::geometric::LazyLBTRRT>(_space_info);
+    else if(planner_type == "LazyRRT")
+        return std::make_shared<ompl::geometric::LazyRRT>(_space_info);
+    else if(planner_type == "LBTRRT")
+        return std::make_shared<ompl::geometric::LBTRRT>(_space_info);
+    else if(planner_type == "pRRT")
+        return std::make_shared<ompl::geometric::pRRT>(_space_info);
+    else if(planner_type == "RRT")
+        return std::make_shared<ompl::geometric::RRT>(_space_info);
+    else if(planner_type == "RRTConnect")
+        return std::make_shared<ompl::geometric::RRTConnect>(_space_info);
+    else if(planner_type == "RRTsharp")
+        return std::make_shared<ompl::geometric::RRTsharp>(_space_info);
+    else if(planner_type == "RRTstar")
+    {
+        auto RRT_planner = std::make_shared<ompl::geometric::RRTstar>(_space_info);
+        RRT_planner->setGoalBias(0.01);
+        RRT_planner->setRange(1000);
+        RRT_planner->setKNearest(true);
+        return RRT_planner;
+    }
+    else if(planner_type == "RRTXstatic")
+        return std::make_shared<ompl::geometric::RRTXstatic>(_space_info);
+    else if(planner_type == "SORRTstar")
+        return std::make_shared<ompl::geometric::SORRTstar>(_space_info);
+    else if(planner_type == "TRRT")
+        return std::make_shared<ompl::geometric::TRRT>(_space_info);
+    //    else if(planner_type == "VFRRT")
+    //        return std::make_shared<ompl::geometric::VFRRT>(space_info); ///TODO: implement options in factory
+    else
+        throw std::runtime_error("Planner type not valid!");
+}
