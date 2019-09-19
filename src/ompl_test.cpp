@@ -32,11 +32,26 @@ bool planner_service(cartesio_planning::CartesioPlanner::Request& req,
                      cartesio_planning::CartesioPlanner::Response& res)
 {
     planner->setStartAndGoalStates(sv, gv);
-    bool a =  planner->solve(req.time);
+
+    if(req.time<=0)
+    {
+        res.status.msg.data = "time arg should be > 0";
+        res.status.val = ompl::base::PlannerStatus::ABORT;
+        return true;
+    }
+
+
+    if(req.planner_type == "")
+        req.planner_type = "RRTstar";
+
+    std::cout<<"Requested planner "<<req.planner_type<<std::endl;
+
+    planner->solve(req.time, req.planner_type);
 
     res.status.val = ompl::base::PlannerStatus::StatusType(planner->getPlannerStatus());
+    res.status.msg.data = planner->getPlannerStatus().asString();
 
-    return a;
+    return true;
 }
 
 

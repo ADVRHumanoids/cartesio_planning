@@ -1,5 +1,23 @@
+#planner types
+string BiTRRT=BiTRRT
+string InformedRRTstar=InformedRRTstar
+string LazyLBTRRT=LazyLBTRRT
+string LazyRRT=LazyRRT
+string LBTRRT=LBTRRT
+string pRRT=pRRT
+string RRT=RRT
+string RRTConnect=RRTConnect
+string RRTsharp=RRTsharp
+string RRTstar=RRTstar
+string RRTXstatic=RRTXstatic
+string SORRTstar=SORRTstar
+string TRRT=TRRT
+
+string planner_type
+
 int32 time
 
 ---
 
 cartesio_planning/CartesioPlannerStatus status
+

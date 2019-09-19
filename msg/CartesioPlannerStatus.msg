@@ -8,3 +8,4 @@ int32 EXACT_SOLUTION=6
 int32 CRASH=7
 int32 ABORT=8
 int32 val
+std_msgs/String msg

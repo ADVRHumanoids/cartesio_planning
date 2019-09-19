@@ -22,7 +22,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     // create space information
     _space_info = std::make_shared<ompl::base::SpaceInformation>(_space);
 
-    setUp();
+    setUpProblemDefinition();
 
 }
 
@@ -45,7 +45,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
     _space_info = std::make_shared<ompl::base::ConstrainedSpaceInformation>(_space);
 
-    setUp();
+    setUpProblemDefinition();
 }
 
 void OmplPlanner::setBounds(const Eigen::VectorXd& bounds_min,
@@ -71,18 +71,13 @@ void OmplPlanner::setBounds(const Eigen::VectorXd& bounds_min,
 
 }
 
-void OmplPlanner::setUp()
+void OmplPlanner::setUpProblemDefinition()
 {
     // create problem definition
     _pdef = std::make_shared<ompl::base::ProblemDefinition>(_space_info);
 
     // set optimization objective (todo: provide choice to user)
     _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(_space_info));
-
-    // create planner (todo: provide choice to user)
-    _planner = std::make_shared<ompl::geometric::RRTstar>(_space_info);
-    _planner->setProblemDefinition(_pdef);
-    _planner->setup();
 }
 
 
@@ -168,23 +163,40 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start, ompl::bas
 }
 
 
-bool OmplPlanner::solve(double t)
+bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 {
-    print();
 
-    _solved = _planner->ompl::base::Planner::solve(t);
-
-    if(_solved)
+    try{
+        _planner = plannerFactory(planner_type, _space_info);
+    } catch(std::exception& e)
     {
-        auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
-
-        geom_path->interpolate();
-
-        if(!geom_path->check())
-            return false;
+        std::cout<<e.what()<<std::endl;
     }
 
-    return _solved;
+
+    if(_planner)
+    {
+        _planner->setProblemDefinition(_pdef);
+        _planner->setup();
+
+
+        print();
+
+        _solved = _planner->ompl::base::Planner::solve(timeout);
+
+        if(_solved)
+        {
+            auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+
+            geom_path->interpolate();
+
+            if(!geom_path->check())
+                return false;
+        }
+
+        return _solved;
+    }
+    return false;
 }
 
 
@@ -192,7 +204,7 @@ void OmplPlanner::print(std::ostream &out)
 {
     _space_info->printSettings(out);
     _pdef->print(out);
-    ///...
+    _planner->printProperties(out);
 }
 
 ompl::base::PlannerStatus OmplPlanner::getPlannerStatus() const
