@@ -20,7 +20,7 @@
 
     <node pkg="cartesian_interface" type="marker_spawner" name="interactive_markers" output="screen"/>
 
-    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
+    <node pkg="cartesio_planning" type="previewer" name="planner_previewer" output="screen"/>
 
 
 </launch>

@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     rosconsole
     std_msgs
+    trajectory_msgs
     message_generation
     )
 
@@ -154,6 +155,19 @@ target_link_libraries(ompl_test ${OMPL_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
 
+#PREVIEWER
+add_executable(previewer
+    src/nodes/previewer.cpp
+    )
+
+target_link_libraries(previewer ${OMPL_LIBRARIES}
+    yaml-cpp
+    dl
+    cartesio_planning
+    ${XBotInterface_LIBRARIES}
+    ${catkin_LIBRARIES}
+    matlogger2::matlogger2)
+
 # Ik test
 add_executable(goal_generation_test
     src/ik/position_ik_test.cpp
@@ -207,6 +221,12 @@ target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
 
 ## Mark executables and/or libraries for installation
 install(TARGETS ompl_test
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+install(TARGETS previewer
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

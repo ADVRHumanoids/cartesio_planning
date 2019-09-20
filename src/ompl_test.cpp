@@ -21,6 +21,8 @@
 
 #include "cartesio_planning/CartesioPlanner.h"
 
+#include <trajectory_msgs/JointTrajectory.h>
+
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
 
@@ -59,7 +61,7 @@ int main(int argc, char ** argv)
 {
 
     ros::init(argc, argv, "ompl_test_node");
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("planner");
 
     auto cfg = LoadOptions(LoadFrom::PARAM);
 
@@ -212,14 +214,28 @@ int main(int argc, char ** argv)
         if (planner->getPlannerStatus())
         {
             auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_logger");
-            ros::Publisher pub = nh.advertise<sensor_msgs::JointState>("joint_states", 10);
-            sensor_msgs::JointState msg;
-            msg.name = model->getEnabledJointNames();
 
+
+            ros::Publisher pub = nh.advertise<trajectory_msgs::JointTrajectory>("joint_states", 10);
+            trajectory_msgs::JointTrajectory msg;
+            msg.joint_names = model->getEnabledJointNames();
+            int nsec = 0;
             for(auto x : planner->getSolutionPath())
             {
                 logger->add("state", x);
+                trajectory_msgs::JointTrajectoryPoint point;
+                point.positions.assign(x.data(), x.data() + x.size());
+                nsec+=10000;
+                point.time_from_start.nsec = nsec; ///TODO: CHECK HOW TO USE IT FROM MOVEIT!
+                msg.points.push_back(point);
             }
+            pub.publish(msg);
+
+
+
+
+
+
 
             int i = 0;
             while(ros::ok())
