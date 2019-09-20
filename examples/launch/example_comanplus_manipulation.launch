@@ -22,5 +22,6 @@
 
     <node pkg="cartesio_planning" type="previewer" name="planner_previewer" output="screen"/>
 
+    <node pkg="cartesian_interface" type="world_connecter" name="world_connecter" args="ci/world_odom planner/world_odom ci/base_link planner/base_link" />
 
 </launch>

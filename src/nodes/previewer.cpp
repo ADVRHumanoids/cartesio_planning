@@ -46,62 +46,70 @@ int main(int argc, char **argv)
     while(ros::ok())
     {
 
-
+        Eigen::VectorXd q;
         if(!trj_msg.points.empty())
         {
             trajectory_msgs::JointTrajectoryPoint pi = trj_msg.points[counter];
-            Eigen::Map<Eigen::VectorXd>q(pi.positions.data(), pi.positions.size());
+            q = Eigen::Map<Eigen::VectorXd>(pi.positions.data(), pi.positions.size());
+        }
+        else
+            q.setZero(model->getJointNum());
 
-            model->setJointPosition(q);
-            model->update();
-
-
-            XBot::JointNameMap _joint_name_map;
-            model->getJointPosition(_joint_name_map);
-
-            std::map<std::string, double> _joint_name_std_map;
-
-            auto predicate = [](const std::pair<std::string, double>& pair)
-            {
-                return pair.first.find("VIRTUALJOINT") == std::string::npos;
-            };
-
-            std::copy_if(_joint_name_map.begin(), _joint_name_map.end(),
-                         std::inserter(_joint_name_std_map, _joint_name_std_map.end()),
-                         predicate);
-
-            ros::Time t = ros::Time::now();
-            robot_state_publisher->publishTransforms(_joint_name_std_map, t, prefix);
-            robot_state_publisher->publishFixedTransforms(prefix, true);
-
-            /* Publish world odom */
-            Eigen::Affine3d w_T_pelvis;
-            w_T_pelvis.setIdentity();
-            std::string fb_link = "world";
-
-            if(model->isFloatingBase())
-            {
-                model->getFloatingBasePose(w_T_pelvis);
-                model->getFloatingBaseLink(fb_link);
-            }
-
-            tf::Transform transform;
-            tf::transformEigenToTF(w_T_pelvis, transform);
-
-            tf_broadcaster.sendTransform(tf::StampedTransform(transform.inverse(),
-                                                               t,
-                                                               prefix + "/" + fb_link,
-                                                               prefix + "/" + "world_odom"));
+        model->setJointPosition(q);
+        model->update();
 
 
+        XBot::JointNameMap _joint_name_map;
+        model->getJointPosition(_joint_name_map);
+
+        std::map<std::string, double> _joint_name_std_map;
+
+        auto predicate = [](const std::pair<std::string, double>& pair)
+        {
+            return pair.first.find("VIRTUALJOINT") == std::string::npos;
+        };
+
+        std::copy_if(_joint_name_map.begin(), _joint_name_map.end(),
+                     std::inserter(_joint_name_std_map, _joint_name_std_map.end()),
+                     predicate);
 
 
+        /* Publish world odom */
+        Eigen::Affine3d w_T_pelvis;
+        w_T_pelvis.setIdentity();
+        std::string fb_link = "world";
+
+        if(model->isFloatingBase())
+        {
+            model->getFloatingBasePose(w_T_pelvis);
+            model->getFloatingBaseLink(fb_link);
+        }
+
+        tf::Transform transform;
+        tf::transformEigenToTF(w_T_pelvis, transform);
+
+
+        ros::Time t = ros::Time::now();
+        robot_state_publisher->publishTransforms(_joint_name_std_map, t, prefix);
+        robot_state_publisher->publishFixedTransforms(prefix, true);
+        tf_broadcaster.sendTransform(tf::StampedTransform(transform.inverse(),
+                                                           t,
+                                                           prefix + "/" + fb_link,
+                                                           prefix + "/" + "world_odom"));
+
+
+
+        ros::spinOnce();
+
+        if(!trj_msg.points.empty())
+        {
             (trj_msg.points[counter+1].time_from_start - trj_msg.points[counter].time_from_start).sleep();
             counter++;
             counter = counter % trj_msg.points.size();
         }
+        else
+            ros::Duration(0.1).sleep();
 
-        ros::spinOnce();
     }
 
     return 0;

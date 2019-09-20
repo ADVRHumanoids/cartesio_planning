@@ -213,7 +213,7 @@ int main(int argc, char ** argv)
 
         if (planner->getPlannerStatus())
         {
-            auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_logger");
+            //auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_logger");
 
 
             ros::Publisher pub = nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 10, true);
@@ -222,7 +222,7 @@ int main(int argc, char ** argv)
             int nsec = 0;
             for(auto x : planner->getSolutionPath())
             {
-                logger->add("state", x);
+                //logger->add("state", x);
                 trajectory_msgs::JointTrajectoryPoint point;
                 point.positions.assign(x.data(), x.data() + x.size());
                 nsec+=100*1e6;
