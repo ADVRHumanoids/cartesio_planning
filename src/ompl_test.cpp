@@ -216,7 +216,7 @@ int main(int argc, char ** argv)
             auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_logger");
 
 
-            ros::Publisher pub = nh.advertise<trajectory_msgs::JointTrajectory>("joint_states", 10);
+            ros::Publisher pub = nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 10, true);
             trajectory_msgs::JointTrajectory msg;
             msg.joint_names = model->getEnabledJointNames();
             int nsec = 0;
@@ -225,8 +225,8 @@ int main(int argc, char ** argv)
                 logger->add("state", x);
                 trajectory_msgs::JointTrajectoryPoint point;
                 point.positions.assign(x.data(), x.data() + x.size());
-                nsec+=10000;
-                point.time_from_start.nsec = nsec; ///TODO: CHECK HOW TO USE IT FROM MOVEIT!
+                nsec+=100*1e6;
+                point.time_from_start.nsec = nsec;
                 msg.points.push_back(point);
             }
             pub.publish(msg);

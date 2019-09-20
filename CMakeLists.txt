@@ -16,6 +16,9 @@ find_package(catkin REQUIRED COMPONENTS
     std_msgs
     trajectory_msgs
     message_generation
+    kdl_parser
+    robot_state_publisher
+    tf tf_conversions
     )
 
 find_package(Eigen3 REQUIRED)
