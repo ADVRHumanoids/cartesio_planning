@@ -71,7 +71,7 @@ private:
     void setUpProblemDefinition();
 
     PlannerPtr plannerFactory(const std::string& planner_type);
-    PlannerPtr makeRRTStar();
+    PlannerPtr makeRRTstar();
 
 
 

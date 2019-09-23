@@ -1,4 +1,4 @@
-RRTStar:
+RRTstar:
     GoalBias: 0.1
     KNearest: true
     Range: 1000

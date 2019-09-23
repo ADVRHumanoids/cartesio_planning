@@ -120,17 +120,17 @@ void OmplPlanner::setUpProblemDefinition()
         std::cout << "No option " #name " specified" << std::endl; \
     } \
 
-OmplPlanner::PlannerPtr OmplPlanner::makeRRTStar()
+OmplPlanner::PlannerPtr OmplPlanner::makeRRTstar()
 {
     auto planner = std::make_shared<ompl::geometric::RRTstar>(_space_info);
 
-    if(!_options || !_options["RRTStar"])
+    if(!_options || !_options["RRTstar"])
     {
         std::cout << "No options detected" << std::endl;
         return planner;
     }
 
-    auto opt = _options["RRTStar"];
+    auto opt = _options["RRTstar"];
 
     PARSE_OPTION(GoalBias, double);
     PARSE_OPTION(Range, int);
@@ -292,50 +292,62 @@ std::shared_ptr<ompl::base::Planner> OmplPlanner::plannerFactory(const std::stri
     {
         return std::make_shared<ompl::geometric::BiTRRT>(_space_info);
     }
+
     ADD_AND_IF("InformedRRTstar")
     {
         return std::make_shared<ompl::geometric::InformedRRTstar>(_space_info);
     }
+
     ADD_AND_IF("LazyLBTRRT")
     {
         return std::make_shared<ompl::geometric::LazyLBTRRT>(_space_info);
     }
+
     ADD_AND_IF("LazyRRT")
     {
         return std::make_shared<ompl::geometric::LazyRRT>(_space_info);
     }
+
     ADD_AND_IF("LBTRRT")
     {
         return std::make_shared<ompl::geometric::LBTRRT>(_space_info);
     }
+
     ADD_AND_IF("pRRT")
     {
         return std::make_shared<ompl::geometric::pRRT>(_space_info);
     }
+
     ADD_AND_IF("RRT")
     {
         return std::make_shared<ompl::geometric::RRT>(_space_info);
     }
+
     ADD_AND_IF("RRTConnect")
     {
         return std::make_shared<ompl::geometric::RRTConnect>(_space_info);
     }
+
     ADD_AND_IF("RRTsharp")
     {
         return std::make_shared<ompl::geometric::RRTsharp>(_space_info);
     }
+
     ADD_AND_IF("RRTstar")
     {
-        return makeRRTStar();
+        return makeRRTstar();
     }
+
     ADD_AND_IF("RRTXstatic")
     {
         return std::make_shared<ompl::geometric::RRTXstatic>(_space_info);
     }
+
     ADD_AND_IF("SORRTstar")
     {
         return std::make_shared<ompl::geometric::SORRTstar>(_space_info);
     }
+
     ADD_AND_IF("TRRT")
     {
         return std::make_shared<ompl::geometric::TRRT>(_space_info);
