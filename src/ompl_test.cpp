@@ -62,6 +62,7 @@ int main(int argc, char ** argv)
 
     ros::init(argc, argv, "ompl_test_node");
     ros::NodeHandle nh("planner");
+    ros::NodeHandle nhpr("~");
 
     auto cfg = LoadOptions(LoadFrom::PARAM);
 
@@ -182,6 +183,14 @@ int main(int argc, char ** argv)
     ros::ServiceServer service = nh.advertiseService("planner_service", planner_service);
 
     ros::Publisher pub_marker = nh.advertise<visualization_msgs::MarkerArray>("obstacles", 10);
+
+    if(nhpr.hasParam("planner_options"))
+    {
+        std::string planner_options_str;
+        nhpr.getParam("planner_options", planner_options_str);
+        auto yaml_opt = YAML::Load(planner_options_str);
+        planner->setYaml(yaml_opt);
+    }
 
     while (ros::ok())
     {

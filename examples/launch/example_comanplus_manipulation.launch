@@ -12,9 +12,12 @@
         textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
 
 
+
     <node pkg="cartesio_planning" type="ompl_test" name="cartesio_planning" output="screen">
         <param name="solver" value=""/>
         <param name="is_model_floating_base" value="true"/>
+        <param name="planner_options"
+            textfile="$(find cartesio_planning)/configs/problem/comanplus_example_manipulation_config.yaml"/>
     </node>
 
 

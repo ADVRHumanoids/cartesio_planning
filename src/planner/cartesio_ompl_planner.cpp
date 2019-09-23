@@ -1,3 +1,18 @@
+#include <ompl/geometric/planners/rrt/BiTRRT.h>
+#include <ompl/geometric/planners/rrt/InformedRRTstar.h>
+#include <ompl/geometric/planners/rrt/LazyLBTRRT.h>
+#include <ompl/geometric/planners/rrt/LazyRRT.h>
+#include <ompl/geometric/planners/rrt/LBTRRT.h>
+#include <ompl/geometric/planners/rrt/pRRT.h>
+#include <ompl/geometric/planners/rrt/RRT.h>
+#include <ompl/geometric/planners/rrt/RRTConnect.h>
+#include <ompl/geometric/planners/rrt/RRTsharp.h>
+#include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/geometric/planners/rrt/RRTXstatic.h>
+#include <ompl/geometric/planners/rrt/SORRTstar.h>
+#include <ompl/geometric/planners/rrt/TRRT.h>
+#include <ompl/geometric/planners/rrt/VFRRT.h>
+
 #include "cartesio_ompl_planner.h"
 #include <type_traits>
 
@@ -27,8 +42,8 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 }
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
-            const Eigen::VectorXd& bounds_max,
-            ompl::base::ConstraintPtr constraint):
+                         const Eigen::VectorXd& bounds_max,
+                         ompl::base::ConstraintPtr constraint):
     _bounds(bounds_min.size()),
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN)
@@ -46,6 +61,11 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _space_info = std::make_shared<ompl::base::ConstrainedSpaceInformation>(_space);
 
     setUpProblemDefinition();
+}
+
+void OmplPlanner::setYaml(YAML::Node options)
+{
+    _options = options;
 }
 
 void OmplPlanner::setBounds(const Eigen::VectorXd& bounds_min,
@@ -73,20 +93,50 @@ void OmplPlanner::setBounds(const Eigen::VectorXd& bounds_min,
 
 void OmplPlanner::setUpProblemDefinition()
 {
-     auto vss_alloc = [](const ompl::base::SpaceInformation * si)
-     {
-         auto vss = std::make_shared<ompl::base::UniformValidStateSampler>(si);
-         vss->setNrAttempts(10000);
-         return vss;
-     };
+    auto vss_alloc = [](const ompl::base::SpaceInformation * si)
+    {
+        auto vss = std::make_shared<ompl::base::UniformValidStateSampler>(si);
+        vss->setNrAttempts(10000);
+        return vss;
+    };
 
-     _space_info->setValidStateSamplerAllocator(vss_alloc);
+    _space_info->setValidStateSamplerAllocator(vss_alloc);
 
     // create problem definition
     _pdef = std::make_shared<ompl::base::ProblemDefinition>(_space_info);
 
     // set optimization objective (todo: provide choice to user)
     _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(_space_info));
+}
+
+#define PARSE_OPTION(name, type) \
+    if(opt[#name]) \
+    { \
+        type value = opt[#name].as<type>(); \
+        std::cout << "Found " #type " option '" #name "' with value = " << value << std::endl; \
+        planner->set##name(value); \
+    } \
+    else { \
+        std::cout << "No option " #name " specified" << std::endl; \
+    } \
+
+OmplPlanner::PlannerPtr OmplPlanner::makeRRTStar()
+{
+    auto planner = std::make_shared<ompl::geometric::RRTstar>(_space_info);
+
+    if(!_options || !_options["RRTStar"])
+    {
+        std::cout << "No options detected" << std::endl;
+        return planner;
+    }
+
+    auto opt = _options["RRTStar"];
+
+    PARSE_OPTION(GoalBias, double);
+    PARSE_OPTION(Range, int);
+    PARSE_OPTION(KNearest, bool);
+
+    return planner;
 }
 
 
@@ -230,44 +280,74 @@ ompl::base::PlannerStatus OmplPlanner::getPlannerStatus() const
     return _solved;
 }
 
+#define ADD_AND_IF(planner_name) \
+    valid_planners.push_back(planner_name); if(planner_type == planner_name)
 
 
 std::shared_ptr<ompl::base::Planner> OmplPlanner::plannerFactory(const std::string &planner_type)
 {
-    if(planner_type == "BiTRRT")
-        return std::make_shared<ompl::geometric::BiTRRT>(_space_info);
-    else if(planner_type == "InformedRRTstar")
-        return std::make_shared<ompl::geometric::InformedRRTstar>(_space_info);
-    else if(planner_type == "LazyLBTRRT")
-        return std::make_shared<ompl::geometric::LazyLBTRRT>(_space_info);
-    else if(planner_type == "LazyRRT")
-        return std::make_shared<ompl::geometric::LazyRRT>(_space_info);
-    else if(planner_type == "LBTRRT")
-        return std::make_shared<ompl::geometric::LBTRRT>(_space_info);
-    else if(planner_type == "pRRT")
-        return std::make_shared<ompl::geometric::pRRT>(_space_info);
-    else if(planner_type == "RRT")
-        return std::make_shared<ompl::geometric::RRT>(_space_info);
-    else if(planner_type == "RRTConnect")
-        return std::make_shared<ompl::geometric::RRTConnect>(_space_info);
-    else if(planner_type == "RRTsharp")
-        return std::make_shared<ompl::geometric::RRTsharp>(_space_info);
-    else if(planner_type == "RRTstar")
+    std::vector<std::string> valid_planners;
+
+    ADD_AND_IF("BiTRRT")
     {
-        auto RRT_planner = std::make_shared<ompl::geometric::RRTstar>(_space_info);
-        RRT_planner->setGoalBias(0.01);
-        RRT_planner->setRange(1000);
-        RRT_planner->setKNearest(true);
-        return RRT_planner;
+        return std::make_shared<ompl::geometric::BiTRRT>(_space_info);
     }
-    else if(planner_type == "RRTXstatic")
+    ADD_AND_IF("InformedRRTstar")
+    {
+        return std::make_shared<ompl::geometric::InformedRRTstar>(_space_info);
+    }
+    ADD_AND_IF("LazyLBTRRT")
+    {
+        return std::make_shared<ompl::geometric::LazyLBTRRT>(_space_info);
+    }
+    ADD_AND_IF("LazyRRT")
+    {
+        return std::make_shared<ompl::geometric::LazyRRT>(_space_info);
+    }
+    ADD_AND_IF("LBTRRT")
+    {
+        return std::make_shared<ompl::geometric::LBTRRT>(_space_info);
+    }
+    ADD_AND_IF("pRRT")
+    {
+        return std::make_shared<ompl::geometric::pRRT>(_space_info);
+    }
+    ADD_AND_IF("RRT")
+    {
+        return std::make_shared<ompl::geometric::RRT>(_space_info);
+    }
+    ADD_AND_IF("RRTConnect")
+    {
+        return std::make_shared<ompl::geometric::RRTConnect>(_space_info);
+    }
+    ADD_AND_IF("RRTsharp")
+    {
+        return std::make_shared<ompl::geometric::RRTsharp>(_space_info);
+    }
+    ADD_AND_IF("RRTstar")
+    {
+        return makeRRTStar();
+    }
+    ADD_AND_IF("RRTXstatic")
+    {
         return std::make_shared<ompl::geometric::RRTXstatic>(_space_info);
-    else if(planner_type == "SORRTstar")
+    }
+    ADD_AND_IF("SORRTstar")
+    {
         return std::make_shared<ompl::geometric::SORRTstar>(_space_info);
-    else if(planner_type == "TRRT")
+    }
+    ADD_AND_IF("TRRT")
+    {
         return std::make_shared<ompl::geometric::TRRT>(_space_info);
-    //    else if(planner_type == "VFRRT")
-    //        return std::make_shared<ompl::geometric::VFRRT>(space_info); ///TODO: implement options in factory
-    else
-        throw std::runtime_error("Planner type not valid!");
+    }
+
+    std::cout << "Valid planners are \n";
+    std::for_each(valid_planners.begin(), valid_planners.end(),
+                  [](std::string p)
+    {
+        std::cout << " - " << p << "\n";
+    });
+    std::cout.flush();
+
+    throw std::runtime_error("Planner type '" + planner_type + "' not valid!");
 }

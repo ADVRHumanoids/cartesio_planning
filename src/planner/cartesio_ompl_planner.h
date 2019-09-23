@@ -3,23 +3,6 @@
 
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/SE3StateSpace.h>
-
-#include <ompl/geometric/planners/rrt/BiTRRT.h>
-#include <ompl/geometric/planners/rrt/InformedRRTstar.h>
-#include <ompl/geometric/planners/rrt/LazyLBTRRT.h>
-#include <ompl/geometric/planners/rrt/LazyRRT.h>
-#include <ompl/geometric/planners/rrt/LBTRRT.h>
-#include <ompl/geometric/planners/rrt/pRRT.h>
-#include <ompl/geometric/planners/rrt/RRT.h>
-#include <ompl/geometric/planners/rrt/RRTConnect.h>
-#include <ompl/geometric/planners/rrt/RRTsharp.h>
-#include <ompl/geometric/planners/rrt/RRTstar.h>
-#include <ompl/geometric/planners/rrt/RRTXstatic.h>
-#include <ompl/geometric/planners/rrt/SORRTstar.h>
-#include <ompl/geometric/planners/rrt/TRRT.h>
-#include <ompl/geometric/planners/rrt/VFRRT.h>
-
-
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/config.h>
 #include <ompl/base/Constraint.h>
@@ -34,6 +17,7 @@
 #include <ompl/base/samplers/ObstacleBasedValidStateSampler.h>
 
 #include <Eigen/Dense>
+#include <yaml-cpp/yaml.h>
 
 #include "../state_wrapper.h"
 
@@ -54,6 +38,8 @@ public:
     OmplPlanner(const Eigen::VectorXd& bounds_min,
                 const Eigen::VectorXd& bounds_max,
                 ompl::base::ConstraintPtr constraint);
+
+    void setYaml(YAML::Node options);
 
     void setStateValidityPredicate(StateValidityPredicate svc);
 
@@ -77,6 +63,18 @@ public:
 
 private:
 
+    typedef std::shared_ptr<ompl::base::Planner> PlannerPtr;
+
+    void setBounds(const Eigen::VectorXd& bounds_min,
+                   const Eigen::VectorXd& bounds_max);
+
+    void setUpProblemDefinition();
+
+    PlannerPtr plannerFactory(const std::string& planner_type);
+    PlannerPtr makeRRTStar();
+
+
+
     ompl::base::RealVectorBounds _bounds;
     std::shared_ptr<ompl::base::RealVectorStateSpace> _ambient_space;
     std::shared_ptr<ompl::base::SpaceInformation> _space_info;
@@ -90,14 +88,11 @@ private:
 
     unsigned int _size;
 
-    void setBounds(const Eigen::VectorXd& bounds_min,
-                   const Eigen::VectorXd& bounds_max);
 
-    void setUpProblemDefinition();
-
-    std::shared_ptr<ompl::base::Planner> plannerFactory(const std::string& planner_type);
 
     std::shared_ptr<StateWrapper> _sw;
+
+    YAML::Node _options;
 
 };
 
