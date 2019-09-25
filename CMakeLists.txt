@@ -6,6 +6,8 @@ add_compile_options(-std=c++11)
 
 option(COMPILE_TESTS "Compile internal tests" FALSE)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -18,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
     message_generation
     kdl_parser
     robot_state_publisher
-    tf tf_conversions
+    tf tf_conversions geometric_shapes
     )
 
 find_package(Eigen3 REQUIRED)
@@ -28,6 +30,8 @@ find_package(ompl 1.5.0 REQUIRED)
 find_package(XBotInterface REQUIRED)
 
 find_package(matlogger2 REQUIRED)
+
+FIND_PACKAGE(FCL 0.6 QUIET)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -134,16 +138,21 @@ include_directories(
     )
 
 # Main library
-add_library(cartesio_planning SHARED
-    src/constraints/cartesian_constraint.cpp
-    src/goal/goal_sampler.cpp
-    src/planner/cartesio_ompl_planner.cpp
-    src/state_wrapper.cpp
-    src/ik/position_ik_solver.cpp)
+set(CARTESIO_PLANNING_SRC_FILES src/constraints/cartesian_constraint.cpp
+                                src/goal/goal_sampler.cpp
+                                src/planner/cartesio_ompl_planner.cpp
+                                src/state_wrapper.cpp
+                                src/ik/position_ik_solver.cpp)
+if(${FCL_FOUND})
+set(CARTESIO_PLANNING_SRC_FILES ${CARTESIO_PLANNING_SRC_FILES}
+                                src/constraints/self_collision_checker.cpp)
+endif()
+
+add_library(cartesio_planning SHARED ${CARTESIO_PLANNING_SRC_FILES})
 
 target_link_libraries(cartesio_planning
     ${OMPL_LIBRARIES}
-    ${cartesian_interface_LIBRARIES})
+    ${cartesian_interface_LIBRARIES} ${FCL_LIBRARIES} ${geometric_shapes_LIBRARIES})
 
 # Test executable
 add_executable(ompl_test
@@ -164,6 +173,19 @@ add_executable(previewer
     )
 
 target_link_libraries(previewer ${OMPL_LIBRARIES}
+    yaml-cpp
+    dl
+    cartesio_planning
+    ${XBotInterface_LIBRARIES}
+    ${catkin_LIBRARIES}
+    matlogger2::matlogger2)
+
+#COLLISION_CHECK
+add_executable(collision_check
+    src/nodes/collision_check.cpp
+    )
+
+target_link_libraries(collision_check ${OMPL_LIBRARIES}
     yaml-cpp
     dl
     cartesio_planning
@@ -230,6 +252,12 @@ install(TARGETS ompl_test
     )
 
 install(TARGETS previewer
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+install(TARGETS collision_check
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
