@@ -29,6 +29,7 @@ using namespace XBot::Cartesian::Utils;
 XBot::Cartesian::Planning::GoalSampler::Ptr g_goal_region;
 std::shared_ptr<Planning::OmplPlanner> planner;
 Eigen::VectorXd sv, gv;
+bool publish_once = false;
 
 bool planner_service(cartesio_planning::CartesioPlanner::Request& req,
                      cartesio_planning::CartesioPlanner::Response& res)
@@ -52,6 +53,8 @@ bool planner_service(cartesio_planning::CartesioPlanner::Request& req,
 
     res.status.val = ompl::base::PlannerStatus::StatusType(planner->getPlannerStatus());
     res.status.msg.data = planner->getPlannerStatus().asString();
+
+    publish_once = true;
 
     return true;
 }
@@ -183,6 +186,7 @@ int main(int argc, char ** argv)
     ros::ServiceServer service = nh.advertiseService("planner_service", planner_service);
 
     ros::Publisher pub_marker = nh.advertise<visualization_msgs::MarkerArray>("obstacles", 10);
+    ros::Publisher pub = nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 10, true);
 
     if(nhpr.hasParam("planner_options"))
     {
@@ -220,12 +224,10 @@ int main(int argc, char ** argv)
         pub_marker.publish(ob_msg);
 
 
-        if (planner->getPlannerStatus())
+        if (planner->getPlannerStatus() && publish_once)
         {
             //auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_logger");
 
-
-            ros::Publisher pub = nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 10, true);
             trajectory_msgs::JointTrajectory msg;
             msg.joint_names = model->getEnabledJointNames();
             int nsec = 0;
@@ -234,54 +236,12 @@ int main(int argc, char ** argv)
                 //logger->add("state", x);
                 trajectory_msgs::JointTrajectoryPoint point;
                 point.positions.assign(x.data(), x.data() + x.size());
-                nsec+=100*1e6;
+                nsec+=10*1e6;
                 point.time_from_start.nsec = nsec;
                 msg.points.push_back(point);
             }
             pub.publish(msg);
-
-
-
-
-
-
-
-            int i = 0;
-            while(ros::ok())
-            {
-                auto q_i = planner->getSolutionPath().at(i);
-
-                model->setJointPosition(q_i);
-                model->update();
-                ros_server.run();
-
-                visualization_msgs::Marker sphere;
-                sphere.header.frame_id = "ci/world_odom";
-                sphere.header.stamp = ros::Time::now();
-                sphere.type = visualization_msgs::Marker::SPHERE;
-                sphere.action = visualization_msgs::Marker::ADD;
-                sphere.pose.position.x = 0.4;
-                sphere.pose.position.y = 0.1;
-                sphere.pose.position.z = -0.20;
-                sphere.pose.orientation.w = 1.0;
-                sphere.scale.x = 0.4;
-                sphere.scale.y = 0.4;
-                sphere.scale.z = 0.4;
-                sphere.color.a = 1.0;
-                sphere.color.r = 1.0;
-
-                visualization_msgs::MarkerArray ob_msg;
-                ob_msg.markers.push_back(sphere);
-
-                pub_marker.publish(ob_msg);
-
-                ros::Duration(0.05).sleep();
-
-                i++;
-                i = i % planner->getSolutionPath().size();
-
-            }
-
+            publish_once = false;
         }
 
         ros::Duration(0.01).sleep();

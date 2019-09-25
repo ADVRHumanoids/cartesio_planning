@@ -6,6 +6,7 @@
 #include <RobotInterfaceROS/ConfigFromParam.h>
 #include <tf/transform_broadcaster.h>
 #include <tf_conversions/tf_eigen.h>
+#include <tf/transform_listener.h>
 
 trajectory_msgs::JointTrajectory trj_msg;
 int counter;
@@ -43,6 +44,10 @@ int main(int argc, char **argv)
 
     tf::TransformBroadcaster tf_broadcaster;
 
+    tf::TransformListener listener;
+    listener.waitForTransform("ci/world", "ci/world_odom", ros::Time(0), ros::Duration(1) );
+
+
     while(ros::ok())
     {
 
@@ -74,28 +79,64 @@ int main(int argc, char **argv)
                      predicate);
 
 
-        /* Publish world odom */
-        Eigen::Affine3d w_T_pelvis;
-        w_T_pelvis.setIdentity();
-        std::string fb_link = "world";
-
         if(model->isFloatingBase())
         {
+            /* Publish world odom */
+            Eigen::Affine3d w_T_pelvis;
+            w_T_pelvis.setIdentity();
+            std::string fb_link = "world";
+
             model->getFloatingBasePose(w_T_pelvis);
             model->getFloatingBaseLink(fb_link);
+
+
+            tf::Transform transform;
+            tf::transformEigenToTF(w_T_pelvis, transform);
+
+
+
+            tf::Transform wp_T_rp;
+            Eigen::Affine3d tmp; model->getPose(fb_link, tmp);
+            tf::transformEigenToTF(tmp, wp_T_rp);
+
+
+            tf::StampedTransform wc_T_rc;
+            listener.lookupTransform("ci/"+fb_link, "ci/world_odom",
+                                     ros::Time(0), wc_T_rc);
+
+            tf::Transform rp_T_rc = wc_T_rc*wp_T_rp;
+
+            ros::Time t = ros::Time::now();
+
+            std::vector<tf::StampedTransform> tfs;
+            tfs.push_back(tf::StampedTransform(rp_T_rc, t, "ci/"+fb_link, "planner/world"));
+            tfs.push_back(tf::StampedTransform(transform.inverse(),
+                                                               t,
+                                                               prefix + "/" + fb_link,
+                                                               prefix + "/" + "world_odom"));
+
+
+
+            robot_state_publisher->publishTransforms(_joint_name_std_map, t, prefix);
+            robot_state_publisher->publishFixedTransforms(prefix, true);
+            tf_broadcaster.sendTransform(tfs);
+        }
+        else
+        {
+            ros::Time t = ros::Time::now();
+
+            std::vector<tf::StampedTransform> tfs;
+            tf::Transform I; I.setIdentity();
+            tfs.push_back(tf::StampedTransform(I, t, "ci/world", "planner/world"));
+
+
+            robot_state_publisher->publishTransforms(_joint_name_std_map, t, prefix);
+            robot_state_publisher->publishFixedTransforms(prefix, true);
+            tf_broadcaster.sendTransform(tfs);
         }
 
-        tf::Transform transform;
-        tf::transformEigenToTF(w_T_pelvis, transform);
 
 
-        ros::Time t = ros::Time::now();
-        robot_state_publisher->publishTransforms(_joint_name_std_map, t, prefix);
-        robot_state_publisher->publishFixedTransforms(prefix, true);
-        tf_broadcaster.sendTransform(tf::StampedTransform(transform.inverse(),
-                                                           t,
-                                                           prefix + "/" + fb_link,
-                                                           prefix + "/" + "world_odom"));
 
 
 
@@ -103,9 +144,10 @@ int main(int argc, char **argv)
 
         if(!trj_msg.points.empty())
         {
-            (trj_msg.points[counter+1].time_from_start - trj_msg.points[counter].time_from_start).sleep();
+            ros::Duration dt = trj_msg.points[counter+1].time_from_start - trj_msg.points[counter].time_from_start;
+            dt.sleep();
             counter++;
-            counter = counter % trj_msg.points.size();
+            counter = counter % (trj_msg.points.size()-1);
         }
         else
             ros::Duration(0.1).sleep();
