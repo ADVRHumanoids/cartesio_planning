@@ -1,0 +1,23 @@
+<launch>
+
+    <arg name="prefix" default=""/>
+
+    <param name="robot_description"
+        textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
+    <param name="robot_description_semantic"
+        textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
+
+    <param name="cartesian/problem_description"
+        textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
+
+
+
+    <node pkg="cartesio_planning" type="planning_scene_test" name="planning_scene_test" output="screen">
+        <remap from="joint_states" to="cartesian/solution"/>
+    </node>
+
+    <include file="$(find cartesian_interface)/launch/cartesio.launch">
+
+    </include>
+
+</launch>

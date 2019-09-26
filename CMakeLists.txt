@@ -19,6 +19,9 @@ find_package(catkin REQUIRED COMPONENTS
     kdl_parser
     robot_state_publisher
     tf tf_conversions
+    moveit_core
+    moveit_ros_planning
+    moveit_ros_planning_interface
     )
 
 find_package(Eigen3 REQUIRED)
@@ -59,16 +62,16 @@ find_package(matlogger2 REQUIRED)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
- add_message_files(
-   FILES
-   CartesioPlannerStatus.msg
- )
+add_message_files(
+    FILES
+    CartesioPlannerStatus.msg
+    )
 
 ## Generate services in the 'srv' folder
- add_service_files(
-   FILES
-   CartesioPlanner.srv
- )
+add_service_files(
+    FILES
+    CartesioPlanner.srv
+    )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -78,10 +81,10 @@ find_package(matlogger2 REQUIRED)
 # )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   std_msgs  # Or other packages containing msgs
- )
+generate_messages(
+    DEPENDENCIES
+    std_msgs  # Or other packages containing msgs
+    )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -113,10 +116,10 @@ find_package(matlogger2 REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-      #INCLUDE_DIRS include
-      LIBRARIES cartesio_planning
-      CATKIN_DEPENDS cartesian_interface roscpp message_runtime
-      #DEPENDS system_lib
+    #INCLUDE_DIRS include
+    LIBRARIES cartesio_planning
+    CATKIN_DEPENDS cartesian_interface roscpp message_runtime
+    #DEPENDS system_lib
     )
 
 ###########
@@ -184,6 +187,10 @@ target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
 
+# Planning scene test
+add_executable(planning_scene_test src/planning_scene_test.cpp)
+target_link_libraries(planning_scene_test ${catkin_LIBRARIES})
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -236,12 +243,18 @@ install(TARGETS previewer
     )
 
 install(TARGETS goal_generation_test
-   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
- )
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
 
 install(TARGETS cartesio_planning
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+install(TARGETS planning_scene_test
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -279,6 +292,6 @@ add_subdirectory(examples/)
 # compilation flags
 option(COMPILE_TESTS "Compile internal tests" FALSE)
 if(COMPILE_TESTS)
-  enable_testing()
+    enable_testing()
     add_subdirectory(tests)
 endif()
