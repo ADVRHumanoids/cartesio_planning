@@ -191,6 +191,9 @@ target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
 add_executable(planning_scene_test src/planning_scene_test.cpp)
 target_link_libraries(planning_scene_test ${catkin_LIBRARIES})
 
+add_executable(planning_scene_publisher src/planning_scene_publisher.cpp)
+target_link_libraries(planning_scene_publisher ${catkin_LIBRARIES})
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
