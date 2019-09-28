@@ -138,6 +138,7 @@ include_directories(
 
 # Main library
 add_library(cartesio_planning SHARED
+    src/collisions/collision_detection.cpp
     src/constraints/cartesian_constraint.cpp
     src/goal/goal_sampler.cpp
     src/planner/cartesio_ompl_planner.cpp
@@ -146,7 +147,8 @@ add_library(cartesio_planning SHARED
 
 target_link_libraries(cartesio_planning
     ${OMPL_LIBRARIES}
-    ${cartesian_interface_LIBRARIES})
+    ${cartesian_interface_LIBRARIES}
+    ${catkin_LIBRARIES})
 
 # Test executable
 add_executable(ompl_test
@@ -189,7 +191,7 @@ target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
 
 # Planning scene test
 add_executable(planning_scene_test src/planning_scene_test.cpp)
-target_link_libraries(planning_scene_test ${catkin_LIBRARIES})
+target_link_libraries(planning_scene_test cartesio_planning)
 
 add_executable(planning_scene_publisher src/planning_scene_publisher.cpp)
 target_link_libraries(planning_scene_publisher ${catkin_LIBRARIES})
