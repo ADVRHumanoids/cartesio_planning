@@ -2,18 +2,25 @@
 
 namespace
 {
-class MonitorLockerWrite
+
+/**
+ * @brief The MonitorLockguardWrite class provides a RAII-style read-write lock
+ * for the planning scene monitor. Constructing an object will acquire the lock,
+ * which will automatically be released when the locker goes out of scope.
+ * See also std::lock_guard<>.
+ */
+class MonitorLockguardWrite
 {
 
 public:
 
-    MonitorLockerWrite(planning_scene_monitor::PlanningSceneMonitorPtr monitor)
+    MonitorLockguardWrite(planning_scene_monitor::PlanningSceneMonitorPtr monitor)
     {
         _monitor = monitor;
         _monitor->lockSceneWrite();
     }
 
-    ~MonitorLockerWrite()
+    ~MonitorLockguardWrite()
     {
         _monitor->unlockSceneWrite();
     }
@@ -23,18 +30,25 @@ private:
     planning_scene_monitor::PlanningSceneMonitorPtr _monitor;
 };
 
-class MonitorLockerRead
+
+/**
+ * @brief The MonitorLockguardRead class provides a RAII-style read-only lock
+ * for the planning scene monitor. Constructing an object will acquire the lock,
+ * which will automatically be released when the locker goes out of scope.
+ * See also std::lock_guard<>.
+ */
+class MonitorLockguardRead
 {
 
 public:
 
-    MonitorLockerRead(planning_scene_monitor::PlanningSceneMonitorPtr monitor)
+    MonitorLockguardRead(planning_scene_monitor::PlanningSceneMonitorPtr monitor)
     {
         _monitor = monitor;
         _monitor->lockSceneRead();
     }
 
-    ~MonitorLockerRead()
+    ~MonitorLockguardRead()
     {
         _monitor->unlockSceneRead();
     }
@@ -80,17 +94,21 @@ void CollisionDetection::startMonitor()
 
 void CollisionDetection::update()
 {
-    MonitorLockerWrite lock_w(_monitor); // RAII-style lock acquisition
+    // acquire lock for thread-safe access to the planning scene
+    MonitorLockguardWrite lock_w(_monitor); // RAII-style lock acquisition
 
+    // retrieve robot state data struct
     auto& robot_state = _monitor->getPlanningScene()->getCurrentStateNonConst();
 
+    // retrieve modelinterface state
     XBot::JointNameMap q;
     _model->getJointPosition(q);
 
+    // update planning scene from model
     for(const auto& jpair : _model->getUrdf().joints_)
     {
-        auto jmodel = jpair.second;
-        auto jname = jpair.first;
+        auto jname = jpair.first; // joint name
+        auto jmodel = jpair.second; // urdf::Joint model
         auto jtype = jmodel->type; // joint type
 
         if(jtype == urdf::Joint::REVOLUTE  ||
@@ -139,7 +157,7 @@ void CollisionDetection::update()
 
 bool CollisionDetection::checkCollisions() const
 {
-    MonitorLockerRead lock_r(_monitor);
+    MonitorLockguardRead lock_r(_monitor);
 
     collision_detection::CollisionRequest collision_request;
     collision_detection::CollisionResult collision_result;
