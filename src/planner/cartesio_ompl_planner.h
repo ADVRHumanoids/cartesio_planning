@@ -46,9 +46,6 @@ public:
     void setStartAndGoalStates(const Eigen::VectorXd& start,
                                const Eigen::VectorXd& goal);
 
-    void setStartAndGoalStates(const Eigen::VectorXd& start,
-                               ompl::base::GoalPtr goal);
-
     void print(std::ostream &out = std::cout);
 
     bool solve(const double timeout, const std::string& planner_type);

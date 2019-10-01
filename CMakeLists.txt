@@ -176,6 +176,19 @@ target_link_libraries(previewer ${OMPL_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
 
+#PREVIEWER
+add_executable(self_collision_robot
+    src/nodes/self_collision_robot.cpp
+    )
+
+target_link_libraries(self_collision_robot ${OMPL_LIBRARIES}
+    yaml-cpp
+    dl
+    cartesio_planning
+    ${XBotInterface_LIBRARIES}
+    ${catkin_LIBRARIES}
+    matlogger2::matlogger2)
+
 # Ik test
 add_executable(goal_generation_test
     src/ik/position_ik_test.cpp
@@ -242,6 +255,12 @@ install(TARGETS ompl_test
     )
 
 install(TARGETS previewer
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+install(TARGETS self_collision_robot
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
