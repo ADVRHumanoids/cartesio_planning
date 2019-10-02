@@ -10,6 +10,12 @@ ConvexHullStability::ConvexHullStability(const XBot::ModelInterface::Ptr model):
 
 }
 
+ConvexHullStability::ConvexHullStability(const XBot::ModelInterface::Ptr model, const PolygonFrames& polyframes):
+    _model(model)
+{
+    setPolygonFrames(polyframes);
+}
+
 bool ConvexHullStability::getConvexHull(PlanarInclusionDetectionBase::Polygon& poly)
 {
     if(_polygon_frames.empty())
@@ -41,7 +47,7 @@ bool ConvexHullStability::checkStability()
         return false;
 
     Eigen::Vector3d com;
-    _model->getCOM(com);
+    com.setZero(); //since the convex hull is omputed wrt com, we check against (0,0)
 
     _inclusion_checker.setPolygon(poly);
     return _inclusion_checker.pointInPolygon(com.head(2));
