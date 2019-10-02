@@ -4,7 +4,8 @@ solver_options:
     control_dt: 0.50 
 
 stack:
-    - ["LeftFoot", "RightFoot", "LeftHand", "RightHand"] #, "TorsoRotZ"]
+    - ["LeftFoot", "RightFoot", "LeftHand", "RightHand"]
+    - ["TorsoRPY"]
 #    - ["Postural"]
     
 constraints: ["JointLimits"] #, "VelocityLimits"]
@@ -30,4 +31,10 @@ RightHand:
     type: "Cartesian"
     distal_link: "TCP_R"
     lambda: 1.0
+
+TorsoRPY:
+    type: "Cartesian"
+    distal_link: "torso"
+    lambda: 1.0
+    indices: [3,4,5]
 
