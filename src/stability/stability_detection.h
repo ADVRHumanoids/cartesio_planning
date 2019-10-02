@@ -30,9 +30,16 @@ public:
     typedef std::list<std::string> PolygonFrames;
 
     ConvexHullStability(const XBot::ModelInterface::Ptr model);
+    ConvexHullStability(const XBot::ModelInterface::Ptr model, const PolygonFrames& polyframes);
+
 
     void setPolygonFrames(const PolygonFrames& pf);
+    /**
+     * @brief checkStability
+     * @return true if stable
+     */
     bool checkStability();
+
     bool getConvexHull(PlanarInclusionDetectionBase::Polygon& poly);
 private:
     convex_hull _huller;

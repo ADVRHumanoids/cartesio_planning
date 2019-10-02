@@ -175,6 +175,19 @@ bool CollisionDetection::checkCollisions() const
     return collision_result.collision;
 }
 
+bool CollisionDetection::checkSelfCollisions() const
+{
+    MonitorLockguardRead lock_r(_monitor);
+
+    collision_detection::CollisionRequest collision_request;
+    collision_detection::CollisionResult collision_result;
+
+    _monitor->getPlanningScene()->checkSelfCollision(collision_request, collision_result);
+
+
+    return collision_result.collision;
+}
+
 std::vector<std::string> CollisionDetection::getCollidingLinks() const
 {
     MonitorLockguardRead lock_r(_monitor);
