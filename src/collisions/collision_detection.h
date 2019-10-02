@@ -49,6 +49,13 @@ public:
      */
     bool checkCollisions() const;
 
+    /**
+     * @brief Get the names of the links that are involved in collisions for the current state
+     */
+    std::vector<std::string> getCollidingLinks() const;
+
+
+
 private:
 
     ModelInterface::ConstPtr _model;

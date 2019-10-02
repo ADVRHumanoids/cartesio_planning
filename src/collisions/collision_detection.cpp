@@ -92,6 +92,13 @@ void CollisionDetection::startMonitor()
 
 }
 
+void CollisionDetection::stopMonitor()
+{
+    _monitor->stopSceneMonitor();
+    _monitor->stopWorldGeometryMonitor();
+    _monitor->stopPublishingPlanningScene();
+}
+
 void CollisionDetection::update()
 {
     // acquire lock for thread-safe access to the planning scene
@@ -112,8 +119,8 @@ void CollisionDetection::update()
         auto jtype = jmodel->type; // joint type
 
         if(jtype == urdf::Joint::REVOLUTE  ||
-           jtype == urdf::Joint::PRISMATIC ||
-           jtype == urdf::Joint::CONTINUOUS)
+                jtype == urdf::Joint::PRISMATIC ||
+                jtype == urdf::Joint::CONTINUOUS)
         {
             robot_state.setJointPositions(jname, {q.at(jname)}); // joint value is a simple scalar
         }
@@ -160,11 +167,22 @@ bool CollisionDetection::checkCollisions() const
     MonitorLockguardRead lock_r(_monitor);
 
     collision_detection::CollisionRequest collision_request;
+
     collision_detection::CollisionResult collision_result;
 
     _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
 
     return collision_result.collision;
+}
+
+std::vector<std::string> CollisionDetection::getCollidingLinks() const
+{
+    MonitorLockguardRead lock_r(_monitor);
+
+    std::vector<std::string> links;
+    _monitor->getPlanningScene()->getCollidingLinks(links);
+
+    return links;
 }
 
 
