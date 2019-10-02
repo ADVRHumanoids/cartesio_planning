@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0)
 project(cartesio_planning)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -31,6 +31,14 @@ find_package(ompl 1.5.0 REQUIRED)
 find_package(XBotInterface REQUIRED)
 
 find_package(matlogger2 REQUIRED)
+
+find_package(OpenSoT REQUIRED)
+
+FIND_PACKAGE(PCL 1.7 QUIET COMPONENTS   common
+                                        filters
+                                        surface
+                                        search
+                                        io)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -132,9 +140,11 @@ include_directories(
     src/
     include
     ${OMPL_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS} # note: must be the last in the include list
     )
+
 
 # Main library
 add_library(cartesio_planning SHARED
@@ -148,7 +158,11 @@ add_library(cartesio_planning SHARED
 target_link_libraries(cartesio_planning
     ${OMPL_LIBRARIES}
     ${cartesian_interface_LIBRARIES}
-    ${catkin_LIBRARIES})
+    ${catkin_LIBRARIES} )
+
+add_library(stability_checker SHARED src/stability/stability_detection.cpp)
+
+target_link_libraries(stability_checker ${OpenSoT_LIBRARIES} ${PCL_LIBRARIES})
 
 # Test executable
 add_executable(ompl_test
@@ -273,6 +287,13 @@ install(TARGETS goal_generation_test
     )
 
 install(TARGETS cartesio_planning
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+
+install(TARGETS stability_checker
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
