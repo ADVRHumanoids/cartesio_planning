@@ -187,6 +187,21 @@ ompl::base::StateSpacePtr OmplPlanner::make_constrained_space(const std::string 
     throw std::runtime_error("Planner type '" + css_type + "' not valid!");
 }
 
+ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
+{
+    // TBD
+}
+
+ompl::base::StateSpacePtr OmplPlanner::make_tangent_bundle()
+{
+    // TBD
+}
+
+ompl::base::StateSpacePtr OmplPlanner::make_css()
+{
+    // TBD
+}
+
 
 std::vector<Eigen::VectorXd> OmplPlanner::getSolutionPath() const
 {
