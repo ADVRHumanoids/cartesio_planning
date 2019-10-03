@@ -6,14 +6,30 @@
 #include <constraints/validity_predicate_aggregate.h>
 #include <functional>
 #include <collisions/collision_detection.h>
+#include "goal/goal_sampler.h"
+
+#include <std_srvs/Empty.h>
 
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
+
+XBot::Cartesian::Planning::GoalSamplerBase::Ptr goal_sampler;
+
+bool goal_sampler_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+    Eigen::VectorXd q;
+    if(!goal_sampler->sampleGoal(q, 10)){
+        ROS_ERROR("Approximate solution found!");
+        return false;
+    }
+    return true;
+}
 
 int main(int argc, char ** argv)
 {
     ros::init(argc, argv, "position_ik_test");
     ros::NodeHandle n("~");
+    ros::NodeHandle nh("planner");
 
     // obtain robot model from param server
     auto cfg = LoadOptions(LoadFrom::PARAM);
@@ -55,16 +71,10 @@ int main(int argc, char ** argv)
     XBot::Cartesian::Planning::PositionCartesianSolver::Ptr solver =
             std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(ci, ik_prob);
 
+    ros::ServiceServer service = nh.advertiseService("goal_sampler_service", goal_sampler_service);
+
     // construct ros server class (mainly for markers and to publish TFs)
     RosServerClass ros_server(ci, model);
-
-    // iteration callback (e.g. to step through the solution)
-    solver->setIterCallback([&ros_server]()
-    {
-//        ros_server.run();
-//        usleep(1e5);
-    }
-    );
 
 
     XBot::Cartesian::Planning::ConvexHullStability::PolygonFrames polyframes;
@@ -81,77 +91,28 @@ int main(int argc, char ** argv)
 
     XBot::Cartesian::Planning::CollisionDetection collision(model);
 
+    auto check_collision = [&collision]()
+    {
+        collision.update();
+        return collision.checkSelfCollisions();
+    };
 
-    // generate random goals respecting constraints
-    int iter = 0;
-    int failures = 0;
-    auto t_start = ros::Time::now();
-    auto t_print = t_start + ros::Duration(1.0);
 
-    bool stable = false;
 
     XBot::Cartesian::Planning::ValidityPredicateAggregate valid;
     valid.add(std::bind(&XBot::Cartesian::Planning::ConvexHullStability::checkStability, ch), "convex_hull");
-    valid.add(std::bind(&XBot::Cartesian::Planning::CollisionDetection::checkSelfCollisions, collision),
-              "self_collisions", false);
+    valid.add(check_collision, "self_collisions", false);
 
+    goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSamplerBase>(solver);
+    goal_sampler->setValidityCheker(std::bind(&XBot::Cartesian::Planning::ValidityPredicateAggregate::checkAll, valid));
+
+    ros::Rate rate(100);
     while(ros::ok())
     {
-        iter++;
-
-        Eigen::VectorXd qrand;
-        if(!stable)
-        {
-            // generate random configuration
-            qrand.setRandom(model->getJointNum()); // uniform in -1 < x < 1
-            qrand = (qrand.array() + 1)/2.0; // uniform in 0 < x < 1
-
-            qrand = qmin + qrand.cwiseProduct(qmax-qmin); // uniform in qmin < x < qmax
-            qrand.head<6>().setRandom(); // we keep virtual joints between -1 and 1 (todo: improve)
-        }
-        else
-            model->getJointPosition(qrand);
-
-
-        // set it to the model
-        model->setJointPosition(qrand);
-        model->update();
-        collision.update();
-
-        // solve position-level ik
-        if(!solver->solve())
-        {
-            failures++;
-        }
-        else
-        {
-            // this publishes TF under ci/ namespace
-
-
-            stable = valid.checkAll();
-        }
-
         ros_server.run();
 
-        // every second we print statistics (generated states per second)
-        auto now = ros::Time::now();
-        double success_rate = 1.0-double(failures)/iter;
-        if(now > t_print)
-        {
-            t_print = now + ros::Duration(1.0);
-            printf("Producing %f goals per second \n"
-                   "Success rate is %f \n",
-                   (iter-failures)/(t_print-now).toSec(),
-                   success_rate);
-            iter = 0;
-            failures = 0;
-        }
-//        if(success_rate <= 0.){
-//            std::cout<<"RESETTING SOLVER"<<std::endl;
-//            solver = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(ci, ik_prob);
-//        }
-
-
+        ros::spinOnce();
+        rate.sleep();
     }
 
 }
