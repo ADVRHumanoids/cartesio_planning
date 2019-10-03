@@ -14,6 +14,7 @@ using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
 
 XBot::Cartesian::Planning::GoalSamplerBase::Ptr goal_sampler;
+XBot::ModelInterface::Ptr model;
 
 bool goal_sampler_service(cartesio_planning::CartesioGoal::Request& req, cartesio_planning::CartesioGoal::Response& res)
 {
@@ -25,6 +26,13 @@ bool goal_sampler_service(cartesio_planning::CartesioGoal::Request& req, cartesi
     }
     res.status.val = res.status.EXACT_SOLUTION;
     res.status.msg.data = "EXACT_SOLUTION";
+
+    res.sampled_goal.name = model->getEnabledJointNames();
+    res.sampled_goal.position.resize(q.size());
+    Eigen::VectorXd::Map(&res.sampled_goal.position[0], q.size()) = q;
+    res.sampled_goal.header.stamp = ros::Time::now();
+
+
     return true;
 }
 
@@ -36,7 +44,7 @@ int main(int argc, char ** argv)
 
     // obtain robot model from param server
     auto cfg = LoadOptions(LoadFrom::PARAM);
-    auto model = XBot::ModelInterface::getModel(cfg);
+    model = XBot::ModelInterface::getModel(cfg);
 
     Eigen::VectorXd qhome, qmin, qmax;
     model->getRobotState("home", qhome);
