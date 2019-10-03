@@ -73,6 +73,7 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q, const unsigned int time_out
 
     bool goal_found = false;
 
+    double T = 0.0;
     while(!goal_found)
     {
         auto tic = std::chrono::high_resolution_clock::now();
@@ -94,7 +95,8 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q, const unsigned int time_out
         auto toc = std::chrono::high_resolution_clock::now();
 
         std::chrono::duration<float> fsec = toc-tic;
-        if(fsec.count() >= time_out_sec)
+        T += fsec.count();
+        if(T >= time_out_sec)
             return false;
     }
 
