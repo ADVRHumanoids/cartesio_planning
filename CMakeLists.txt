@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
     rosconsole
     std_msgs
     trajectory_msgs
+    sensor_msgs
     message_generation
     kdl_parser
     robot_state_publisher
@@ -94,7 +95,7 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
     DEPENDENCIES
-    std_msgs  # Or other packages containing msgs
+    std_msgs  sensor_msgs# Or other packages containing msgs
     )
 
 ################################################
