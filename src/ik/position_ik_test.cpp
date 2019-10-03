@@ -8,20 +8,23 @@
 #include <collisions/collision_detection.h>
 #include "goal/goal_sampler.h"
 
-#include <std_srvs/Empty.h>
+#include "cartesio_planning/CartesioGoal.h"
 
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
 
 XBot::Cartesian::Planning::GoalSamplerBase::Ptr goal_sampler;
 
-bool goal_sampler_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+bool goal_sampler_service(cartesio_planning::CartesioGoal::Request& req, cartesio_planning::CartesioGoal::Response& res)
 {
     Eigen::VectorXd q;
-    if(!goal_sampler->sampleGoal(q, 10)){
-        ROS_ERROR("Approximate solution found!");
+    if(!goal_sampler->sampleGoal(q, req.time)){
+        res.status.val = res.status.TIMEOUT;
+        res.status.msg.data = "TIMEOUT";
         return false;
     }
+    res.status.val = res.status.EXACT_SOLUTION;
+    res.status.msg.data = "EXACT_SOLUTION";
     return true;
 }
 
