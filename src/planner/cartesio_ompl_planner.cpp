@@ -24,10 +24,12 @@
 using namespace XBot::Cartesian::Planning;
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
-                         const Eigen::VectorXd& bounds_max):
+                         const Eigen::VectorXd& bounds_max,
+                         YAML::Node options):
     _bounds(bounds_min.size()),
     _size(bounds_min.size()),
-    _solved(ompl::base::PlannerStatus::UNKNOWN)
+    _solved(ompl::base::PlannerStatus::UNKNOWN),
+    _options(options)
 {
     _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::REALVECTOR, _size);
 
@@ -50,11 +52,13 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
-                         ompl::base::ConstraintPtr constraint):
+                         ompl::base::ConstraintPtr constraint,
+                         YAML::Node options):
     _bounds(bounds_min.size()),
     _constraint(constraint),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
-    _size(bounds_min.size())
+    _size(bounds_min.size()),
+    _options(options)
 {
     _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::CONSTRAINED, _size);
 
@@ -72,11 +76,6 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
     // setup problem definition
     setup_problem_definition();
-}
-
-void OmplPlanner::setYaml(YAML::Node options)
-{
-    _options = options;
 }
 
 void OmplPlanner::set_bounds(const Eigen::VectorXd& bounds_min,
@@ -159,11 +158,14 @@ ompl::base::StateSpacePtr OmplPlanner::make_constrained_space()
 
     std::string css_type = "Atlas";
 
+    std::cout << _options << std::endl;
+
     if(_options && _options["StateSpace"] && _options["StateSpace"]["type"])
     {
         css_type = _options["StateSpace"]["type"].as<std::string>();
     }
-    else {
+    else
+    {
         std::cout << "No StateSpace/type found, using default '" << css_type << "'" << std::endl;
     }
 

@@ -33,13 +33,13 @@ public:
     typedef std::function<bool(const Eigen::VectorXd&)> StateValidityPredicate;
 
     OmplPlanner(const Eigen::VectorXd& bounds_min,
-                const Eigen::VectorXd& bounds_max);
+                const Eigen::VectorXd& bounds_max,
+                YAML::Node options);
 
     OmplPlanner(const Eigen::VectorXd& bounds_min,
                 const Eigen::VectorXd& bounds_max,
-                ompl::base::ConstraintPtr constraint);
-
-    void setYaml(YAML::Node options);
+                ompl::base::ConstraintPtr constraint,
+                YAML::Node options);
 
     void setStateValidityPredicate(StateValidityPredicate svc);
 

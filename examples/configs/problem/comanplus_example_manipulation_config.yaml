@@ -4,4 +4,4 @@ RRTstar:
     Range: 1000
 
 StateSpace:
-    type: "DioLadro"
+    type: "Atlas"

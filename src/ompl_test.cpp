@@ -112,7 +112,18 @@ int main(int argc, char ** argv)
     qmax.head<6>() << -qmin.head<6>();
 
     auto constraint = std::make_shared<XBot::Cartesian::Planning::CartesianConstraint>(solver_constraint);
-    planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, constraint);
+
+    YAML::Node yaml_opt;
+
+    if(nhpr.hasParam("planner_options"))
+    {
+        std::string planner_options_str;
+        nhpr.getParam("planner_options", planner_options_str);
+        yaml_opt = YAML::Load(planner_options_str);
+    }
+
+
+    planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, constraint, yaml_opt);
 
     RosServerClass ros_server(ci_goal, model);
 
@@ -188,13 +199,6 @@ int main(int argc, char ** argv)
     ros::Publisher pub_marker = nh.advertise<visualization_msgs::MarkerArray>("obstacles", 10);
     ros::Publisher pub = nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 10, true);
 
-    if(nhpr.hasParam("planner_options"))
-    {
-        std::string planner_options_str;
-        nhpr.getParam("planner_options", planner_options_str);
-        auto yaml_opt = YAML::Load(planner_options_str);
-        planner->setYaml(yaml_opt);
-    }
 
     while (ros::ok())
     {
