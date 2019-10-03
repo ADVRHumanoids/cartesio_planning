@@ -77,12 +77,15 @@ FIND_PACKAGE(PCL 1.7 QUIET COMPONENTS   common
 add_message_files(
     FILES
     CartesioPlannerStatus.msg
+    CartesioPlannerGoalStatus.msg
     )
 
 ## Generate services in the 'srv' folder
 add_service_files(
     FILES
     CartesioPlanner.srv
+    CartesioGoal.srv
+    SetContactFrames.srv
     )
 
 ## Generate actions in the 'action' folder
@@ -95,7 +98,7 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
     DEPENDENCIES
-    std_msgs  sensor_msgs# Or other packages containing msgs
+    std_msgs sensor_msgs# Or other packages containing msgs
     )
 
 ################################################

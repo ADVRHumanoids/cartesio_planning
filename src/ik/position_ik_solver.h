@@ -2,6 +2,8 @@
 #define __CARTESIO_PLANNING_POSITION_IK_SOLVER_H__
 
 #include <cartesian_interface/CartesianInterfaceImpl.h>
+#include <cartesian_interface/ros/RosServerClass.h>
+
 
 namespace XBot { namespace Cartesian { namespace Planning {
 
@@ -87,6 +89,11 @@ public:
      */
     double getErrorThreshold() const;
 
+    void setRosServerClass(RosServerClass::Ptr ros_server)
+    {
+        _ros_server = ros_server;
+    }
+
 private:
 
     struct TaskData
@@ -132,6 +139,8 @@ private:
     double _err_tol;
 
     std::function<void(void)> _iter_callback;
+
+    RosServerClass::Ptr _ros_server;
 
 };
 
