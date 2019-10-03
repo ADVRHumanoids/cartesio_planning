@@ -72,11 +72,12 @@ private:
     ompl::base::PlannerPtr make_planner(const std::string& planner_type);
     ompl::base::PlannerPtr make_RRTstar();
 
-    ompl::base::StateSpacePtr make_constrained_space(const std::string& css_type);
+    ompl::base::StateSpacePtr make_constrained_space();
     ompl::base::StateSpacePtr make_atlas_space();
     ompl::base::StateSpacePtr make_tangent_bundle();
-    ompl::base::StateSpacePtr make_css();
+    ompl::base::StateSpacePtr make_projected_space();
 
+    ompl::base::ConstraintPtr _constraint;
 
     ompl::base::RealVectorBounds _bounds;
     std::shared_ptr<ompl::base::RealVectorStateSpace> _ambient_space;
@@ -88,12 +89,10 @@ private:
 
     std::shared_ptr<ompl::base::StateSpace> _space;
     std::function<void(void)> _on_reset_space;
-    std::function<void(const Eigen::VectorXd& start,
-                       const Eigen::VectorXd& goal)> _on_set_start_goal;
+    std::function<void(const ompl::base::State* start,
+                       const ompl::base::State* goal)> _on_set_start_goal;
 
     unsigned int _size;
-
-
 
     std::shared_ptr<StateWrapper> _sw;
 

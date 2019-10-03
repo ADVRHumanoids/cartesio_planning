@@ -52,8 +52,9 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
                          ompl::base::ConstraintPtr constraint):
     _bounds(bounds_min.size()),
-    _size(bounds_min.size()),
-    _solved(ompl::base::PlannerStatus::UNKNOWN)
+    _constraint(constraint),
+    _solved(ompl::base::PlannerStatus::UNKNOWN),
+    _size(bounds_min.size())
 {
     _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::CONSTRAINED, _size);
 
@@ -61,7 +62,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _ambient_space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
 
     // constrained state space
-    _space = std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, constraint);
+    _space = make_constrained_space();
 
     // set bounds to state space
     set_bounds(bounds_min, bounds_max);
@@ -79,7 +80,7 @@ void OmplPlanner::setYaml(YAML::Node options)
 }
 
 void OmplPlanner::set_bounds(const Eigen::VectorXd& bounds_min,
-                            const Eigen::VectorXd& bounds_max)
+                             const Eigen::VectorXd& bounds_max)
 {
     if(bounds_min.size() != _size || bounds_max.size() != _size)
     {
@@ -127,13 +128,13 @@ ompl::base::PlannerPtr OmplPlanner::make_RRTstar()
 #define PARSE_OPTION(name, type) \
     if(opt[#name]) \
     { \
-        type value = opt[#name].as<type>(); \
-        std::cout << "Found " #type " option '" #name "' with value = " << value << std::endl; \
-        planner->set##name(value); \
-    } \
+    type value = opt[#name].as<type>(); \
+    std::cout << "Found " #type " option '" #name "' with value = " << value << std::endl; \
+    planner->set##name(value); \
+} \
     else { \
-        std::cout << "No option " #name " specified" << std::endl; \
-    } \
+    std::cout << "No option " #name " specified" << std::endl; \
+} \
     /* End macro for option parsing */
 
     auto planner = std::make_shared<ompl::geometric::RRTstar>(_space_info);
@@ -153,27 +154,37 @@ ompl::base::PlannerPtr OmplPlanner::make_RRTstar()
     return planner;
 }
 
-ompl::base::StateSpacePtr OmplPlanner::make_constrained_space(const std::string & css_type)
+ompl::base::StateSpacePtr OmplPlanner::make_constrained_space()
 {
+
+    std::string css_type = "Atlas";
+
+    if(_options && _options["StateSpace"] && _options["StateSpace"]["type"])
+    {
+        css_type = _options["StateSpace"]["type"].as<std::string>();
+    }
+    else {
+        std::cout << "No StateSpace/type found, using default '" << css_type << "'" << std::endl;
+    }
 
 #define ADD_CSS_AND_IF(css_name) \
     valid_css.push_back(css_name); if(css_type == css_name)
 
     std::vector<std::string> valid_css;
 
-    ADD_CSS_AND_IF("AtlasStateSpace")
+    ADD_CSS_AND_IF("Atlas")
     {
         return make_atlas_space();
     }
 
-    ADD_CSS_AND_IF("TangentBundleStateSpace")
+    ADD_CSS_AND_IF("TangentBundle")
     {
         return make_tangent_bundle();
     }
 
-    ADD_CSS_AND_IF("ConstrainedStateSpace")
+    ADD_CSS_AND_IF("Projected")
     {
-        return make_tangent_bundle();
+        return make_projected_space();
     }
 
     std::cout << "Valid constrained state spaces are \n";
@@ -189,19 +200,36 @@ ompl::base::StateSpacePtr OmplPlanner::make_constrained_space(const std::string 
 
 ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
 {
-    // TBD
+    _on_set_start_goal = [this](const ompl::base::State* start,
+            const ompl::base::State* goal)
+    {
+        auto atlas_ss = std::dynamic_pointer_cast<ompl::base::AtlasStateSpace>(_space);
+
+        if(atlas_ss)
+        {
+            atlas_ss->anchorChart(start);
+            atlas_ss->anchorChart(goal);
+        }
+        else
+        {
+            throw std::runtime_error("dynamic_pointer_cast to 'ompl::base::AtlasStateSpace' failed");
+        }
+    };
+
+    return std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, _constraint);
 }
 
 ompl::base::StateSpacePtr OmplPlanner::make_tangent_bundle()
 {
-    // TBD
+    make_atlas_space();
+
+    return std::make_shared<ompl::base::TangentBundleStateSpace>(_ambient_space, _constraint);
 }
 
-ompl::base::StateSpacePtr OmplPlanner::make_css()
+ompl::base::StateSpacePtr OmplPlanner::make_projected_space()
 {
-    // TBD
+    return std::make_shared<ompl::base::ProjectedStateSpace>(_ambient_space, _constraint);
 }
-
 
 std::vector<Eigen::VectorXd> OmplPlanner::getSolutionPath() const
 {
@@ -253,23 +281,17 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
     // create ompl start and goal variables
     ompl::base::ScopedState<> ompl_start(_space);
     ompl::base::ScopedState<> ompl_goal(_space);
-
-
     _sw->setState(ompl_start.get(), start);
     _sw->setState(ompl_goal.get(), goal);
 
-
+    // this resets problem definition
     setup_problem_definition();
 
     // set start and goal
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal);
 
-    auto atlas_ss = std::dynamic_pointer_cast<ompl::base::AtlasStateSpace>(_space);
-    if(atlas_ss)
-    {
-        atlas_ss->anchorChart(ompl_start.get());
-        atlas_ss->anchorChart(ompl_goal.get());
-    }
+    // trigger callback
+    _on_set_start_goal(ompl_start.get(), ompl_goal.get());
 
 }
 
