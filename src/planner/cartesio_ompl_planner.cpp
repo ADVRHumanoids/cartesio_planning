@@ -12,6 +12,11 @@
 #include <ompl/geometric/planners/rrt/SORRTstar.h>
 #include <ompl/geometric/planners/rrt/TRRT.h>
 #include <ompl/geometric/planners/rrt/VFRRT.h>
+#include <ompl/geometric/planners/prm/LazyPRM.h>
+#include <ompl/geometric/planners/prm/PRMstar.h>
+#include <ompl/geometric/planners/prm/PRM.h>
+#include <ompl/geometric/planners/prm/LazyPRMstar.h>
+
 
 #include "cartesio_ompl_planner.h"
 #include <type_traits>
@@ -29,15 +34,17 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     // create euclidean state space
     _ambient_space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
 
-    // set bounds to state space
-    setBounds(bounds_min, bounds_max);
-
+    // unconstrained case -> state space = ambient state space
     _space = _ambient_space;
+
+    // set bounds to state space
+    set_bounds(bounds_min, bounds_max);
 
     // create space information
     _space_info = std::make_shared<ompl::base::SpaceInformation>(_space);
 
-    setUpProblemDefinition();
+    // setup problem definition
+    setup_problem_definition();
 
 }
 
@@ -50,17 +57,20 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 {
     _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::CONSTRAINED, _size);
 
-    // create euclidean state space
+    // create euclidean state space as ambient space
     _ambient_space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
 
-    // set bounds to state space
-    setBounds(bounds_min, bounds_max);
-
+    // constrained state space
     _space = std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, constraint);
 
+    // set bounds to state space
+    set_bounds(bounds_min, bounds_max);
+
+    // create **constrained** space information
     _space_info = std::make_shared<ompl::base::ConstrainedSpaceInformation>(_space);
 
-    setUpProblemDefinition();
+    // setup problem definition
+    setup_problem_definition();
 }
 
 void OmplPlanner::setYaml(YAML::Node options)
@@ -68,7 +78,7 @@ void OmplPlanner::setYaml(YAML::Node options)
     _options = options;
 }
 
-void OmplPlanner::setBounds(const Eigen::VectorXd& bounds_min,
+void OmplPlanner::set_bounds(const Eigen::VectorXd& bounds_min,
                             const Eigen::VectorXd& bounds_max)
 {
     if(bounds_min.size() != _size || bounds_max.size() != _size)
@@ -91,7 +101,7 @@ void OmplPlanner::setBounds(const Eigen::VectorXd& bounds_min,
 
 }
 
-void OmplPlanner::setUpProblemDefinition()
+void OmplPlanner::setup_problem_definition()
 {
     auto vss_alloc = [](const ompl::base::SpaceInformation * si)
     {
@@ -109,6 +119,11 @@ void OmplPlanner::setUpProblemDefinition()
     _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(_space_info));
 }
 
+
+ompl::base::PlannerPtr OmplPlanner::make_RRTstar()
+{
+
+    /* Macro for option parsing */
 #define PARSE_OPTION(name, type) \
     if(opt[#name]) \
     { \
@@ -119,9 +134,8 @@ void OmplPlanner::setUpProblemDefinition()
     else { \
         std::cout << "No option " #name " specified" << std::endl; \
     } \
+    /* End macro for option parsing */
 
-OmplPlanner::PlannerPtr OmplPlanner::makeRRTstar()
-{
     auto planner = std::make_shared<ompl::geometric::RRTstar>(_space_info);
 
     if(!_options || !_options["RRTstar"])
@@ -137,6 +151,40 @@ OmplPlanner::PlannerPtr OmplPlanner::makeRRTstar()
     PARSE_OPTION(KNearest, bool);
 
     return planner;
+}
+
+ompl::base::StateSpacePtr OmplPlanner::make_constrained_space(const std::string & css_type)
+{
+
+#define ADD_CSS_AND_IF(css_name) \
+    valid_css.push_back(css_name); if(css_type == css_name)
+
+    std::vector<std::string> valid_css;
+
+    ADD_CSS_AND_IF("AtlasStateSpace")
+    {
+        return make_atlas_space();
+    }
+
+    ADD_CSS_AND_IF("TangentBundleStateSpace")
+    {
+        return make_tangent_bundle();
+    }
+
+    ADD_CSS_AND_IF("ConstrainedStateSpace")
+    {
+        return make_tangent_bundle();
+    }
+
+    std::cout << "Valid constrained state spaces are \n";
+    std::for_each(valid_css.begin(), valid_css.end(),
+                  [](std::string p)
+    {
+        std::cout << " - " << p << "\n";
+    });
+    std::cout.flush();
+
+    throw std::runtime_error("Planner type '" + css_type + "' not valid!");
 }
 
 
@@ -196,7 +244,7 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
     _sw->setState(ompl_goal.get(), goal);
 
 
-    setUpProblemDefinition();
+    setup_problem_definition();
 
     // set start and goal
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal);
@@ -211,17 +259,44 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
 }
 
 
+void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
+                                        std::shared_ptr<ompl::base::GoalSampleableRegion> goal)
+{
+    if(start.size() != _size)
+    {
+        throw std::invalid_argument("Invalid start/goal size: "
+                                    "start size is " + std::to_string(start.size()) +
+                                    ", expected size is " + std::to_string(_size));
+    }
+
+    // create ompl start and goal variables
+    ompl::base::ScopedState<> ompl_start(_space);
+    _sw->setState(ompl_start.get(), start);
+
+
+    // set start and goal
+    _pdef->clearStartStates();
+    _pdef->addStartState(ompl_start);
+    _pdef->setGoal(goal);
+
+    auto atlas_ss = std::dynamic_pointer_cast<ompl::base::AtlasStateSpace>(_space);
+    if(atlas_ss)
+    {
+        atlas_ss->anchorChart(ompl_start.get());
+        ompl::base::ScopedState<> ompl_goal(_space);
+
+        for(int i = 0; i < 100; i++)
+        {
+            goal->sampleGoal(ompl_goal.get());
+            atlas_ss->anchorChart(ompl_goal.get());
+        }
+    }
+}
+
 bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 {
 
-    try
-    {
-        _planner = plannerFactory(planner_type);
-    }
-    catch(std::exception& e)
-    {
-        std::cout<<e.what()<<std::endl;
-    }
+    _planner = make_planner(planner_type);
 
 
     if(_planner)
@@ -262,77 +337,98 @@ ompl::base::PlannerStatus OmplPlanner::getPlannerStatus() const
     return _solved;
 }
 
-#define ADD_AND_IF(planner_name) \
+
+ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type)
+{
+
+#define ADD_PLANNER_AND_IF(planner_name) \
     valid_planners.push_back(planner_name); if(planner_type == planner_name)
 
-
-std::shared_ptr<ompl::base::Planner> OmplPlanner::plannerFactory(const std::string &planner_type)
-{
     std::vector<std::string> valid_planners;
 
-    ADD_AND_IF("BiTRRT")
+    ADD_PLANNER_AND_IF("BiTRRT")
     {
         return std::make_shared<ompl::geometric::BiTRRT>(_space_info);
     }
 
-    ADD_AND_IF("InformedRRTstar")
+    ADD_PLANNER_AND_IF("InformedRRTstar")
     {
         return std::make_shared<ompl::geometric::InformedRRTstar>(_space_info);
     }
 
-    ADD_AND_IF("LazyLBTRRT")
+    ADD_PLANNER_AND_IF("LazyLBTRRT")
     {
         return std::make_shared<ompl::geometric::LazyLBTRRT>(_space_info);
     }
 
-    ADD_AND_IF("LazyRRT")
+    ADD_PLANNER_AND_IF("LazyRRT")
     {
         return std::make_shared<ompl::geometric::LazyRRT>(_space_info);
     }
 
-    ADD_AND_IF("LBTRRT")
+    ADD_PLANNER_AND_IF("LBTRRT")
     {
         return std::make_shared<ompl::geometric::LBTRRT>(_space_info);
     }
 
-    ADD_AND_IF("pRRT")
+    ADD_PLANNER_AND_IF("pRRT")
     {
         return std::make_shared<ompl::geometric::pRRT>(_space_info);
     }
 
-    ADD_AND_IF("RRT")
+    ADD_PLANNER_AND_IF("RRT")
     {
         return std::make_shared<ompl::geometric::RRT>(_space_info);
     }
 
-    ADD_AND_IF("RRTConnect")
+    ADD_PLANNER_AND_IF("RRTConnect")
     {
         return std::make_shared<ompl::geometric::RRTConnect>(_space_info);
     }
 
-    ADD_AND_IF("RRTsharp")
+    ADD_PLANNER_AND_IF("RRTsharp")
     {
         return std::make_shared<ompl::geometric::RRTsharp>(_space_info);
     }
 
-    ADD_AND_IF("RRTstar")
+    ADD_PLANNER_AND_IF("RRTstar")
     {
-        return makeRRTstar();
+        return make_RRTstar();
     }
 
-    ADD_AND_IF("RRTXstatic")
+    ADD_PLANNER_AND_IF("RRTXstatic")
     {
         return std::make_shared<ompl::geometric::RRTXstatic>(_space_info);
     }
 
-    ADD_AND_IF("SORRTstar")
+    ADD_PLANNER_AND_IF("SORRTstar")
     {
         return std::make_shared<ompl::geometric::SORRTstar>(_space_info);
     }
 
-    ADD_AND_IF("TRRT")
+    ADD_PLANNER_AND_IF("TRRT")
     {
         return std::make_shared<ompl::geometric::TRRT>(_space_info);
+    }
+
+    ADD_PLANNER_AND_IF("PRM")
+    {
+        return std::make_shared<ompl::geometric::PRM>(_space_info);
+    }
+
+    ADD_PLANNER_AND_IF("PRMstar")
+    {
+        return std::make_shared<ompl::geometric::PRMstar>(_space_info);
+    }
+
+    ADD_PLANNER_AND_IF("LazyPRMstar")
+    {
+        return std::make_shared<ompl::geometric::LazyPRMstar>(_space_info);
+    }
+
+    ADD_PLANNER_AND_IF("LazyPRM")
+    {
+        return std::make_shared<ompl::geometric::LazyPRM>(_space_info);
     }
 
     std::cout << "Valid planners are \n";

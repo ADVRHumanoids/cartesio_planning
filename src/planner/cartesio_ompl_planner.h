@@ -46,6 +46,9 @@ public:
     void setStartAndGoalStates(const Eigen::VectorXd& start,
                                const Eigen::VectorXd& goal);
 
+    void setStartAndGoalStates(const Eigen::VectorXd& start,
+                               std::shared_ptr<ompl::base::GoalSampleableRegion> goal);
+
     void print(std::ostream &out = std::cout);
 
     bool solve(const double timeout, const std::string& planner_type);
@@ -58,18 +61,21 @@ public:
 
     StateWrapper getStateWrapper() const;
 
+
 private:
 
-    typedef std::shared_ptr<ompl::base::Planner> PlannerPtr;
-
-    void setBounds(const Eigen::VectorXd& bounds_min,
+    void set_bounds(const Eigen::VectorXd& bounds_min,
                    const Eigen::VectorXd& bounds_max);
 
-    void setUpProblemDefinition();
+    void setup_problem_definition();
 
-    PlannerPtr plannerFactory(const std::string& planner_type);
-    PlannerPtr makeRRTstar();
+    ompl::base::PlannerPtr make_planner(const std::string& planner_type);
+    ompl::base::PlannerPtr make_RRTstar();
 
+    ompl::base::StateSpacePtr make_constrained_space(const std::string& css_type);
+    ompl::base::StateSpacePtr make_atlas_space();
+    ompl::base::StateSpacePtr make_tangent_bundle();
+    ompl::base::StateSpacePtr make_css();
 
 
     ompl::base::RealVectorBounds _bounds;
@@ -81,7 +87,9 @@ private:
     ompl::base::PlannerStatus _solved;
 
     std::shared_ptr<ompl::base::StateSpace> _space;
-
+    std::function<void(void)> _on_reset_space;
+    std::function<void(const Eigen::VectorXd& start,
+                       const Eigen::VectorXd& goal)> _on_set_start_goal;
 
     unsigned int _size;
 
