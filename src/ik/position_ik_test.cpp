@@ -46,49 +46,29 @@ bool goal_sampler_service(cartesio_planning::CartesioGoal::Request& req, cartesi
 
 bool set_contact_frames_service(cartesio_planning::SetContactFrames::Request& req, cartesio_planning::SetContactFrames::Response& res)
 {
+    polyframes.clear();
+    for(unsigned int i = 0; i < req.frames_in_contact.size(); ++i)
+        polyframes.push_back(req.frames_in_contact[i]);
+
+
     if(req.action.data() == req.CLEAR)
     {
-        polyframes.clear();
-        for(unsigned int i = 0; i < req.frames_in_contact.size(); ++i)
-            polyframes.push_back(req.frames_in_contact[i]);
-
         ch->setPolygonFrames(polyframes);
-        ch_viz->setPolygonFrames(polyframes);
-
-
         res.result.data = true;
-        return true;
     }
     else if(req.action.data() == req.ADD)
     {
-        for(unsigned int i = 0; i < req.frames_in_contact.size(); ++i)
-            polyframes.push_back(req.frames_in_contact[i]);
-
-        ch->setPolygonFrames(polyframes);
-        ch_viz->setPolygonFrames(polyframes);
-
+        ch->addPolygonFrames(polyframes);
         res.result.data = true;
-        return true;
     }
     else if(req.action.data() == req.REMOVE)
     {
-        for(unsigned int i = 0; i < req.frames_in_contact.size(); ++i)
-        {
-            auto it = std::find(polyframes.begin(), polyframes.end(), req.frames_in_contact[i]);
-            if(it != polyframes.end())
-                polyframes.erase(it);
-        }
-
-        ch->setPolygonFrames(polyframes);
-        ch_viz->setPolygonFrames(polyframes);
-
+        ch->removePolygonFrames(polyframes);
         res.result.data = true;
-        return true;
     }
 
     res.result.data = false;
     return true;
-
 }
 
 int main(int argc, char ** argv)
@@ -154,7 +134,7 @@ int main(int argc, char ** argv)
     polyframes.push_back("r_foot_upper_left_link");
     polyframes.push_back("r_foot_upper_right_link");
     ch = std::make_shared<XBot::Cartesian::Planning::ConvexHullStability>(model, polyframes);
-    ch_viz = std::make_shared<XBot::Cartesian::Planning::ConvexHullVisualization>(model, polyframes);
+    ch_viz = std::make_shared<XBot::Cartesian::Planning::ConvexHullVisualization>(model, *ch);
     ros::ServiceServer service_b = nh.advertiseService("set_contact_frames_service", set_contact_frames_service);
 
 
