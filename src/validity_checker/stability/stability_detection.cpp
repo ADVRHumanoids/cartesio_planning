@@ -58,6 +58,23 @@ void ConvexHullStability::setPolygonFrames(const PolygonFrames &pf)
     _polygon_frames = pf;
 }
 
+void ConvexHullStability::addPolygonFrames(const PolygonFrames& pf)
+{
+    for(auto frame : pf)
+        _polygon_frames.push_back(frame);
+}
+
+void ConvexHullStability::removePolygonFrames(const PolygonFrames& pf)
+{
+    for(auto frame : pf)
+    {
+        auto it = std::find(_polygon_frames.begin(), _polygon_frames.end(), frame);
+        if(it != _polygon_frames.end())
+            _polygon_frames.erase(it);
+    }
+}
+
+
 
 PlanarInclusionDetectionBase::PlanarInclusionDetectionBase()
 {

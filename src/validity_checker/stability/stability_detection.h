@@ -37,6 +37,9 @@ public:
 
 
     void setPolygonFrames(const PolygonFrames& pf);
+    void addPolygonFrames(const PolygonFrames& pf);
+    void removePolygonFrames(const PolygonFrames& pf);
+
     /**
      * @brief checkStability
      * @return true if stable
@@ -57,24 +60,11 @@ class ConvexHullVisualization
 public:
     typedef std::shared_ptr<ConvexHullVisualization> Ptr;
 
-    ConvexHullVisualization(const XBot::ModelInterface::Ptr model):
-        _ch(model),
+    ConvexHullVisualization(const XBot::ModelInterface::Ptr model, ConvexHullStability& ch):
+        _ch(ch),
         _model(*model)
     {
         _vis_pub = _nh.advertise<visualization_msgs::Marker>( "convex_hull", 0 );
-    }
-
-    ConvexHullVisualization(const XBot::ModelInterface::Ptr model, const ConvexHullStability::PolygonFrames& pf):
-        _ch(model),
-        _model(*model)
-    {
-        _vis_pub = _nh.advertise<visualization_msgs::Marker>( "convex_hull", 0 );
-        _ch.setPolygonFrames(pf);
-    }
-
-    void setPolygonFrames(const ConvexHullStability::PolygonFrames& pf)
-    {
-        _ch.setPolygonFrames(pf);
     }
 
     void publish()
@@ -131,7 +121,7 @@ public:
     }
 
 private:
-    ConvexHullStability _ch;
+    ConvexHullStability& _ch;
     ros::NodeHandle _nh;
     ros::Publisher _vis_pub;
     XBot::ModelInterface& _model;
