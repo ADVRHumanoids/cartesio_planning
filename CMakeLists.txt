@@ -155,22 +155,26 @@ include_directories(
 
 # Main library
 add_library(cartesio_planning SHARED
-    src/validity_checker/collisions/planning_scene_wrapper.cpp
-    src/validity_checker/validity_checker_factory.cpp
     src/constraints/cartesian_constraint.cpp
     src/goal/goal_sampler.cpp
+    src/ik/position_ik_solver.cpp
     src/planner/cartesio_ompl_planner.cpp
     src/state_wrapper.cpp
-    src/ik/position_ik_solver.cpp
-    src/constraints/validity_predicate_aggregate.cpp)
+    src/validity_checker/stability/cartesian_utils.cpp
+    src/validity_checker/stability/convex_hull_utils.cpp
+    src/validity_checker/stability/stability_detection.cpp
+    src/validity_checker/collisions/planning_scene_wrapper.cpp
+    src/validity_checker/validity_checker_factory.cpp
+    src/validity_checker/validity_predicate_aggregate.cpp)
 
 target_link_libraries(cartesio_planning
+    PUBLIC
     ${OMPL_LIBRARIES}
     ${cartesian_interface_LIBRARIES}
-    ${catkin_LIBRARIES})
-
-add_library(stability_checker SHARED src/validity_checker/stability/stability_detection.cpp)
-target_link_libraries(stability_checker ${OpenSoT_LIBRARIES} ${PCL_LIBRARIES})
+    ${catkin_LIBRARIES}
+    PRIVATE
+    ${PCL_LIBRARIES}
+    )
 
 add_library(trajectory_interpolation SHARED src/planner/trajectory_interpolation.cpp)
 target_link_libraries(trajectory_interpolation PRIVATE casadi)
@@ -180,7 +184,7 @@ add_executable(stability_test
     src/stability_test.cpp
     )
 
-target_link_libraries(stability_test stability_checker cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(stability_test cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES})
 
 # Test executable
 add_executable(ompl_test
@@ -228,7 +232,6 @@ target_link_libraries(goal_generation_node ${OMPL_LIBRARIES}
     yaml-cpp
     dl
     cartesio_planning
-    stability_checker
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
@@ -308,13 +311,6 @@ install(TARGETS goal_generation_node
     )
 
 install(TARGETS cartesio_planning
-    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    )
-
-
-install(TARGETS stability_checker
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

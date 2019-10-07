@@ -1,16 +1,20 @@
 #ifndef STABILITY_DETECTION_H
 #define STABILITY_DETECTION_H
 
-#include <OpenSoT/utils/cartesian_utils.h>
-#include <OpenSoT/utils/convex_hull_utils.h>
+#include <ros/ros.h>
+
 #include <XBotInterface/ModelInterface.h>
 #include <visualization_msgs/MarkerArray.h>
+
+class convex_hull;
 
 namespace XBot { namespace Cartesian { namespace Planning {
 
 class PlanarInclusionDetectionBase
 {
+
 public:
+
     typedef Eigen::Vector2d Point2;
     typedef std::vector<Point2> Polygon;
 
@@ -20,14 +24,18 @@ public:
     bool pointInPolygon(const Point2& point) const;
     void setPolygon(const Polygon& polygon);
     const Polygon& getPolygon() const;
+
 protected:
+
     Polygon _polygon_vertices;
 
 };
 
 class ConvexHullStability
 {
+
 public:
+
     typedef std::list<std::string> PolygonFrames;
 
     typedef std::shared_ptr<ConvexHullStability> Ptr;
@@ -47,8 +55,12 @@ public:
     bool checkStability();
 
     bool getConvexHull(PlanarInclusionDetectionBase::Polygon& poly);
+
+    ~ConvexHullStability();
+
 private:
-    convex_hull _huller;
+
+    std::unique_ptr<convex_hull> _huller;
     PlanarInclusionDetectionBase _inclusion_checker;
 
     PolygonFrames _polygon_frames;
@@ -121,6 +133,7 @@ public:
     }
 
 private:
+
     ConvexHullStability& _ch;
     ros::NodeHandle _nh;
     ros::Publisher _vis_pub;
@@ -128,8 +141,8 @@ private:
 };
 
 }
-}
-}
+                                     }
+               }
 
 
 #endif

@@ -1,17 +1,22 @@
 #include "validity_checker/stability/stability_detection.h"
 
+#include "cartesian_utils.h"
+#include "convex_hull_utils.h"
+
 using namespace XBot::Cartesian::Planning;
 
 
 
 ConvexHullStability::ConvexHullStability(XBot::ModelInterface::ConstPtr model):
-    _model(model)
+    _model(model),
+    _huller(new convex_hull)
 {
 
 }
 
 ConvexHullStability::ConvexHullStability(XBot::ModelInterface::ConstPtr model, const PolygonFrames& polyframes):
-    _model(model)
+    _model(model),
+    _huller(new convex_hull)
 {
     setPolygonFrames(polyframes);
 }
@@ -22,11 +27,11 @@ bool ConvexHullStability::getConvexHull(PlanarInclusionDetectionBase::Polygon& p
             return false;
 
     std::list<KDL::Vector> points_KDL;
-    if(!_huller.getSupportPolygonPoints(points_KDL, _polygon_frames, *_model, "COM"))
+    if(!_huller->getSupportPolygonPoints(points_KDL, _polygon_frames, *_model, "COM"))
         return false;
 
     std::vector<KDL::Vector> ch_KDL;
-    if(!_huller.getConvexHull(points_KDL, ch_KDL))
+    if(!_huller->getConvexHull(points_KDL, ch_KDL))
         return false;
 
     PlanarInclusionDetectionBase::Point2 p;
@@ -39,6 +44,7 @@ bool ConvexHullStability::getConvexHull(PlanarInclusionDetectionBase::Polygon& p
 
     return true;
 }
+
 
 bool ConvexHullStability::checkStability()
 {
@@ -108,4 +114,9 @@ bool PlanarInclusionDetectionBase::pointInPolygon(const Point2 &point) const
     if(cartesian_utils::pnpoly(_polygon_vertices.size(), X.data(), Y.data(), (float)point[0], (float)point[1]) == 0)
         return false;
     return true;
+}
+
+ConvexHullStability::~ConvexHullStability()
+{
+
 }

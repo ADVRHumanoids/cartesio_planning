@@ -3,7 +3,7 @@
 #include <cartesian_interface/utils/LoadConfig.h>
 #include <std_srvs/Trigger.h>
 #include <validity_checker/stability/stability_detection.h>
-#include <constraints/validity_predicate_aggregate.h>
+#include <validity_checker/validity_predicate_aggregate.h>
 #include <functional>
 #include <validity_checker/collisions/planning_scene_wrapper.h>
 #include "goal/goal_sampler.h"
@@ -114,8 +114,7 @@ int main(int argc, char ** argv)
     }
 
     // construct position-level ik solver
-    XBot::Cartesian::Planning::PositionCartesianSolver::Ptr solver =
-            std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(ci, ik_prob);
+    auto solver = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(ci, ik_prob);
 
 
     ros::ServiceServer service_a = nh.advertiseService("goal_sampler_service", goal_sampler_service);
@@ -149,7 +148,7 @@ int main(int argc, char ** argv)
 
 
     XBot::Cartesian::Planning::ValidityPredicateAggregate valid;
-    valid.add(std::bind(&XBot::Cartesian::Planning::ConvexHullStability::checkStability, *ch), "convex_hull");
+    valid.add(std::bind(&XBot::Cartesian::Planning::ConvexHullStability::checkStability, ch.get()), "convex_hull");
     valid.add(check_collision, "self_collisions", false);
 
     goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSamplerBase>(solver);
