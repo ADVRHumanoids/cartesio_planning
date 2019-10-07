@@ -29,8 +29,8 @@ class ConvexHullStability
 public:
     typedef std::list<std::string> PolygonFrames;
 
-    ConvexHullStability(const XBot::ModelInterface::Ptr model);
-    ConvexHullStability(const XBot::ModelInterface::Ptr model, const PolygonFrames& polyframes);
+    ConvexHullStability(XBot::ModelInterface::ConstPtr model);
+    ConvexHullStability(XBot::ModelInterface::ConstPtr model, const PolygonFrames& polyframes);
 
 
     void setPolygonFrames(const PolygonFrames& pf);

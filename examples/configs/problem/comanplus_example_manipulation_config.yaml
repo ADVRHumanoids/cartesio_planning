@@ -3,11 +3,13 @@ ValidityCheck:
     - Stability
 
 SelfCollision:
-    type: "SelfCollisionChecker"
+    type: "CollisionChecker"
+    include_environment: true
 
 Stability:
     type: "ConvexHull"
     links: ["link_1", "link_2", "link_3"]
+    stability_margin: 0.03
 
 RRTstar:
     GoalBias: 0.1

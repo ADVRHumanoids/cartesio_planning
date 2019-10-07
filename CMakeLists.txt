@@ -152,6 +152,7 @@ include_directories(
 # Main library
 add_library(cartesio_planning SHARED
     src/validity_checker/collisions/planning_scene_wrapper.cpp
+    src/validity_checker/validity_checker_factory.cpp
     src/constraints/cartesian_constraint.cpp
     src/goal/goal_sampler.cpp
     src/planner/cartesio_ompl_planner.cpp
