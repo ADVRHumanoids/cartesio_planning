@@ -10,7 +10,7 @@
         textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
     
 
-    <node pkg="cartesio_planning" type="goal_generation_test" name="goal_generation_test" required="true" output="screen" launch-prefix="$(arg prefix)">
+    <node pkg="cartesio_planning" type="goal_generation_node" name="goal_generation_node" required="true" output="screen" launch-prefix="$(arg prefix)">
 	<param name="is_model_floating_base" type="bool" value="true"/>
         <param name="model_type" value="RBDL"/>
     </node>

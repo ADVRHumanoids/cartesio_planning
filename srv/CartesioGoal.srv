@@ -1,0 +1,6 @@
+int32 time
+
+---
+
+cartesio_planning/CartesioPlannerGoalStatus status
+sensor_msgs/JointState sampled_goal

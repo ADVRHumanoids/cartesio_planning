@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
     rosconsole
     std_msgs
     trajectory_msgs
+    sensor_msgs
     message_generation
     kdl_parser
     robot_state_publisher
@@ -76,12 +77,15 @@ FIND_PACKAGE(PCL 1.7 QUIET COMPONENTS   common
 add_message_files(
     FILES
     CartesioPlannerStatus.msg
+    CartesioPlannerGoalStatus.msg
     )
 
 ## Generate services in the 'srv' folder
 add_service_files(
     FILES
     CartesioPlanner.srv
+    CartesioGoal.srv
+    SetContactFrames.srv
     )
 
 ## Generate actions in the 'action' folder
@@ -94,7 +98,7 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
     DEPENDENCIES
-    std_msgs  # Or other packages containing msgs
+    std_msgs sensor_msgs# Or other packages containing msgs
     )
 
 ################################################
@@ -215,12 +219,12 @@ target_link_libraries(self_collision_robot ${OMPL_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
 
-# Ik test
-add_executable(goal_generation_test
-    src/ik/position_ik_test.cpp
+# goal_generation node
+add_executable(goal_generation_node
+    src/nodes/goal_generation.cpp
     )
 
-target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
+target_link_libraries(goal_generation_node ${OMPL_LIBRARIES}
     yaml-cpp
     dl
     cartesio_planning
@@ -297,7 +301,7 @@ install(TARGETS self_collision_robot
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
-install(TARGETS goal_generation_test
+install(TARGETS goal_generation_node
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

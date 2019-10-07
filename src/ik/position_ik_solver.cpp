@@ -69,6 +69,9 @@ bool PositionCartesianSolver::solve()
         _model->setJointPosition(q);
         _model->update();
 
+        if(_ros_server)
+            _ros_server->run();
+
         getError(error);
         tol_satisfied = error.norm() < _err_tol*_n_task;
 //        tol_satisfied = tol_satisfied && dq.norm() < 1e-3;
@@ -161,6 +164,17 @@ PositionCartesianSolver::CartesianTaskData::CartesianTaskData(std::string a_dist
 void PositionCartesianSolver::CartesianTaskData::update(XBot::Cartesian::CartesianInterfaceImpl::Ptr ci,
                                                         XBot::ModelInterface::Ptr model)
 {
+    J.setZero(size, model->getJointNum());
+    error.setZero(size);
+
+    /* If task was disabled, error and jacobian are zero */
+    auto ctrl_mode = ci->getControlMode(distal_link);
+    if(ctrl_mode == ControlType::Disabled)
+    {
+        return;
+    }
+
+
     /* Error computation */
     Eigen::Affine3d T, Tdes;
     ci->getCurrentPose(distal_link, T);
@@ -183,7 +197,6 @@ void PositionCartesianSolver::CartesianTaskData::update(XBot::Cartesian::Cartesi
     }
 
     /* Jacobian computation */
-    J.setZero(size, model->getJointNum());
     Eigen::MatrixXd Ji;
 
     if(base_link == "world")

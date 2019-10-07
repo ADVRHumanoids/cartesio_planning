@@ -127,9 +127,9 @@ int main(int argc, char ** argv)
 
     RosServerClass ros_server(ci_goal, model);
 
-//    g_goal_region = std::make_shared<XBot::Cartesian::Planning::GoalSampler>(planner->getSpaceInfo(),
-//                                                                                solver_goal,
-//                                                                                planner->getStateWrapper());
+    g_goal_region = std::make_shared<XBot::Cartesian::Planning::GoalSampler>(planner->getSpaceInfo(),
+                                                                                solver_goal,
+                                                                                planner->getStateWrapper());
 
     // sphere validity check
     auto sphere_validity_check = [model](const Eigen::VectorXd& q)
