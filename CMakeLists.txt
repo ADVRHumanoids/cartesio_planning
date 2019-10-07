@@ -36,8 +36,6 @@ find_package(XBotInterface REQUIRED)
 
 find_package(matlogger2 REQUIRED)
 
-find_package(OpenSoT REQUIRED)
-
 FIND_PACKAGE(PCL 1.7 QUIET COMPONENTS   common
                                         filters
                                         surface
