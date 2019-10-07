@@ -52,7 +52,7 @@ private:
     PlanarInclusionDetectionBase _inclusion_checker;
 
     PolygonFrames _polygon_frames;
-    XBot::ModelInterface::Ptr _model;
+    XBot::ModelInterface::ConstPtr _model;
 };
 
 class ConvexHullVisualization

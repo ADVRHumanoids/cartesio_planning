@@ -4,13 +4,13 @@ using namespace XBot::Cartesian::Planning;
 
 
 
-ConvexHullStability::ConvexHullStability(const XBot::ModelInterface::Ptr model):
+ConvexHullStability::ConvexHullStability(XBot::ModelInterface::ConstPtr model):
     _model(model)
 {
 
 }
 
-ConvexHullStability::ConvexHullStability(const XBot::ModelInterface::Ptr model, const PolygonFrames& polyframes):
+ConvexHullStability::ConvexHullStability(XBot::ModelInterface::ConstPtr model, const PolygonFrames& polyframes):
     _model(model)
 {
     setPolygonFrames(polyframes);
