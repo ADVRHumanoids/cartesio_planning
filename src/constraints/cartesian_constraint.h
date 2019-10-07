@@ -12,6 +12,8 @@ class CartesianConstraint : public ompl::base::Constraint
 
 public: // Constraint interface
 
+    typedef std::shared_ptr<CartesianConstraint> Ptr;
+
     CartesianConstraint(PositionCartesianSolver::Ptr ik_solver);
 
     void function(const Eigen::Ref<const Eigen::VectorXd>& x,

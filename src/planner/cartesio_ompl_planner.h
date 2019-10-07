@@ -31,6 +31,7 @@ class OmplPlanner
 public:
 
     typedef std::function<bool(const Eigen::VectorXd&)> StateValidityPredicate;
+    typedef std::shared_ptr<OmplPlanner> Ptr;
 
     OmplPlanner(const Eigen::VectorXd& bounds_min,
                 const Eigen::VectorXd& bounds_max,

@@ -1,12 +1,15 @@
-ValidityCheck:
-    - SelfCollision
-    - Stability
+manifold:
+    param_name: "cartesian/problem_description_constraint"
 
-SelfCollision:
+state_validity_check:
+    - self_collision
+    - stability
+
+self_collision:
     type: "CollisionChecker"
     include_environment: true
 
-Stability:
+stability:
     type: "ConvexHull"
     links: ["link_1", "link_2", "link_3"]
     stability_margin: 0.03
@@ -16,5 +19,7 @@ RRTstar:
     KNearest: true
     Range: 1000
 
-StateSpace:
+state_space:
+    floating_base_pos_min: [-1, -1, -1]
+    floating_base_pos_max: [ 1,  1,  1]
     type: "Atlas"

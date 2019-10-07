@@ -2,43 +2,10 @@
 
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "validity_checker/stability/stability_detection.h"
-
-/* Macro for option parsing */
-#define PARSE_OPTION(yaml, name, type, default_value) \
-type name = default_value; \
-if(yaml[#name]) \
-{ \
-type value = yaml[#name].as<type>(); \
-std::cout << "Found " #type " option '" #name "' with value = " << value << std::endl; \
-name = value; \
-} \
-else { \
-std::cout << "No option " #name " specified" << std::endl; \
-} \
-/* End macro for option parsing */
+#include "utils/parse_yaml_utils.h"
 
 namespace
 {
-
-std::ostream& operator<<(std::ostream& os, std::vector<std::string> v)
-{
-    for(const auto& elem : v)
-    {
-        os << " - " << elem << "\n";
-    }
-
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, std::list<std::string> v)
-{
-    for(const auto& elem : v)
-    {
-        os << " - " << elem << "\n";
-    }
-
-    return os;
-}
 
 /**
  * @brief MakeCollisionChecker
@@ -52,7 +19,7 @@ std::function<bool ()> MakeCollisionChecker(YAML::Node vc_node,
     using namespace XBot::Cartesian::Planning;
 
     // parse options
-    PARSE_OPTION(vc_node, include_environment, bool, true);
+    YAML_PARSE_OPTION(vc_node, include_environment, bool, true);
 
     // construct planning scene for model
     auto planning_scene = std::make_shared<PlanningSceneWrapper>(model);
@@ -65,11 +32,11 @@ std::function<bool ()> MakeCollisionChecker(YAML::Node vc_node,
 
         if(include_environment)
         {
-            return planning_scene->checkCollisions();
+            return !planning_scene->checkCollisions();
         }
         else
         {
-            return planning_scene->checkSelfCollisions();
+            return !planning_scene->checkSelfCollisions();
         }
 
     };
@@ -89,8 +56,8 @@ std::function<bool ()> MakeConvexHullChecker(YAML::Node vc_node,
 {
     using namespace XBot::Cartesian::Planning;
 
-    PARSE_OPTION(vc_node, stability_margin, double, 0.0);
-    PARSE_OPTION(vc_node, links, std::list<std::string>, {});
+    YAML_PARSE_OPTION(vc_node, stability_margin, double, 0.0);
+    YAML_PARSE_OPTION(vc_node, links, std::list<std::string>, {});
 
     auto cvx_hull = std::make_shared<ConvexHullStability>(model, links);
 

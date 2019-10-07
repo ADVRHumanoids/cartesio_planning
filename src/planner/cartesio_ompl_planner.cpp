@@ -1,5 +1,8 @@
+
 #include <ompl/geometric/planners/rrt/BiTRRT.h>
 #include <ompl/geometric/planners/rrt/InformedRRTstar.h>
+#include <type_traits>
+
 #include <ompl/geometric/planners/rrt/LazyLBTRRT.h>
 #include <ompl/geometric/planners/rrt/LazyRRT.h>
 #include <ompl/geometric/planners/rrt/LBTRRT.h>
@@ -17,9 +20,8 @@
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/prm/LazyPRMstar.h>
 
-
 #include "cartesio_ompl_planner.h"
-#include <type_traits>
+#include "utils/parse_yaml_utils.h"
 
 using namespace XBot::Cartesian::Planning;
 
@@ -123,19 +125,6 @@ void OmplPlanner::setup_problem_definition()
 ompl::base::PlannerPtr OmplPlanner::make_RRTstar()
 {
 
-    /* Macro for option parsing */
-#define PARSE_OPTION(name, type) \
-    if(opt[#name]) \
-    { \
-    type value = opt[#name].as<type>(); \
-    std::cout << "Found " #type " option '" #name "' with value = " << value << std::endl; \
-    planner->set##name(value); \
-} \
-    else { \
-    std::cout << "No option " #name " specified" << std::endl; \
-} \
-    /* End macro for option parsing */
-
     auto planner = std::make_shared<ompl::geometric::RRTstar>(_space_info);
 
     if(!_options || !_options["RRTstar"])
@@ -146,9 +135,9 @@ ompl::base::PlannerPtr OmplPlanner::make_RRTstar()
 
     auto opt = _options["RRTstar"];
 
-    PARSE_OPTION(GoalBias, double);
-    PARSE_OPTION(Range, int);
-    PARSE_OPTION(KNearest, bool);
+    PLANNER_PARSE_OPTION(GoalBias, double);
+    PLANNER_PARSE_OPTION(Range, int);
+    PLANNER_PARSE_OPTION(KNearest, bool);
 
     return planner;
 }
