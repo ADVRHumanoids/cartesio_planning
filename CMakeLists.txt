@@ -151,7 +151,7 @@ include_directories(
 
 # Main library
 add_library(cartesio_planning SHARED
-    src/collisions/planning_scene_wrapper.cpp
+    src/validity_checker/collisions/planning_scene_wrapper.cpp
     src/constraints/cartesian_constraint.cpp
     src/goal/goal_sampler.cpp
     src/planner/cartesio_ompl_planner.cpp
@@ -164,7 +164,7 @@ target_link_libraries(cartesio_planning
     ${cartesian_interface_LIBRARIES}
     ${catkin_LIBRARIES})
 
-add_library(stability_checker SHARED src/stability/stability_detection.cpp)
+add_library(stability_checker SHARED src/validity_checker/stability/stability_detection.cpp)
 target_link_libraries(stability_checker ${OpenSoT_LIBRARIES} ${PCL_LIBRARIES})
 
 add_library(trajectory_interpolation SHARED src/planner/trajectory_interpolation.cpp)

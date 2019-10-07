@@ -2,10 +2,10 @@
 #include <cartesian_interface/ros/RosServerClass.h>
 #include <cartesian_interface/utils/LoadConfig.h>
 #include <std_srvs/Trigger.h>
-#include <stability/stability_detection.h>
+#include <validity_checker/stability/stability_detection.h>
 #include <constraints/validity_predicate_aggregate.h>
 #include <functional>
-#include <collisions/planning_scene_wrapper.h>
+#include <validity_checker/collisions/planning_scene_wrapper.h>
 
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;

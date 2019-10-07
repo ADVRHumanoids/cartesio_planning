@@ -1,7 +1,7 @@
 #include <sensor_msgs/JointState.h>
 #include <XBotInterface/ModelInterface.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>
-#include "stability/stability_detection.h"
+#include "validity_checker/stability/stability_detection.h"
 #include <visualization_msgs/Marker.h>
 
 using namespace XBot::Cartesian::Planning;

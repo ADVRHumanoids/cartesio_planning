@@ -1,3 +1,14 @@
+ValidityCheck:
+    - SelfCollision
+    - Stability
+
+SelfCollision:
+    type: "SelfCollisionChecker"
+
+Stability:
+    type: "ConvexHull"
+    links: ["link_1", "link_2", "link_3"]
+
 RRTstar:
     GoalBias: 0.1
     KNearest: true

@@ -1,4 +1,4 @@
-#include "collisions/planning_scene_wrapper.h"
+#include "validity_checker/collisions/planning_scene_wrapper.h"
 
 #include <sensor_msgs/JointState.h>
 #include <moveit_msgs/ApplyPlanningScene.h>

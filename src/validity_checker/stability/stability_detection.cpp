@@ -1,4 +1,4 @@
-#include "stability/stability_detection.h"
+#include "validity_checker/stability/stability_detection.h"
 
 using namespace XBot::Cartesian::Planning;
 
