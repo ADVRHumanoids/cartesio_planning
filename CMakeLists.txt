@@ -25,6 +25,8 @@ find_package(catkin REQUIRED COMPONENTS
     visualization_msgs
     )
 
+find_package(casadi REQUIRED)
+
 find_package(Eigen3 REQUIRED)
 
 find_package(ompl 1.5.0 REQUIRED)
@@ -149,7 +151,7 @@ include_directories(
 
 # Main library
 add_library(cartesio_planning SHARED
-    src/collisions/collision_detection.cpp
+    src/collisions/planning_scene_wrapper.cpp
     src/constraints/cartesian_constraint.cpp
     src/goal/goal_sampler.cpp
     src/planner/cartesio_ompl_planner.cpp
@@ -160,11 +162,14 @@ add_library(cartesio_planning SHARED
 target_link_libraries(cartesio_planning
     ${OMPL_LIBRARIES}
     ${cartesian_interface_LIBRARIES}
-    ${catkin_LIBRARIES} )
+    ${catkin_LIBRARIES})
 
 add_library(stability_checker SHARED src/stability/stability_detection.cpp)
-
 target_link_libraries(stability_checker ${OpenSoT_LIBRARIES} ${PCL_LIBRARIES})
+
+add_library(trajectory_interpolation SHARED src/planner/trajectory_interpolation.cpp)
+target_link_libraries(trajectory_interpolation PRIVATE casadi)
+
 
 add_executable(stability_test
     src/stability_test.cpp
@@ -185,20 +190,18 @@ target_link_libraries(ompl_test ${OMPL_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
 
-#PREVIEWER
+# Previewer node
 add_executable(previewer
-    src/nodes/previewer.cpp
+    src/nodes/trajectory_viewer.cpp
     )
 
-target_link_libraries(previewer ${OMPL_LIBRARIES}
-    yaml-cpp
-    dl
-    cartesio_planning
+target_link_libraries(previewer
+    trajectory_interpolation
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
 
-#PREVIEWER
+# Self collision robot node
 add_executable(self_collision_robot
     src/nodes/self_collision_robot.cpp
     )
@@ -303,6 +306,12 @@ install(TARGETS cartesio_planning
 
 
 install(TARGETS stability_checker
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+install(TARGETS trajectory_interpolation
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
