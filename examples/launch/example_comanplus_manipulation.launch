@@ -25,6 +25,7 @@
 
     <node pkg="cartesio_planning" type="previewer" name="planner_previewer" output="screen"/>
 
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter" args="0 0 0 0 0 0 ci/world planner/world 10"/>
     
     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find cartesio_planning)/configs/rviz/example_comanplus_manipulation.rviz" output="screen"/>
     
