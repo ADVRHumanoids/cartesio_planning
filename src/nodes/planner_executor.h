@@ -31,7 +31,7 @@ private:
     void init_subscribe_start_goal();
 
     void on_start_state_recv(const sensor_msgs::JointStateConstPtr& msg);
-    void on_stop_state_recv(const sensor_msgs::JointStateConstPtr& msg);
+    void on_goal_state_recv(const sensor_msgs::JointStateConstPtr& msg);
 
     ros::NodeHandle _nh, _nhpr;
     YAML::Node _planner_config;
