@@ -1,6 +1,7 @@
-#include "collisions/collision_detection.h"
+#include "collisions/planning_scene_wrapper.h"
 
 #include <sensor_msgs/JointState.h>
+#include <moveit_msgs/ApplyPlanningScene.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
 
@@ -26,7 +27,7 @@ int main(int argc, char ** argv)
                                  ros::Time::now(),
                                  ros::Duration(3.0));
 
-    XBot::Cartesian::Planning::CollisionDetection collision_detection(model);
+    XBot::Cartesian::Planning::PlanningSceneWrapper collision_detection(model);
     collision_detection.startMonitor();
 
     // on timer event callback
@@ -63,6 +64,7 @@ int main(int argc, char ** argv)
         model->update();
 
     };
+
 
     // every 0.5 sec we check for collisions
     auto collisions_timer = nh.createTimer(ros::Duration(0.5), on_check_collisions_event);

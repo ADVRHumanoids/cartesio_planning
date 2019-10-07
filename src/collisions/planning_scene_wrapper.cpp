@@ -1,4 +1,4 @@
-#include "collision_detection.h"
+#include "planning_scene_wrapper.h"
 
 namespace
 {
@@ -61,7 +61,7 @@ private:
 
 namespace XBot { namespace Cartesian { namespace Planning {
 
-CollisionDetection::CollisionDetection(ModelInterface::ConstPtr model):
+PlanningSceneWrapper::PlanningSceneWrapper(ModelInterface::ConstPtr model):
     _model(model)
 {
     // create robot model loader
@@ -76,7 +76,7 @@ CollisionDetection::CollisionDetection(ModelInterface::ConstPtr model):
 
 }
 
-void CollisionDetection::startMonitor()
+void PlanningSceneWrapper::startMonitor()
 {
     // publish planning scene at 30 Hz (topic is ~/monitored_planning_scene)
     _monitor->setPlanningScenePublishingFrequency(30.); // tbd: hardcoded
@@ -92,14 +92,14 @@ void CollisionDetection::startMonitor()
 
 }
 
-void CollisionDetection::stopMonitor()
+void PlanningSceneWrapper::stopMonitor()
 {
     _monitor->stopSceneMonitor();
     _monitor->stopWorldGeometryMonitor();
     _monitor->stopPublishingPlanningScene();
 }
 
-void CollisionDetection::update()
+void PlanningSceneWrapper::update()
 {
     // acquire lock for thread-safe access to the planning scene
     MonitorLockguardWrite lock_w(_monitor); // RAII-style lock acquisition
@@ -162,7 +162,7 @@ void CollisionDetection::update()
     _monitor->triggerSceneUpdateEvent(planning_scene_monitor::PlanningSceneMonitor::UPDATE_STATE);
 }
 
-bool CollisionDetection::checkCollisions() const
+bool PlanningSceneWrapper::checkCollisions() const
 {
     MonitorLockguardRead lock_r(_monitor);
 
@@ -175,7 +175,7 @@ bool CollisionDetection::checkCollisions() const
     return collision_result.collision;
 }
 
-bool CollisionDetection::checkSelfCollisions() const
+bool PlanningSceneWrapper::checkSelfCollisions() const
 {
     MonitorLockguardRead lock_r(_monitor);
 
@@ -188,7 +188,7 @@ bool CollisionDetection::checkSelfCollisions() const
     return collision_result.collision;
 }
 
-std::vector<std::string> CollisionDetection::getCollidingLinks() const
+std::vector<std::string> PlanningSceneWrapper::getCollidingLinks() const
 {
     MonitorLockguardRead lock_r(_monitor);
 
@@ -196,6 +196,12 @@ std::vector<std::string> CollisionDetection::getCollidingLinks() const
     _monitor->getPlanningScene()->getCollidingLinks(links);
 
     return links;
+}
+
+void PlanningSceneWrapper::applyPlanningScene(const moveit_msgs::PlanningScene & scene)
+{
+    _monitor->updateFrameTransforms();
+    _monitor->newPlanningSceneMessage(scene);
 }
 
 

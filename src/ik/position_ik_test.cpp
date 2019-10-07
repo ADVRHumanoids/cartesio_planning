@@ -5,7 +5,7 @@
 #include <stability/stability_detection.h>
 #include <constraints/validity_predicate_aggregate.h>
 #include <functional>
-#include <collisions/collision_detection.h>
+#include <collisions/planning_scene_wrapper.h>
 
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
@@ -79,7 +79,7 @@ int main(int argc, char ** argv)
     XBot::Cartesian::Planning::ConvexHullStability ch(model, polyframes);
 
 
-    XBot::Cartesian::Planning::CollisionDetection collision(model);
+    XBot::Cartesian::Planning::PlanningSceneWrapper collision(model);
 
 
     // generate random goals respecting constraints
@@ -92,7 +92,7 @@ int main(int argc, char ** argv)
 
     XBot::Cartesian::Planning::ValidityPredicateAggregate valid;
     valid.add(std::bind(&XBot::Cartesian::Planning::ConvexHullStability::checkStability, ch), "convex_hull");
-    valid.add(std::bind(&XBot::Cartesian::Planning::CollisionDetection::checkSelfCollisions, collision),
+    valid.add(std::bind(&XBot::Cartesian::Planning::PlanningSceneWrapper::checkSelfCollisions, collision),
               "self_collisions", false);
 
     while(ros::ok())

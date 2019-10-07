@@ -228,12 +228,16 @@ target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
 
-# Planning scene test
+# Planning scene test and publisher
 add_executable(planning_scene_test src/planning_scene_test.cpp)
 target_link_libraries(planning_scene_test cartesio_planning)
 
 add_executable(planning_scene_publisher src/planning_scene_publisher.cpp)
 target_link_libraries(planning_scene_publisher ${catkin_LIBRARIES})
+
+# Executor
+add_executable(planning_server src/nodes/planner_executor_main.cpp src/nodes/planner_executor.cpp)
+target_link_libraries(planning_server ${catkin_LIBRARIES}) # cartesio_planning stability_checker)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
