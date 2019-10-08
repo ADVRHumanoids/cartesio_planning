@@ -13,6 +13,7 @@
 #include "planner/cartesio_ompl_planner.h"
 #include "constraints/cartesian_constraint.h"
 #include "validity_checker/validity_predicate_aggregate.h"
+#include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "cartesio_planning/CartesioPlanner.h"
 
 class PlannerExecutor
@@ -27,6 +28,7 @@ public:
 private:
 
     typedef std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> RsPubPtr;
+    typedef std::shared_ptr<XBot::Cartesian::Planning::PlanningSceneWrapper> PlanningScenePtr;
 
     void init_load_model();
     void init_load_config();
@@ -35,6 +37,8 @@ private:
     void init_subscribe_start_goal();
     void init_trj_publisiher();
     void init_planner_srv();
+
+    std::function<bool()> make_collision_checker(YAML::Node vc_node);
 
     bool check_state_valid(XBot::ModelInterface::ConstPtr model);
 
@@ -50,6 +54,7 @@ private:
     XBot::ModelInterface::Ptr _model;
     XBot::Cartesian::Planning::OmplPlanner::Ptr _planner;
     XBot::Cartesian::Planning::CartesianConstraint::Ptr _manifold;
+    PlanningScenePtr _planning_scene;
     XBot::Cartesian::Planning::ValidityPredicateAggregate _vc_aggregate;
 
     ros::Subscriber _goal_sub, _start_sub;

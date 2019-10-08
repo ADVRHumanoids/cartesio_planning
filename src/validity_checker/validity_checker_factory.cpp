@@ -87,7 +87,7 @@ std::function<bool ()> XBot::Cartesian::Planning::MakeValidityChecker(YAML::Node
     }
     else
     {
-        if(vc_type == "CollisionChecker")
+        if(vc_type == "CollisionCheck")
         {
             return MakeCollisionChecker(vc_node, model);
         }

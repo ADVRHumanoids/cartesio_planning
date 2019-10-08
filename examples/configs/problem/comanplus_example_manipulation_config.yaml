@@ -6,7 +6,7 @@ state_validity_check:
     - stability
 
 self_collision:
-    type: "CollisionChecker"
+    type: "CollisionCheck"
     include_environment: true
 
 stability:

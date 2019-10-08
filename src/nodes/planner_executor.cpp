@@ -175,8 +175,6 @@ void PlannerExecutor::init_load_validity_checker()
         return;
     }
 
-
-
     for(auto vc : _planner_config["state_validity_check"])
     {
         auto vc_name = vc.as<std::string>();
@@ -186,9 +184,19 @@ void PlannerExecutor::init_load_validity_checker()
             throw std::runtime_error("Node for state validity checker '" + vc_name + "' must be defined");
         }
 
-        auto vc_fun = Planning::MakeValidityChecker(_planner_config[vc_name],
-                                                    _model,
-                                                    "");
+        std::function<bool()> vc_fun;
+
+        // handle collision avoidance separately, since it is a critical component
+        if(_planner_config[vc_name]["type"].as<std::string>() == "CollisionCheck")
+        {
+            vc_fun = make_collision_checker(_planner_config[vc_name]); // this also create planning scene
+        }
+        else
+        {
+            vc_fun = Planning::MakeValidityChecker(_planner_config[vc_name],
+                                                   _model,
+                                                   "");
+        }
 
         _vc_aggregate.add(vc_fun, vc_name);
 
@@ -225,6 +233,37 @@ void PlannerExecutor::init_trj_publisiher()
 void PlannerExecutor::init_planner_srv()
 {
     _planner_srv = _nh.advertiseService("compute_plan", &PlannerExecutor::planner_service, this);
+}
+
+std::function<bool()> PlannerExecutor::make_collision_checker(YAML::Node vc_node)
+{
+    using namespace XBot::Cartesian::Planning;
+
+    // parse options
+    YAML_PARSE_OPTION(vc_node, include_environment, bool, true);
+
+    // construct planning scene for model
+    _planning_scene = std::make_shared<PlanningSceneWrapper>(_model);
+    _planning_scene->startMonitor();
+
+    // define validity checker
+    auto validity_checker = [include_environment, this]()
+    {
+        _planning_scene->update();
+
+        if(include_environment)
+        {
+            return !_planning_scene->checkCollisions();
+        }
+        else
+        {
+            return !_planning_scene->checkSelfCollisions();
+        }
+
+    };
+
+    return validity_checker;
+
 }
 
 bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
