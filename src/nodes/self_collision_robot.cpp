@@ -4,121 +4,7 @@
 #include <sensor_msgs/JointState.h>
 #include <XBotInterface/ModelInterface.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>
-
-
-Eigen::Affine3d toAffine3d(const urdf::Pose& p)
-{
-    Eigen::Affine3d T;
-
-    T.translation()[0] = p.position.x;
-    T.translation()[1] = p.position.y;
-    T.translation()[2] = p.position.z;
-
-    T.linear() = Eigen::Matrix3d(Eigen::Quaterniond(p.rotation.w, p.rotation.x, p.rotation.y, p.rotation.z));
-    return T;
-}
-
-visualization_msgs::MarkerArray createRobotMarkerArray(const XBot::ModelInterface& model, const std::vector<std::string> contact_links)
-{
-    visualization_msgs::MarkerArray markers;
-
-    std::string bl; model.getFloatingBaseLink(bl);
-
-    ros::Time t = ros::Time::now();
-
-    std::vector<urdf::LinkSharedPtr> links;
-    model.getUrdf().getLinks(links);
-
-    int id = 0;
-    for(auto link : links)
-    {
-        if(link->collision)
-        {
-            visualization_msgs::Marker marker;
-
-            marker.header.frame_id = "ci/"+bl;
-            marker.header.stamp = t;
-            marker.ns = "collision_robot";
-            marker.id = id;
-
-            marker.action = visualization_msgs::Marker::ADD;
-
-            Eigen::Affine3d pose; model.getPose(link->name, bl, pose);
-            pose = pose*toAffine3d(link->collision->origin);
-
-            marker.pose.position.x = pose.translation()[0];
-            marker.pose.position.y = pose.translation()[1];
-            marker.pose.position.z = pose.translation()[2];
-            Eigen::Quaterniond q(pose.linear());
-            marker.pose.orientation.x = q.x();
-            marker.pose.orientation.y = q.y();
-            marker.pose.orientation.z = q.z();
-            marker.pose.orientation.w = q.w();
-
-            if(std::find(contact_links.begin(), contact_links.end(), link->name) != contact_links.end())
-            {
-                marker.color.a = 1.0;
-                marker.color.r = 1.0;
-                marker.color.g = 0.0;
-                marker.color.b = 0.0;
-            }
-            else
-            {
-                marker.color.a = 1.0;
-                marker.color.r = 0.0;
-                marker.color.g = 1.0;
-                marker.color.b = 0.0;
-            }
-
-            if(link->collision->geometry->type == urdf::Geometry::BOX)
-            {
-                marker.type = visualization_msgs::Marker::CUBE;
-
-                boost::shared_ptr<urdf::Box> mesh =
-                        boost::static_pointer_cast<urdf::Box>(link->collision->geometry);
-
-                marker.scale.x = mesh->dim.x;
-                marker.scale.y = mesh->dim.y;
-                marker.scale.z = mesh->dim.z;
-            }
-            else if(link->collision->geometry->type == urdf::Geometry::CYLINDER)
-            {
-                marker.type = visualization_msgs::Marker::CYLINDER;
-
-                boost::shared_ptr<urdf::Cylinder> mesh =
-                        boost::static_pointer_cast<urdf::Cylinder>(link->visual->geometry);
-
-                marker.scale.x = marker.scale.y = mesh->radius;
-                marker.scale.z = mesh->length;
-            }
-            else if(link->collision->geometry->type == urdf::Geometry::SPHERE)
-            {
-                marker.type = visualization_msgs::Marker::SPHERE;
-
-                boost::shared_ptr<urdf::Sphere> mesh =
-                        boost::static_pointer_cast<urdf::Sphere>(link->visual->geometry);
-
-                marker.scale.x = marker.scale.y = marker.scale.z = 2.*mesh->radius;
-            }
-            else if(link->collision->geometry->type == urdf::Geometry::MESH)
-            {
-                marker.type = visualization_msgs::Marker::MESH_RESOURCE;
-
-
-                boost::shared_ptr<urdf::Mesh> mesh =
-                        boost::static_pointer_cast<urdf::Mesh>(link->collision->geometry);
-
-                marker.mesh_resource = mesh->filename;
-                marker.scale.x = mesh->scale.x;
-                marker.scale.y = mesh->scale.y;
-                marker.scale.z = mesh->scale.z;
-            }
-            markers.markers.push_back(marker);
-            id++;
-        }
-    }
-    return markers;
-}
+#include <utils/robot_viz.h>
 
 int main(int argc, char ** argv)
 {
@@ -135,7 +21,8 @@ int main(int argc, char ** argv)
 
 
     robot_state::RobotState& current_state = planning_scene.getCurrentStateNonConst();
-    ros::Publisher collision_robot_pub = nh.advertise<visualization_msgs::MarkerArray>( "collision_robot", 0 );
+    XBot::Cartesian::Planning::RobotViz robot_viz(model,"collision_robot", nh, Eigen::Vector4d(0.0,0.0,1.0,0.5));
+    robot_viz.setPrefix("ci/");
 
     // function to check if a joint name is defined inside the current state
     // (useful to skip virtual joints, moveit uses quaterion)
@@ -149,7 +36,7 @@ int main(int argc, char ** argv)
     };
 
     // on joint state received callback
-    auto on_js_received = [&collision_robot_pub, &model, &current_state, &planning_scene, &has_joint_name](const sensor_msgs::JointStateConstPtr& msg)
+    auto on_js_received = [&robot_viz, &model, &current_state, &planning_scene, &has_joint_name](const sensor_msgs::JointStateConstPtr& msg)
     {
         for(int i = 0; i < msg->name.size(); i++)
         {
@@ -173,7 +60,7 @@ int main(int argc, char ** argv)
             planning_scene.getCollidingLinks(contact_links);
 
 
-        collision_robot_pub.publish(createRobotMarkerArray(*model, contact_links));
+        robot_viz.publishMarkers(ros::Time::now(), contact_links);
 
 
     };
