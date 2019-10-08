@@ -36,6 +36,7 @@ namespace
 template <typename T>
 std::ostream& operator<<(std::ostream& os, std::vector<T> v)
 {
+    os << "\n";
     for(const auto& elem : v)
     {
         os << " - " << elem << "\n";
@@ -46,6 +47,7 @@ std::ostream& operator<<(std::ostream& os, std::vector<T> v)
 
 std::ostream& operator<<(std::ostream& os, std::list<std::string> v)
 {
+    os << "\n";
     for(const auto& elem : v)
     {
         os << " - " << elem << "\n";

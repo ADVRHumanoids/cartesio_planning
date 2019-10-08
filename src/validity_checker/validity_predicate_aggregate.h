@@ -3,33 +3,36 @@
 
 #include <map>
 #include <functional>
+#include <vector>
 
 namespace XBot { namespace Cartesian { namespace Planning {
 
-
 class ValidityPredicateAggregate
 {
-    public:
-        template<typename Function>
-        bool add(Function && fn, const std::string& id, const bool expected_value = true)
-        {
-            if(_functions.count(id) == 1)
-                return false;
-            _functions[id] = std::forward<Function>(fn);
-            _expected_values[id] = expected_value;
-            return true;
-        }
 
-        bool remove(const std::string& id);
+public:
 
-        bool checkAll();
-    private:
-        std::map<std::string, std::function<bool()>> _functions;
-        std::map<std::string, bool> _expected_values;
+    template<typename Function>
+    bool add(Function && fn, const std::string& id, const bool expected_value = true)
+    {
+        if(_functions.count(id) == 1)
+            return false;
+        _functions[id] = std::forward<Function>(fn);
+        _expected_values[id] = expected_value;
+        return true;
+    }
+
+    bool remove(const std::string& id);
+
+    bool checkAll(std::vector<std::string>* failed_predicates = nullptr);
+
+private:
+
+    std::map<std::string, std::function<bool()>> _functions;
+
+    std::map<std::string, bool> _expected_values;
 };
 
-}
-}
-}
+} } }
 
 #endif

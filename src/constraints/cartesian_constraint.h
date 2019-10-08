@@ -24,6 +24,8 @@ public: // Constraint interface
 
     bool project(Eigen::Ref<Eigen::VectorXd> x) const;
 
+    void reset();
+
 private:
 
     PositionCartesianSolver::Ptr _ik_solver;

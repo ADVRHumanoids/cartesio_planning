@@ -149,13 +149,13 @@ ompl::base::StateSpacePtr OmplPlanner::make_constrained_space()
 
     std::cout << _options << std::endl;
 
-    if(_options && _options["StateSpace"] && _options["StateSpace"]["type"])
+    if(_options && _options["state_space"] && _options["state_space"]["type"])
     {
-        css_type = _options["StateSpace"]["type"].as<std::string>();
+        css_type = _options["state_space"]["type"].as<std::string>();
     }
     else
     {
-        std::cout << "No StateSpace/type found, using default '" << css_type << "'" << std::endl;
+        std::cout << "No state_space/type found, using default '" << css_type << "'" << std::endl;
     }
 
 #define ADD_CSS_AND_IF(css_name) \
@@ -236,11 +236,21 @@ std::vector<Eigen::VectorXd> OmplPlanner::getSolutionPath() const
 
 }
 
-ompl::base::SpaceInformationPtr OmplPlanner::getSpaceInfo() const { return _space_info; }
+ompl::base::SpaceInformationPtr OmplPlanner::getSpaceInfo() const
+{
+    return _space_info;
+}
 
-StateWrapper OmplPlanner::getStateWrapper() const { return *_sw; }
+void OmplPlanner::getBounds(Eigen::VectorXd & qmin, Eigen::VectorXd & qmax) const
+{
+    qmin = qmin.Map(_bounds.low.data(), _bounds.low.size());
+    qmax = qmax.Map(_bounds.high.data(), _bounds.high.size());
+}
 
-
+StateWrapper OmplPlanner::getStateWrapper() const
+{
+    return *_sw;
+}
 
 void OmplPlanner::setStateValidityPredicate(StateValidityPredicate svp)
 {

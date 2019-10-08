@@ -61,4 +61,9 @@ bool CartesianConstraint::project(Eigen::Ref<Eigen::VectorXd> x) const
 
 }
 
+void CartesianConstraint::reset()
+{
+    _ik_solver->reset();
+}
+
 } } }

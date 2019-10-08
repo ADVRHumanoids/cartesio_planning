@@ -1,5 +1,5 @@
 manifold:
-    param_name: "cartesian/problem_description_constraint"
+    param_name: "problem_description_constraint"
 
 state_validity_check:
     - self_collision
@@ -11,7 +11,16 @@ self_collision:
 
 stability:
     type: "ConvexHull"
-    links: ["link_1", "link_2", "link_3"]
+    links:
+      - "l_foot_lower_left_link"
+      - "l_foot_lower_right_link"
+      - "l_foot_upper_left_link"
+      - "l_foot_upper_right_link"
+      - "r_foot_lower_left_link"
+      - "r_foot_lower_right_link"
+      - "r_foot_upper_left_link"
+      - "r_foot_upper_right_link"
+
     stability_margin: 0.03
 
 RRTstar:

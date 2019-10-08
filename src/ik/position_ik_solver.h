@@ -89,10 +89,16 @@ public:
      */
     double getErrorThreshold() const;
 
-    void setRosServerClass(RosServerClass::Ptr ros_server)
-    {
-        _ros_server = ros_server;
-    }
+    /**
+     * @brief setRosServerClass
+     * @param ros_server
+     */
+    void setRosServerClass(RosServerClass::Ptr ros_server);
+
+    /**
+     * @brief reset
+     */
+    void reset();
 
 private:
 

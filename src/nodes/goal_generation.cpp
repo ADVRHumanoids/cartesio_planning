@@ -152,7 +152,7 @@ int main(int argc, char ** argv)
     valid.add(check_collision, "self_collisions", false);
 
     goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSamplerBase>(solver);
-    goal_sampler->setValidityCheker(std::bind(&XBot::Cartesian::Planning::ValidityPredicateAggregate::checkAll, valid));
+    goal_sampler->setValidityCheker(std::bind(&XBot::Cartesian::Planning::ValidityPredicateAggregate::checkAll, &valid, nullptr));
 
     ros::Rate rate(100);
     while(ros::ok())

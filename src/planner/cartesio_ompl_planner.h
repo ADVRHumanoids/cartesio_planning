@@ -60,6 +60,8 @@ public:
 
     ompl::base::SpaceInformationPtr getSpaceInfo() const;
 
+    void getBounds(Eigen::VectorXd& qmin, Eigen::VectorXd& qmax) const;
+
     StateWrapper getStateWrapper() const;
 
 

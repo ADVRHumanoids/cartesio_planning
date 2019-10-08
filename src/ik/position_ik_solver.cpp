@@ -138,6 +138,16 @@ double PositionCartesianSolver::getErrorThreshold() const
     return _err_tol * _n_task;
 }
 
+void PositionCartesianSolver::setRosServerClass(XBot::Cartesian::RosServerClass::Ptr ros_server)
+{
+    _ros_server = ros_server;
+}
+
+void PositionCartesianSolver::reset()
+{
+    _ci->reset(0.0);
+}
+
 PositionCartesianSolver::TaskData::TaskData(int a_size):
     size(a_size)
 {

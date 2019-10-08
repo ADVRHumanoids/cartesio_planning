@@ -2,30 +2,39 @@
 
     <arg name="solver" default="OpenSot"/>
     <arg name="prefix" default=""/>
+
     <param name="robot_description"
         textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
+
     <param name="robot_description_semantic"
         textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
-    <param name="cartesian/problem_description_constraint"
+
+    <param name="planner/problem_description_constraint"
         textfile="$(find cartesio_planning)/configs/problem/comanplus_constraint_stack.yaml"/>
-    <param name="cartesian/problem_description_goal"
+
+    <param name="cartesian/problem_description"
         textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
 
-
-
-    <node pkg="cartesio_planning" type="ompl_test" name="cartesio_planning" output="screen">
+    <node pkg="cartesio_planning" type="planning_server" name="planning_server" output="screen">
+        <remap from="planner/goal/joint_states" to="cartesian/solution"/>
         <param name="solver" value=""/>
         <param name="is_model_floating_base" value="true"/>
-        <param name="planner_options"
+        <param name="planner_config"
             textfile="$(find cartesio_planning)/configs/problem/comanplus_example_manipulation_config.yaml"/>
     </node>
 
+    <include file="$(find cartesian_interface)/launch/cartesio.launch">
+        <arg name="tf_prefix" value="ci"/>
+    </include>
 
-    <node pkg="cartesian_interface" type="marker_spawner" name="interactive_markers" output="screen"/>
 
     <node pkg="cartesio_planning" type="previewer" name="planner_previewer" output="screen"/>
 
-    <node pkg="tf" type="static_transform_publisher" name="world_connecter" args="0 0 0 0 0 0 ci/world planner/world 10"/>
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_start" args="0 0 0 0 0 0 world planner/start/world 30"/>
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_goal" args="0 0 0 0 0 0 world planner/goal/world 30"/>
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_playback" args="0 0 0 0 0 0 world planner/world 30"/>
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_ci" args="0 0 0 0 0 0 world ci/world 30"/>
+
     
     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find cartesio_planning)/configs/rviz/example_comanplus_manipulation.rviz" output="screen"/>
     

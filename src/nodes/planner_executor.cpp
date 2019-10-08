@@ -2,7 +2,8 @@
 
 #include "utils/parse_yaml_utils.h"
 #include "validity_checker/validity_checker_factory.h"
-#include "validity_checker/validity_predicate_aggregate.h"
+
+#include <trajectory_msgs/JointTrajectory.h>
 
 #include <RobotInterfaceROS/ConfigFromParam.h>
 
@@ -16,21 +17,42 @@ PlannerExecutor::PlannerExecutor():
     _nh("planner"),
     _nhpr("~")
 {
-    init_load_model();
     init_load_config();
+    init_load_model();
     init_load_planner();
     init_load_validity_checker();
+    init_subscribe_start_goal();
+    init_trj_publisiher();
+    init_planner_srv();
+}
+
+void PlannerExecutor::run()
+{
+    auto time = ros::Time::now();
+    ros::spinOnce();
+
+    publish_tf(time);
+
 }
 
 void PlannerExecutor::init_load_model()
 {
     auto cfg = XBot::ConfigOptionsFromParamServer();
     _model = XBot::ModelInterface::getModel(cfg);
+    _start_model = XBot::ModelInterface::getModel(cfg);
+    _goal_model = XBot::ModelInterface::getModel(cfg);
 
     Eigen::VectorXd qhome;
     _model->getRobotState("home", qhome);
+
     _model->setJointPosition(qhome);
     _model->update();
+
+    _start_model->setJointPosition(qhome);
+    _start_model->update();
+
+    _goal_model->setJointPosition(qhome);
+    _goal_model->update();
 }
 
 void PlannerExecutor::init_load_config()
@@ -98,9 +120,9 @@ void PlannerExecutor::init_load_planner()
     if(_model->isFloatingBase())
     {
         qmax.head<6>() << 1, 1, 1, M_PI, M_PI, M_PI;
-        qmin.head<6>() << -qmin.head<6>();
+        qmin.head<6>() << -qmax.head<6>();
 
-        YAML_PARSE_OPTION(_planner_config["state_space"]["floating_base_pos_min"],
+        YAML_PARSE_OPTION(_planner_config["state_space"],
                 floating_base_pos_min,
                 std::vector<double>,
                 {});
@@ -112,7 +134,7 @@ void PlannerExecutor::init_load_planner()
                     floating_base_pos_min[2];
         }
 
-        YAML_PARSE_OPTION(_planner_config["state_space"]["floating_base_pos_max"],
+        YAML_PARSE_OPTION(_planner_config["state_space"],
                 floating_base_pos_max,
                 std::vector<double>,
                 {});
@@ -153,7 +175,7 @@ void PlannerExecutor::init_load_validity_checker()
         return;
     }
 
-    Planning::ValidityPredicateAggregate vc_aggregate;
+
 
     for(auto vc : _planner_config["state_validity_check"])
     {
@@ -168,15 +190,15 @@ void PlannerExecutor::init_load_validity_checker()
                                                     _model,
                                                     "");
 
-        vc_aggregate.add(vc_fun, "vc_name");
+        _vc_aggregate.add(vc_fun, vc_name);
 
     }
 
-    auto validity_predicate = [&vc_aggregate, this](const Eigen::VectorXd& q)
+    auto validity_predicate = [this](const Eigen::VectorXd& q)
     {
         _model->setJointPosition(q);
         _model->update();
-        return vc_aggregate.checkAll();
+        return _vc_aggregate.checkAll();
     };
 
     _planner->setStateValidityPredicate(validity_predicate);
@@ -187,16 +209,192 @@ void PlannerExecutor::init_subscribe_start_goal()
     _start_sub = _nh.subscribe("start/joint_states", 1,
                                &PlannerExecutor::on_start_state_recv, this);
 
-    _goal_sub = _nh.subscribe("stop/joint_states", 1,
+    _goal_sub = _nh.subscribe("goal/joint_states", 1,
                               &PlannerExecutor::on_goal_state_recv, this);
+
+    _start_rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_start_model);
+
+    _goal_rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_goal_model);
+}
+
+void PlannerExecutor::init_trj_publisiher()
+{
+    _trj_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 1);
+}
+
+void PlannerExecutor::init_planner_srv()
+{
+    _planner_srv = _nh.advertiseService("compute_plan", &PlannerExecutor::planner_service, this);
+}
+
+bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
+{
+    if(_model != model)
+    {
+        _model->syncFrom(*model, XBot::Sync::Position);
+    }
+
+    bool valid = true;
+
+    std::vector<std::string> failed_checks;
+    if(!_vc_aggregate.checkAll(&failed_checks))
+    {
+        valid = false;
+
+        std::cout << "Invalid state, failed validity checks were: \n";
+        for(int i = 0; i < failed_checks.size(); i++)
+        {
+            std::cout << " - '" << failed_checks[i] << "'\n";
+        }
+        std::cout.flush();
+    }
+
+    Eigen::VectorXd q;
+    Eigen::VectorXd qmin, qmax;
+    _model->getJointPosition(q);
+    _planner->getBounds(qmin, qmax);
+    const double q_tol = 1e-6;
+
+    if((q.array() < qmin.array() - q_tol).any() || (q.array() > qmax.array() + q_tol).any())
+    {
+        valid = false;
+        std::cout << "Invalid state, violates bounds" << std::endl;
+
+        for(int i = 0; i < _model->getJointNum(); i++)
+        {
+            if(q[i] < qmin[i] || q[i] > qmax[i])
+            {
+                std::cout << _model->getEnabledJointNames().at(i) <<
+                         ": " << qmin[i] << " <= " << q[i] <<
+                         " <= " << qmax[i] << "\n";
+            }
+        }
+        std::cout.flush();
+    }
+
+    if(!_manifold)
+    {
+        return valid;
+    }
+
+    Eigen::VectorXd error(_manifold->getCoDimension());
+    _manifold->function(q, error);
+
+    const double err_threshold = 1e-6;
+    double err = error.cwiseAbs().maxCoeff();
+    if(err > err_threshold)
+    {
+        valid = false;
+        std::cout << "Invalid state, not on manifold (error = " << err << ")" << std::endl;
+    }
+
+    return valid;
 }
 
 void PlannerExecutor::on_start_state_recv(const sensor_msgs::JointStateConstPtr & msg)
 {
+    // tbd: input checking
+
+    XBot::JointNameMap q;
+    for(int i = 0; i < msg->name.size(); i++)
+    {
+        q[msg->name[i]] = msg->position[i];
+    }
+
+    _start_model->setJointPosition(q);
+    _start_model->update();
+
+    if(_manifold)
+    {
+        _manifold->reset(); // note: manifold is set according to start state
+    }
+
+    check_state_valid(_start_model);
 
 }
 
 void PlannerExecutor::on_goal_state_recv(const sensor_msgs::JointStateConstPtr & msg)
 {
+    // tbd: input checking
 
+    XBot::JointNameMap q;
+    for(int i = 0; i < msg->name.size(); i++)
+    {
+        q[msg->name[i]] = msg->position[i];
+    }
+
+    _goal_model->setJointPosition(q);
+    _goal_model->update();
+
+    check_state_valid(_goal_model);
+
+}
+
+bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Request& req,
+                                      cartesio_planning::CartesioPlanner::Response& res)
+{
+    // check start and goal state correctness
+    std::cout << "Checking start state validity.." << std::endl;
+    if(!check_state_valid(_start_model))
+    {
+        throw std::runtime_error("Invalid start state");
+    }
+
+    std::cout << "Checking goal state validity.." << std::endl;
+    if(!check_state_valid(_goal_model))
+    {
+        throw std::runtime_error("Invalid goal state");
+    }
+
+    Eigen::VectorXd qstart, qgoal;
+    _start_model->getJointPosition(qstart);
+    _goal_model->getJointPosition(qgoal);
+
+    _planner->setStartAndGoalStates(qstart, qgoal);
+
+    if(req.time <= 0)
+    {
+        res.status.msg.data = "time arg should be > 0";
+        res.status.val = ompl::base::PlannerStatus::ABORT;
+        return true;
+    }
+
+
+    if(req.planner_type == "")
+    {
+        req.planner_type = "RRTstar";
+    }
+
+    std::cout << "Requested planner " << req.planner_type << std::endl;
+
+    _planner->solve(req.time, req.planner_type);
+
+    res.status.val = ompl::base::PlannerStatus::StatusType(_planner->getPlannerStatus());
+    res.status.msg.data = _planner->getPlannerStatus().asString();
+
+    if(_planner->getPlannerStatus())
+    {
+        trajectory_msgs::JointTrajectory msg;
+        msg.joint_names = _model->getEnabledJointNames();
+        auto t = ros::Duration(0);
+
+        for(auto x : _planner->getSolutionPath())
+        {
+            trajectory_msgs::JointTrajectoryPoint point;
+            point.positions.assign(x.data(), x.data() + x.size());
+            t += ros::Duration(0.1);
+            point.time_from_start = t;
+            msg.points.push_back(point);
+        }
+
+        _trj_pub.publish(msg);
+    }
+
+    return true;
+}
+
+void PlannerExecutor::publish_tf(ros::Time time)
+{
+    _start_rspub->publishTransforms(time, "planner/start");
+    _goal_rspub->publishTransforms(time, "planner/goal");
 }
