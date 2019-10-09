@@ -10,8 +10,9 @@
 
 #include <cartesian_interface/utils/RobotStatePublisher.h>
 
-#include "planner/cartesio_ompl_planner.h"
 #include "constraints/cartesian_constraint.h"
+#include "planner/cartesio_ompl_planner.h"
+#include "utils/robot_viz.h"
 #include "validity_checker/validity_predicate_aggregate.h"
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "validity_checker/validity_checker_context.h"
@@ -29,7 +30,6 @@ public:
 
 private:
 
-    typedef std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> RsPubPtr;
     typedef std::shared_ptr<XBot::Cartesian::Planning::PlanningSceneWrapper> PlanningScenePtr;
 
     void init_load_model();
@@ -60,7 +60,7 @@ private:
 
     ros::Subscriber _goal_sub, _start_sub;
     XBot::ModelInterface::Ptr _start_model, _goal_model;
-    RsPubPtr _goal_rspub, _start_rspub;
+    XBot::Cartesian::Planning::RobotViz::Ptr _start_viz, _goal_viz;
 
     ros::Publisher _trj_pub;
     ros::ServiceServer _planner_srv;

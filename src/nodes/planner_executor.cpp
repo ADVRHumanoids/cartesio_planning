@@ -190,9 +190,15 @@ void PlannerExecutor::init_subscribe_start_goal()
     _goal_sub = _nh.subscribe("goal/joint_states", 1,
                               &PlannerExecutor::on_goal_state_recv, this);
 
-    _start_rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_start_model);
+    _start_viz = std::make_shared<Planning::RobotViz>(_model,
+                                                     "start/robot_markers",
+                                                     _nh);
+    _start_viz->setPrefix("planner/start/");
 
-    _goal_rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_goal_model);
+    _goal_viz = std::make_shared<Planning::RobotViz>(_model,
+                                                     "goal/robot_markers",
+                                                     _nh);
+    _goal_viz->setPrefix("planner/goal/");
 }
 
 void PlannerExecutor::init_trj_publisiher()
@@ -287,8 +293,6 @@ void PlannerExecutor::on_start_state_recv(const sensor_msgs::JointStateConstPtr 
         _manifold->reset(); // note: manifold is set according to start state
     }
 
-    check_state_valid(_start_model);
-
 }
 
 void PlannerExecutor::on_goal_state_recv(const sensor_msgs::JointStateConstPtr & msg)
@@ -303,8 +307,6 @@ void PlannerExecutor::on_goal_state_recv(const sensor_msgs::JointStateConstPtr &
 
     _goal_model->setJointPosition(q);
     _goal_model->update();
-
-    check_state_valid(_goal_model);
 
 }
 
@@ -373,6 +375,32 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
 
 void PlannerExecutor::publish_tf(ros::Time time)
 {
-    _start_rspub->publishTransforms(time, "planner/start");
-    _goal_rspub->publishTransforms(time, "planner/goal");
+    /* Publish start markers */
+    auto start_color = (Eigen::Vector4d() << 0.0, 0.0, 1.0, 0.5).finished();
+
+    bool start_valid = check_state_valid(_start_model);
+
+    if(!start_valid)
+    {
+        start_color << 178./255., 0, 77./255., 0.5;
+    }
+
+    std::vector<std::string> red_links = _vc_context.planning_scene->getCollidingLinks();
+    _start_viz->setRGBA(start_color);
+    _start_viz->publishMarkers(time, red_links);
+
+    /* Publish goal markers */
+    auto goal_color = (Eigen::Vector4d() << 0.0, 1.0, 0.0, 0.5).finished();
+
+    bool goal_valid = check_state_valid(_goal_model);
+
+    if(!goal_valid)
+    {
+        goal_color << 178./255., 77./255., 0, 0.5;
+    }
+
+    red_links = _vc_context.planning_scene->getCollidingLinks();
+    _goal_viz->setRGBA(goal_color);
+    _goal_viz->publishMarkers(time, red_links);
+
 }
