@@ -53,18 +53,21 @@ std::function<bool ()> ValidityCheckContext::make_collision_checker(YAML::Node v
     // construct planning scene for model
     planning_scene = std::make_shared<PlanningSceneWrapper>(_model);
 
+    auto planning_scene_capture = planning_scene;
+
     // define validity checker
-    auto validity_checker = [include_environment, this]()
+    auto validity_checker = [include_environment,
+            planning_scene_capture]()
     {
-        planning_scene->update();
+        planning_scene_capture->update();
 
         if(include_environment)
         {
-            return !planning_scene->checkCollisions();
+            return !planning_scene_capture->checkCollisions();
         }
         else
         {
-            return !planning_scene->checkSelfCollisions();
+            return !planning_scene_capture->checkSelfCollisions();
         }
 
     };
