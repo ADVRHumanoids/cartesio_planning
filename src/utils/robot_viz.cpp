@@ -21,19 +21,16 @@ std::string XBot::Cartesian::Planning::RobotViz::getPrefix()
     return _prefix;
 }
 
-void XBot::Cartesian::Planning::RobotViz::setRGBA(double R, double G, double B, double A)
+void XBot::Cartesian::Planning::RobotViz::setRGBA(const color& rgba)
 {
-    _rgba[0] = R;
-    _rgba[1] = G;
-    _rgba[2] = B;
-    _rgba[3] = A;
+    _rgba = rgba;
 }
 
 void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time, const std::vector<std::string> & red_links)
 {
     visualization_msgs::MarkerArray markers;
 
-    std::string bl; _model->getFloatingBaseLink(bl);
+    std::string bl = "world"; // _model->getFloatingBaseLink(bl);
 
     ros::Time t = time;
 

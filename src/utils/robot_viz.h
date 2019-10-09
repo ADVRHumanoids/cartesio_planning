@@ -28,7 +28,7 @@ public:
 
     std::string getPrefix();
 
-    void setRGBA(double R, double G, double B, double A);
+    void setRGBA(const color& rgba);
 
     void publishMarkers(const ros::Time& time, const std::vector<std::string>& red_links);
 
