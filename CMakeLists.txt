@@ -164,7 +164,8 @@ add_library(cartesio_planning SHARED
     src/validity_checker/stability/stability_detection.cpp
     src/validity_checker/collisions/planning_scene_wrapper.cpp
     src/validity_checker/validity_checker_factory.cpp
-    src/validity_checker/validity_predicate_aggregate.cpp)
+    src/validity_checker/validity_predicate_aggregate.cpp
+    src/nodes/goal_generation.cpp)
 
 target_link_libraries(cartesio_planning
     PUBLIC
@@ -225,7 +226,7 @@ target_link_libraries(self_collision_robot ${OMPL_LIBRARIES}
 
 # goal_generation node
 add_executable(goal_generation_node
-    src/nodes/goal_generation.cpp
+    src/goal_generation_test.cpp
     )
 
 target_link_libraries(goal_generation_node ${OMPL_LIBRARIES}

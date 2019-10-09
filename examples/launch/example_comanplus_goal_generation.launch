@@ -13,6 +13,8 @@
     <node pkg="cartesio_planning" type="goal_generation_node" name="goal_generation_node" required="true" output="screen" launch-prefix="$(arg prefix)">
 	<param name="is_model_floating_base" type="bool" value="true"/>
         <param name="model_type" value="RBDL"/>
+        <param name="planner_config"
+            textfile="$(find cartesio_planning)/configs/problem/comanplus_example_manipulation_config.yaml"/>
     </node>
 
     <node pkg="cartesian_interface" type="marker_spawner" name="interactive_markers" output="screen"/>
