@@ -69,9 +69,9 @@ int main(int argc, char** argv)
 
     /* A default pose */
     geometry_msgs::Pose pose;
-    pose.position.x = nhpr.param("x", 0.8);
-    pose.position.y = nhpr.param("y", 0.0);
-    pose.position.z = nhpr.param("z", 0.0);
+    pose.position.x = nhpr.param("x", 0.4);
+    pose.position.y = nhpr.param("y", -0.1);
+    pose.position.z = nhpr.param("z", -0.2);
     pose.orientation.w = 1.0;
 
     /* Define a box to be attached */
@@ -113,7 +113,6 @@ int main(int argc, char** argv)
     moveit_msgs::PlanningScene planning_scene;
     planning_scene.world.collision_objects.push_back(attached_object.object);
     planning_scene.is_diff = true;
-    planning_scene_diff_publisher.publish(planning_scene);
 
     auto srv = node_handle.serviceClient<moveit_msgs::ApplyPlanningScene>("planner/apply_planning_scene");
     srv.waitForExistence();

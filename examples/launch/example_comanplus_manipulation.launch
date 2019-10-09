@@ -23,6 +23,8 @@
             textfile="$(find cartesio_planning)/configs/problem/comanplus_example_manipulation_config.yaml"/>
     </node>
 
+    <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/>
+
     <include file="$(find cartesian_interface)/launch/cartesio.launch">
         <arg name="tf_prefix" value="ci"/>
     </include>
