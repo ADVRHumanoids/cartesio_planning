@@ -174,6 +174,14 @@ void PlannerExecutor::init_load_validity_checker()
 
     _vc_context.planning_scene->startMonitor();
 
+    _vc_context.planning_scene->startMonitor();
+
+    _get_planning_scene_srv = _nh.advertiseService("get_planning_scene",
+                                                   &PlannerExecutor::get_planning_scene_service, this);
+
+    _apply_planning_scene_srv = _nh.advertiseService("apply_planning_scene",
+                                                     &PlannerExecutor::apply_planning_scene_service, this);
+
     auto validity_predicate = [this](const Eigen::VectorXd& q)
     {
         _model->setJointPosition(q);
@@ -372,6 +380,20 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
         _trj_pub.publish(msg);
     }
 
+    return true;
+}
+
+bool PlannerExecutor::get_planning_scene_service(moveit_msgs::GetPlanningScene::Request& req,
+                                                 moveit_msgs::GetPlanningScene::Response& res)
+{
+    _vc_context.planning_scene->getPlanningScene(req, res);
+    return true;
+}
+
+bool PlannerExecutor::apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request & req,
+                                                   moveit_msgs::ApplyPlanningScene::Response & res)
+{
+    _vc_context.planning_scene->applyPlanningScene(req.scene);
     return true;
 }
 
