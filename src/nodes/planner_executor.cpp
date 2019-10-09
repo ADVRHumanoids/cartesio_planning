@@ -172,6 +172,8 @@ void PlannerExecutor::init_load_validity_checker()
     _vc_context = Planning::ValidityCheckContext(_planner_config,
                                                  _model, _nh);
 
+    _vc_context.planning_scene->startMonitor();
+
     auto validity_predicate = [this](const Eigen::VectorXd& q)
     {
         _model->setJointPosition(q);
