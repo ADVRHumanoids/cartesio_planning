@@ -5,6 +5,7 @@
 
 #include <XBotInterface/ModelInterface.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <cartesio_planning/SetContactFrames.h>
 
 class convex_hull;
 
@@ -67,16 +68,19 @@ private:
     XBot::ModelInterface::ConstPtr _model;
 };
 
-class ConvexHullVisualization
+class ConvexHullROS
 {
 public:
-    typedef std::shared_ptr<ConvexHullVisualization> Ptr;
+    typedef std::shared_ptr<ConvexHullROS> Ptr;
 
-    ConvexHullVisualization(const XBot::ModelInterface::Ptr model, ConvexHullStability& ch):
+    ConvexHullROS(XBot::ModelInterface::ConstPtr model, ConvexHullStability& ch, ros::NodeHandle& nh):
         _ch(ch),
-        _model(*model)
+        _model(*model),
+        _nh(nh)
     {
         _vis_pub = _nh.advertise<visualization_msgs::Marker>( "convex_hull", 0 );
+
+        _frame_sub = _nh.subscribe("contact_frames", 10, &ConvexHullROS::set_contact_frames, this);
     }
 
     void publish()
@@ -137,12 +141,29 @@ private:
     ConvexHullStability& _ch;
     ros::NodeHandle _nh;
     ros::Publisher _vis_pub;
-    XBot::ModelInterface& _model;
+    const XBot::ModelInterface& _model;
+    ros::Subscriber _frame_sub;
+
+    void set_contact_frames(cartesio_planning::SetContactFrames::ConstPtr msg)
+    {
+
+        ConvexHullStability::PolygonFrames polyframes;
+        for(unsigned int i = 0; i < msg->frames_in_contact.size(); ++i)
+            polyframes.push_back(msg->frames_in_contact[i]);
+
+
+        if(msg->action.data() == msg->CLEAR)
+            _ch.setPolygonFrames(polyframes);
+        else if(msg->action.data() == msg->ADD)
+            _ch.addPolygonFrames(polyframes);
+        else if(msg->action.data() == msg->REMOVE)
+            _ch.removePolygonFrames(polyframes);
+    }
 };
 
 }
-                                     }
-               }
+}
+}
 
 
 #endif

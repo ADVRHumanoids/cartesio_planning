@@ -18,7 +18,7 @@ public:
     ValidityCheckContext();
 
     ValidityCheckContext(YAML::Node config,
-                         ModelInterface::ConstPtr model);
+                         ModelInterface::ConstPtr model, ros::NodeHandle& nh);
 
     PlanningSceneWrapper::Ptr planning_scene;
     ValidityPredicateAggregate vc_aggregate;
