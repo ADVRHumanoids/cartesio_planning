@@ -9,16 +9,12 @@
 #include "goal/goal_sampler.h"
 
 #include "cartesio_planning/CartesioGoal.h"
-#include "cartesio_planning/SetContactFrames.h"
 
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
 
 XBot::Cartesian::Planning::GoalSamplerBase::Ptr goal_sampler;
 XBot::ModelInterface::Ptr model;
-XBot::Cartesian::Planning::ConvexHullStability::PolygonFrames polyframes;
-XBot::Cartesian::Planning::ConvexHullStability::Ptr ch;
-XBot::Cartesian::Planning::ConvexHullVisualization::Ptr ch_viz;
 
 bool goal_sampler_service(cartesio_planning::CartesioGoal::Request& req, cartesio_planning::CartesioGoal::Response& res)
 {
@@ -37,39 +33,9 @@ bool goal_sampler_service(cartesio_planning::CartesioGoal::Request& req, cartesi
         Eigen::VectorXd::Map(&res.sampled_goal.position[0], q.size()) = q;
         res.sampled_goal.header.stamp = ros::Time::now();
     }
-
-
-
-
     return true;
 }
 
-bool set_contact_frames_service(cartesio_planning::SetContactFrames::Request& req, cartesio_planning::SetContactFrames::Response& res)
-{
-    polyframes.clear();
-    for(unsigned int i = 0; i < req.frames_in_contact.size(); ++i)
-        polyframes.push_back(req.frames_in_contact[i]);
-
-
-    if(req.action.data() == req.CLEAR)
-    {
-        ch->setPolygonFrames(polyframes);
-        res.result.data = true;
-    }
-    else if(req.action.data() == req.ADD)
-    {
-        ch->addPolygonFrames(polyframes);
-        res.result.data = true;
-    }
-    else if(req.action.data() == req.REMOVE)
-    {
-        ch->removePolygonFrames(polyframes);
-        res.result.data = true;
-    }
-
-    res.result.data = false;
-    return true;
-}
 
 int main(int argc, char ** argv)
 {
@@ -124,6 +90,7 @@ int main(int argc, char ** argv)
     solver->setRosServerClass(ros_server);
 
 
+    XBot::Cartesian::Planning::ConvexHullStability::PolygonFrames polyframes;
     polyframes.push_back("l_foot_lower_left_link");
     polyframes.push_back("l_foot_lower_right_link");
     polyframes.push_back("l_foot_upper_left_link");
@@ -132,9 +99,8 @@ int main(int argc, char ** argv)
     polyframes.push_back("r_foot_lower_right_link");
     polyframes.push_back("r_foot_upper_left_link");
     polyframes.push_back("r_foot_upper_right_link");
-    ch = std::make_shared<XBot::Cartesian::Planning::ConvexHullStability>(model, polyframes);
-    ch_viz = std::make_shared<XBot::Cartesian::Planning::ConvexHullVisualization>(model, *ch);
-    ros::ServiceServer service_b = nh.advertiseService("set_contact_frames_service", set_contact_frames_service);
+    XBot::Cartesian::Planning::ConvexHullStability::Ptr ch = std::make_shared<XBot::Cartesian::Planning::ConvexHullStability>(model, polyframes);
+    XBot::Cartesian::Planning::ConvexHullROS::Ptr ch_viz = std::make_shared<XBot::Cartesian::Planning::ConvexHullROS>(model, *ch, n);
 
 
     XBot::Cartesian::Planning::PlanningSceneWrapper collision(model);

@@ -76,6 +76,7 @@ add_message_files(
     FILES
     CartesioPlannerStatus.msg
     CartesioPlannerGoalStatus.msg
+    SetContactFrames.msg
     )
 
 ## Generate services in the 'srv' folder
@@ -83,7 +84,6 @@ add_service_files(
     FILES
     CartesioPlanner.srv
     CartesioGoal.srv
-    SetContactFrames.srv
     )
 
 ## Generate actions in the 'action' folder

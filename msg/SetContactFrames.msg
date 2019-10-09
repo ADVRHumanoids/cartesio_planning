@@ -7,7 +7,3 @@ string action
 
 string[] frames_in_contact
 
-
----
-
-std_msgs/Bool result
