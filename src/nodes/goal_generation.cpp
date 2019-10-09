@@ -25,10 +25,15 @@ void GoalGenerator::update()
     _ros_server->run();
 }
 
+bool GoalGenerator::sample(Eigen::VectorXd& q, double time_out)
+{
+    return _goal_sampler->sampleGoal(q, time_out);
+}
+
 bool GoalGenerator::goal_sampler_service(cartesio_planning::CartesioGoal::Request &req, cartesio_planning::CartesioGoal::Response &res)
 {
     Eigen::VectorXd q;
-    if(!_goal_sampler->sampleGoal(q, req.time)){
+    if(!sample(q, req.time)){
         res.status.val = res.status.TIMEOUT;
         res.status.msg.data = "TIMEOUT";
     }

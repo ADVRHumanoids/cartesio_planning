@@ -19,6 +19,7 @@ public:
 
     void update();
 
+    bool sample(Eigen::VectorXd& q, double time_out);
 private:
     ros::NodeHandle& _nh;
 
