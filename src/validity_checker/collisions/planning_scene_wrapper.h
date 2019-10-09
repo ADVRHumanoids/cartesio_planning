@@ -19,6 +19,8 @@ class PlanningSceneWrapper
 
 public:
 
+    typedef std::shared_ptr<PlanningSceneWrapper> Ptr;
+
     /**
      * @brief CollisionDetection constructor. The class keeps a model pointer,
      * which is used for querying the robot state at each call to update()

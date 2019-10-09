@@ -158,6 +158,7 @@ add_library(cartesio_planning SHARED
     src/ik/position_ik_solver.cpp
     src/planner/cartesio_ompl_planner.cpp
     src/state_wrapper.cpp
+    src/validity_checker/validity_checker_context.cpp
     src/validity_checker/stability/cartesian_utils.cpp
     src/validity_checker/stability/convex_hull_utils.cpp
     src/validity_checker/stability/stability_detection.cpp
