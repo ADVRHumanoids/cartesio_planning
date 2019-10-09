@@ -3,6 +3,7 @@
 
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit_msgs/PlanningScene.h>
+#include <moveit_msgs/GetPlanningScene.h>
 
 #include <XBotInterface/ModelInterface.h>
 
@@ -59,6 +60,9 @@ public:
     std::vector<std::string> getCollidingLinks() const;
 
     void applyPlanningScene(const moveit_msgs::PlanningScene& scene);
+
+    void getPlanningScene(moveit_msgs::GetPlanningScene::Request& req,
+                          moveit_msgs::GetPlanningScene::Response& res);
 
 
 

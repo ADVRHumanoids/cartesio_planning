@@ -79,13 +79,13 @@ PlanningSceneWrapper::PlanningSceneWrapper(ModelInterface::ConstPtr model):
 void PlanningSceneWrapper::startMonitor()
 {
     // publish planning scene at 30 Hz (topic is ~/monitored_planning_scene)
-    _monitor->setPlanningScenePublishingFrequency(30.); // tbd: hardcoded
+    _monitor->setPlanningScenePublishingFrequency(2.); // tbd: hardcoded
 
     // this subscribes to /planning_scene
     _monitor->startSceneMonitor();
 
     // this is somehow different from the scene monitor.. boh
-    _monitor->startWorldGeometryMonitor();
+    //    _monitor->startWorldGeometryMonitor();
 
     // this starts monitored planning scene publisher
     _monitor->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
@@ -202,6 +202,22 @@ void PlanningSceneWrapper::applyPlanningScene(const moveit_msgs::PlanningScene &
 {
     _monitor->updateFrameTransforms();
     _monitor->newPlanningSceneMessage(scene);
+}
+
+void PlanningSceneWrapper::getPlanningScene(moveit_msgs::GetPlanningScene::Request & req,
+                                            moveit_msgs::GetPlanningScene::Response & res)
+{
+    if (req.components.components & moveit_msgs::PlanningSceneComponents::TRANSFORMS)
+    {
+        _monitor->updateFrameTransforms();
+    }
+
+    planning_scene_monitor::LockedPlanningSceneRO ps(_monitor);
+
+    moveit_msgs::PlanningSceneComponents all_components;
+    all_components.components = UINT_MAX;  // Return all scene components if nothing is specified.
+    ps->getPlanningSceneMsg(res.scene, req.components.components ? req.components : all_components);
+
 }
 
 

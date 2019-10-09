@@ -5,6 +5,8 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
+#include <moveit_msgs/GetPlanningScene.h>
+#include <moveit_msgs/ApplyPlanningScene.h>
 
 #include <XBotInterface/ModelInterface.h>
 
@@ -48,6 +50,11 @@ private:
     void on_goal_state_recv(const sensor_msgs::JointStateConstPtr& msg);
     bool planner_service(cartesio_planning::CartesioPlanner::Request& req,
                          cartesio_planning::CartesioPlanner::Response& res);
+    bool get_planning_scene_service(moveit_msgs::GetPlanningScene::Request& req,
+                                    moveit_msgs::GetPlanningScene::Response& res);
+    bool apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request& req,
+                                      moveit_msgs::ApplyPlanningScene::Response& res);
+
 
     void publish_tf(ros::Time time);
 
@@ -64,6 +71,8 @@ private:
 
     ros::Publisher _trj_pub;
     ros::ServiceServer _planner_srv;
+    ros::ServiceServer _get_planning_scene_srv;
+    ros::ServiceServer _apply_planning_scene_srv;
 
 
 };
