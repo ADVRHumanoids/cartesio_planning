@@ -73,7 +73,7 @@ class ConvexHullROS
 public:
     typedef std::shared_ptr<ConvexHullROS> Ptr;
 
-    ConvexHullROS(const XBot::ModelInterface::Ptr model, ConvexHullStability& ch, ros::NodeHandle& nh):
+    ConvexHullROS(XBot::ModelInterface::ConstPtr model, ConvexHullStability& ch, ros::NodeHandle& nh):
         _ch(ch),
         _model(*model),
         _nh(nh)
@@ -141,7 +141,7 @@ private:
     ConvexHullStability& _ch;
     ros::NodeHandle _nh;
     ros::Publisher _vis_pub;
-    XBot::ModelInterface& _model;
+    const XBot::ModelInterface& _model;
     ros::Subscriber _frame_sub;
 
     void set_contact_frames(cartesio_planning::SetContactFrames::ConstPtr msg)

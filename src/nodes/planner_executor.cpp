@@ -170,7 +170,7 @@ void PlannerExecutor::init_load_planner()
 void PlannerExecutor::init_load_validity_checker()
 {
     _vc_context = Planning::ValidityCheckContext(_planner_config,
-                                                 _model);
+                                                 _model, _nh);
 
     auto validity_predicate = [this](const Eigen::VectorXd& q)
     {

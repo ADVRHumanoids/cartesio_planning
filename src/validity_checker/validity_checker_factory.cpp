@@ -52,7 +52,8 @@ std::function<bool ()> MakeCollisionChecker(YAML::Node vc_node,
  * @return
  */
 std::function<bool ()> MakeConvexHullChecker(YAML::Node vc_node,
-                                             XBot::ModelInterface::ConstPtr model)
+                                             XBot::ModelInterface::ConstPtr model,
+                                             ros::NodeHandle& nh)
 {
     using namespace XBot::Cartesian::Planning;
 
@@ -60,9 +61,12 @@ std::function<bool ()> MakeConvexHullChecker(YAML::Node vc_node,
     YAML_PARSE_OPTION(vc_node, links, std::list<std::string>, {});
 
     auto cvx_hull = std::make_shared<ConvexHullStability>(model, links);
+    auto cvx_ros = std::make_shared<ConvexHullROS>(model, *cvx_hull, nh);
+
 
     auto validity_checker = [=]()
     {
+        cvx_ros->publish();
         return cvx_hull->checkStability();
     };
 
@@ -74,7 +78,8 @@ std::function<bool ()> MakeConvexHullChecker(YAML::Node vc_node,
 
 std::function<bool ()> XBot::Cartesian::Planning::MakeValidityChecker(YAML::Node vc_node,
                                                                       ModelInterface::ConstPtr model,
-                                                                      std::string lib_name)
+                                                                      std::string lib_name,
+                                                                      ros::NodeHandle& nh)
 {
     /* Obtain factory name from task type */
     std::string vc_type = vc_node["type"].as<std::string>();
@@ -93,7 +98,7 @@ std::function<bool ()> XBot::Cartesian::Planning::MakeValidityChecker(YAML::Node
         }
         else if(vc_type == "ConvexHull")
         {
-            return MakeConvexHullChecker(vc_node, model);
+            return MakeConvexHullChecker(vc_node, model, nh);
         }
         else
         {
