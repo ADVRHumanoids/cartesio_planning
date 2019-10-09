@@ -4,14 +4,9 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
-        - /Status1
-        - /Grid1
-        - /RobotModel1
-        - /TF1
-        - /TF1/Frames1
-        - /InteractiveMarkers1
-        - /RobotModel2
+        - /MarkerArray1/Namespaces1
+        - /PlanningScene1
+        - /PlanningScene1/Scene Geometry1
       Splitter Ratio: 0.5
     Tree Height: 775
   - Class: rviz/Selection
@@ -57,663 +52,356 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
-        DWL:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        DWLExt:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        DWYTorso:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
-        Head:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        HeadHokuyo:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        HokuyoLaser:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        LElb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LFoot:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LFootmot:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LForearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LHipMot:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LLowLeg:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LShp:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LShr:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LShy:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LSoftHand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        LSoftHandLink:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LThighLowLeg:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LThighUpLeg:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LWrMot2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LWrMot3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         Link Tree Style: Links in Alphabetic Order
-        RElb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RFoot:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RFootmot:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RForearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RHipMot:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RLowLeg:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RShp:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RShr:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RShy:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RSoftHand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        RSoftHandLink:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RThighLowLeg:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RThighUpLeg:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RWrMot2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RWrMot3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        TCP_L:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        TCP_R:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        Waist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        imu_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        l_ankle:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_arm_ft:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_foot_lower_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_foot_lower_right_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_foot_upper_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_foot_upper_right_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_heel:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_leg_ft:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_sole:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_toe:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        r_ankle:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_arm_ft:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_foot_lower_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_foot_lower_right_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_foot_upper_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_foot_upper_right_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_heel:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_leg_ft:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_sole:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_toe:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        torso:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        world:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ci
       Update Interval: 0
-      Value: true
-      Visual Enabled: true
-    - Class: rviz/TF
-      Enabled: false
-      Frame Timeout: 15
-      Frames:
-        All Enabled: false
-      Marker Scale: 1
-      Name: TF
-      Show Arrows: true
-      Show Axes: true
-      Show Names: true
-      Tree:
-        {}
-      Update Interval: 0
       Value: false
+      Visual Enabled: true
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
-      Enabled: true
+      Enabled: false
       Name: InteractiveMarkers
       Show Axes: false
       Show Descriptions: true
       Show Visual Aids: false
       Update Topic: /TCP_L_Cartesian_marker_server/update
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /planner/obstacles
+      Marker Topic: /planner/goal/robot_markers
       Name: MarkerArray
       Namespaces:
-        "": true
+        collision: true
+        visual: false
       Queue Size: 100
       Value: true
-    - Alpha: 0.400000006
-      Class: rviz/RobotModel
-      Collision Enabled: false
+    - Class: moveit_rviz_plugin/PlanningScene
       Enabled: true
-      Links:
-        All Links Enabled: true
-        DWL:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        DWLExt:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        DWYTorso:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        Expand Joint Details: false
-        Expand Link Details: false
-        Expand Tree: false
-        Head:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        HeadHokuyo:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        HokuyoLaser:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        LElb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LFoot:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LFootmot:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LForearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LHipMot:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LLowLeg:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LShp:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LShr:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LShy:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LSoftHand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        LSoftHandLink:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LThighLowLeg:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LThighUpLeg:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LWrMot2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LWrMot3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        Link Tree Style: Links in Alphabetic Order
-        RElb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RFoot:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RFootmot:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RForearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RHipMot:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RLowLeg:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RShp:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RShr:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RShy:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RSoftHand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        RSoftHandLink:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RThighLowLeg:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RThighUpLeg:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RWrMot2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RWrMot3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        TCP_L:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        TCP_R:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        Waist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        imu_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        l_ankle:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_arm_ft:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_foot_lower_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_foot_lower_right_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_foot_upper_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_foot_upper_right_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_heel:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_leg_ft:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_sole:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_toe:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        l_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        r_ankle:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_arm_ft:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_foot_lower_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_foot_lower_right_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_foot_upper_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_foot_upper_right_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_heel:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_leg_ft:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_sole:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_toe:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        r_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        torso:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        world:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-      Name: RobotModel
+      Move Group Namespace: ""
+      Name: PlanningScene
+      Planning Scene Topic: /planning_server/monitored_planning_scene
       Robot Description: robot_description
-      TF Prefix: planner
-      Update Interval: 0
+      Scene Geometry:
+        Scene Alpha: 0.899999976
+        Scene Color: 170; 0; 127
+        Scene Display Time: 0.200000003
+        Show Scene Geometry: true
+        Voxel Coloring: Z-Axis
+        Voxel Rendering: Occupied Voxels
+      Scene Robot:
+        Attached Body Color: 150; 50; 150
+        Links:
+          All Links Enabled: true
+          DWL:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          DWLExt:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          DWYTorso:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          Expand Joint Details: false
+          Expand Link Details: false
+          Expand Tree: false
+          HeadHokuyo:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LElb:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LFoot:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LFootmot:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LForearm:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LHipMot:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LLowLeg:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LShp:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LShr:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LShy:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LSoftHand:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          LSoftHandLink:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LThighLowLeg:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LThighUpLeg:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LWrMot2:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          LWrMot3:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          Link Tree Style: Links in Alphabetic Order
+          Neck:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RElb:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RFoot:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RFootmot:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RForearm:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RHipMot:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RLowLeg:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RShp:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RShr:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RShy:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RSoftHand:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          RSoftHandLink:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RThighLowLeg:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RThighUpLeg:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RWrMot2:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          RWrMot3:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          TCP_L:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          TCP_R:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          Waist:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          base_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          imu_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          l_ankle:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          l_arm_ft:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          l_foot_lower_left_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          l_foot_lower_right_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          l_foot_upper_left_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          l_foot_upper_right_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          l_heel:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          l_leg_ft:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          l_sole:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          l_toe:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          l_wrist:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          r_ankle:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          r_arm_ft:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          r_foot_lower_left_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          r_foot_lower_right_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          r_foot_upper_left_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          r_foot_upper_right_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          r_heel:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          r_leg_ft:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          r_sole:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          r_toe:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          r_wrist:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          world:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+        Robot Alpha: 1
+        Show Robot Collision: false
+        Show Robot Visual: false
       Value: true
-      Visual Enabled: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
     Default Light: true
-    Fixed Frame: ci/world_odom
+    Fixed Frame: world
     Frame Rate: 30
   Name: root
   Tools:
@@ -749,10 +437,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.0703987479
+      Pitch: 0.550398648
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.03540003
+      Yaw: 4.81358004
     Saved: ~
 Window Geometry:
   Displays:
