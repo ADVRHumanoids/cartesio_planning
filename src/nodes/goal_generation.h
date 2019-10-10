@@ -14,15 +14,12 @@ public:
     typedef std::shared_ptr<GoalGenerator> Ptr;
 
     GoalGenerator(XBot::Cartesian::CartesianInterfaceImpl::Ptr ci,
-                  XBot::Cartesian::Planning::ValidityCheckContext& vc_context,
-                  ros::NodeHandle& nh);
+                  XBot::Cartesian::Planning::ValidityCheckContext& vc_context);
 
     void update();
 
     bool sample(Eigen::VectorXd& q, double time_out);
 private:
-    ros::NodeHandle& _nh;
-
     XBot::Cartesian::Planning::ValidityCheckContext& _vc_context;
 
     XBot::Cartesian::Planning::GoalSamplerBase::Ptr _goal_sampler;
@@ -30,10 +27,10 @@ private:
     XBot::Cartesian::RosServerClass::Ptr _ros_server;
     XBot::Cartesian::Planning::PositionCartesianSolver::Ptr _ik;
 
-    ros::ServiceServer _service_a;
 
 
-    bool goal_sampler_service(cartesio_planning::CartesioGoal::Request& req, cartesio_planning::CartesioGoal::Response& res);
+
+
 
 };
 

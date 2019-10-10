@@ -21,6 +21,8 @@
 
 #include "cartesio_planning/CartesioPlanner.h"
 
+#include "nodes/goal_generation.h"
+
 class PlannerExecutor
 {
 
@@ -41,6 +43,7 @@ private:
     void init_subscribe_start_goal();
     void init_trj_publisiher();
     void init_planner_srv();
+    void init_goal_generator();
 
 
 
@@ -74,7 +77,10 @@ private:
     ros::ServiceServer _get_planning_scene_srv;
     ros::ServiceServer _apply_planning_scene_srv;
 
-
+    GoalGenerator::Ptr _goal_generator;
+    bool _use_goal_generator;
+    bool goal_sampler_service(cartesio_planning::CartesioGoal::Request& req, cartesio_planning::CartesioGoal::Response& res);
+    ros::ServiceServer _service_goal_sampler;
 };
 
 #endif // PLANNER_EXECUTOR_H

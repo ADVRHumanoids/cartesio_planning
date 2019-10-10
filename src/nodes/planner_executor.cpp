@@ -21,6 +21,7 @@ PlannerExecutor::PlannerExecutor():
     init_load_model();
     init_load_planner();
     init_load_validity_checker();
+    init_goal_generator();
     init_subscribe_start_goal();
     init_trj_publisiher();
     init_planner_srv();
@@ -30,6 +31,9 @@ void PlannerExecutor::run()
 {
     auto time = ros::Time::now();
     ros::spinOnce();
+
+    if(_use_goal_generator)
+        _goal_generator->update();
 
     publish_tf(time);
 
@@ -197,7 +201,8 @@ void PlannerExecutor::init_subscribe_start_goal()
     _start_sub = _nh.subscribe("start/joint_states", 1,
                                &PlannerExecutor::on_start_state_recv, this);
 
-    _goal_sub = _nh.subscribe("goal/joint_states", 1,
+    if(!_use_goal_generator)
+        _goal_sub = _nh.subscribe("goal/joint_states", 1,
                               &PlannerExecutor::on_goal_state_recv, this);
 
     _start_viz = std::make_shared<Planning::RobotViz>(_model,
@@ -219,6 +224,64 @@ void PlannerExecutor::init_trj_publisiher()
 void PlannerExecutor::init_planner_srv()
 {
     _planner_srv = _nh.advertiseService("compute_plan", &PlannerExecutor::planner_service, this);
+}
+
+void PlannerExecutor::init_goal_generator()
+{
+    if(!_nhpr.getParam("use_goal_generator" ,_use_goal_generator))
+        _use_goal_generator = false;
+
+    if(_use_goal_generator)
+    {
+        std::string problem_description_string;
+        if(!_nh.getParam("problem_description_goal", problem_description_string))
+        {
+            ROS_ERROR("param problem_description_goal not provided!");
+            throw std::runtime_error("cartesian/problem_description not provided!");
+        }
+
+        auto ik_yaml_constraint = YAML::Load(problem_description_string);
+
+
+        auto ik_prob = ProblemDescription(ik_yaml_constraint, _model);
+
+        CartesianInterfaceImpl::Ptr ci = Utils::LoadObject<CartesianInterfaceImpl>("libCartesianOpenSot.so",
+                                                                                   "create_instance",
+                                                                                   _model,
+                                                                                   ik_prob);
+
+
+        _goal_generator = std::make_shared<GoalGenerator>(ci, _vc_context);
+
+        _service_goal_sampler = _nh.advertiseService("goal_sampler_service",
+                                                     &PlannerExecutor::goal_sampler_service, this);
+
+        ROS_WARN("goal generator is going to be used, disabling goal from topic");
+    }
+}
+
+bool PlannerExecutor::goal_sampler_service(cartesio_planning::CartesioGoal::Request &req,
+                                           cartesio_planning::CartesioGoal::Response &res)
+{
+    Eigen::VectorXd q;
+    if(!_goal_generator->sample(q, req.time)){
+        res.status.val = res.status.TIMEOUT;
+        res.status.msg.data = "TIMEOUT";
+    }
+    else
+    {
+        res.status.val = res.status.EXACT_SOLUTION;
+        res.status.msg.data = "EXACT_SOLUTION";
+
+        res.sampled_goal.name = _goal_model->getEnabledJointNames();
+        res.sampled_goal.position.resize(q.size());
+        Eigen::VectorXd::Map(&res.sampled_goal.position[0], q.size()) = q;
+        res.sampled_goal.header.stamp = ros::Time::now();
+    }
+
+    _goal_model->setJointPosition(q);
+    _goal_model->update();
+    return true;
 }
 
 bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)

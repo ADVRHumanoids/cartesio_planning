@@ -15,10 +15,16 @@
     <param name="cartesian/problem_description"
         textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
 
+    <param name="planner/problem_description_goal"
+        textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
+
+    <arg name="use_goal_generator" default="true"/>
+
     <node pkg="cartesio_planning" type="planning_server" name="planning_server" output="screen">
         <remap from="planner/goal/joint_states" to="cartesian/solution"/>
         <param name="solver" value=""/>
         <param name="is_model_floating_base" value="true"/>
+        <param name="use_goal_generator" value="$(arg use_goal_generator)"/>
         <param name="planner_config"
             textfile="$(find cartesio_planning)/configs/problem/comanplus_example_manipulation_config.yaml"/>
     </node>
@@ -36,9 +42,13 @@
     <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_goal" args="0 0 0 0 0 0 world planner/goal/world 30"/>
     <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_playback" args="0 0 0 0 0 0 world planner/world 30"/>
     <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_ci" args="0 0 0 0 0 0 world ci/world 30"/>
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_goal_sampler" args="0 0 0 0 0 0 world goal_sampler/world 30"/>
 
     
     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find cartesio_planning)/configs/rviz/example_comanplus_manipulation.rviz" output="screen"/>
     
+    <node if="$(arg use_goal_generator)" pkg="cartesian_interface" type="marker_spawner" name="interactive_markers_goal_sampler" output="screen">
+        <param name="tf_prefix" value="goal_sampler"/>
+    </node>
 
 </launch>

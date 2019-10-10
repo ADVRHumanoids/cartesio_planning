@@ -67,7 +67,7 @@ int main(int argc, char ** argv)
     XBot::Cartesian::Planning::ValidityCheckContext vc_context(YAML::Load(planner_config_string),
                                                                model, nh);
 
-    GoalGenerator goal_gen(ci, vc_context, nh);
+    GoalGenerator goal_gen(ci, vc_context);
 
 
 
