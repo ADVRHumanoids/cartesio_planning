@@ -279,8 +279,10 @@ bool PlannerExecutor::goal_sampler_service(cartesio_planning::CartesioGoal::Requ
         res.sampled_goal.header.stamp = ros::Time::now();
     }
 
+    _manifold->project(q);
     _goal_model->setJointPosition(q);
     _goal_model->update();
+
     return true;
 }
 
@@ -310,7 +312,7 @@ bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
     Eigen::VectorXd qmin, qmax;
     _model->getJointPosition(q);
     _planner->getBounds(qmin, qmax);
-    const double q_tol = 1e-6;
+    const double q_tol = 1e-3;
 
     if((q.array() < qmin.array() - q_tol).any() || (q.array() > qmax.array() + q_tol).any())
     {
@@ -336,8 +338,9 @@ bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
 
     Eigen::VectorXd error(_manifold->getCoDimension());
     _manifold->function(q, error);
+    _manifold->getTolerance();
 
-    const double err_threshold = 1e-6;
+    const double err_threshold = _manifold->getTolerance();
     double err = error.cwiseAbs().maxCoeff();
     if(err > err_threshold)
     {

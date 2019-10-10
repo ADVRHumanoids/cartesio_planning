@@ -73,8 +73,7 @@ bool PositionCartesianSolver::solve()
             _ros_server->run();
 
         getError(error);
-        tol_satisfied = error.norm() < _err_tol*_n_task;
-//        tol_satisfied = tol_satisfied && dq.norm() < 1e-3;
+        tol_satisfied = error.cwiseAbs().maxCoeff() < _err_tol;
 
         iter++;
 
