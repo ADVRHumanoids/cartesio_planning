@@ -57,6 +57,8 @@ private:
                                     moveit_msgs::GetPlanningScene::Response& res);
     bool apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request& req,
                                       moveit_msgs::ApplyPlanningScene::Response& res);
+    bool goal_sampler_service(cartesio_planning::CartesioGoal::Request& req,
+                              cartesio_planning::CartesioGoal::Response& res);
 
 
     void publish_tf(ros::Time time);
@@ -80,7 +82,6 @@ private:
 
     GoalGenerator::Ptr _goal_generator;
     bool _use_goal_generator;
-    bool goal_sampler_service(cartesio_planning::CartesioGoal::Request& req, cartesio_planning::CartesioGoal::Response& res);
     ros::ServiceServer _service_goal_sampler;
 };
 
