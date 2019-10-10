@@ -1,8 +1,9 @@
+#include <type_traits>
+
+
 
 #include <ompl/geometric/planners/rrt/BiTRRT.h>
 #include <ompl/geometric/planners/rrt/InformedRRTstar.h>
-#include <type_traits>
-
 #include <ompl/geometric/planners/rrt/LazyLBTRRT.h>
 #include <ompl/geometric/planners/rrt/LazyRRT.h>
 #include <ompl/geometric/planners/rrt/LBTRRT.h>
@@ -20,7 +21,9 @@
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/prm/LazyPRMstar.h>
 #include <ompl/geometric/planners/prm/SPARS.h>
+#define remove_cv_t remove_cv // this fixes a missing typedef in SPARStwo header
 #include <ompl/geometric/planners/prm/SPARStwo.h>
+#undef  remove_cv_t
 #include <ompl/geometric/planners/kpiece/KPIECE1.h>
 #include <ompl/geometric/planners/kpiece/BKPIECE1.h>
 #include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
