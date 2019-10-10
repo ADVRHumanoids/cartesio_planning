@@ -23,6 +23,8 @@
 
 #include "nodes/goal_generation.h"
 
+namespace XBot { namespace Cartesian {
+
 class PlannerExecutor
 {
 
@@ -34,7 +36,7 @@ public:
 
 private:
 
-    typedef std::shared_ptr<XBot::Cartesian::Planning::PlanningSceneWrapper> PlanningScenePtr;
+    typedef std::shared_ptr<Planning::PlanningSceneWrapper> PlanningScenePtr;
 
     void init_load_model();
     void init_load_config();
@@ -47,7 +49,6 @@ private:
 
 
 
-    bool check_state_valid(XBot::ModelInterface::ConstPtr model);
 
     void on_start_state_recv(const sensor_msgs::JointStateConstPtr& msg);
     void on_goal_state_recv(const sensor_msgs::JointStateConstPtr& msg);
@@ -61,15 +62,17 @@ private:
                               cartesio_planning::CartesioGoal::Response& res);
 
 
+    Planning::CartesianConstraint::Ptr make_manifold(std::string problem_description_string);
+    bool check_state_valid(XBot::ModelInterface::ConstPtr model);
     void publish_tf(ros::Time time);
     void enforce_bounds(Eigen::VectorXd& q) const;
 
     ros::NodeHandle _nh, _nhpr;
     YAML::Node _planner_config;
     XBot::ModelInterface::Ptr _model;
-    XBot::Cartesian::Planning::OmplPlanner::Ptr _planner;
-    XBot::Cartesian::Planning::CartesianConstraint::Ptr _manifold;
-    XBot::Cartesian::Planning::ValidityCheckContext _vc_context;
+    Planning::OmplPlanner::Ptr _planner;
+    Planning::CartesianConstraint::Ptr _manifold;
+    Planning::ValidityCheckContext _vc_context;
 
     ros::Subscriber _goal_sub, _start_sub;
     XBot::ModelInterface::Ptr _start_model, _goal_model;
@@ -84,5 +87,7 @@ private:
     bool _use_goal_generator;
     ros::ServiceServer _service_goal_sampler;
 };
+
+} }
 
 #endif // PLANNER_EXECUTOR_H

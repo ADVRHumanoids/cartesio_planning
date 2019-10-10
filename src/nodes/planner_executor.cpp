@@ -95,23 +95,8 @@ void PlannerExecutor::init_load_planner()
         {
             throw std::runtime_error("problem_description '" + param_name + "' parameter missing");
         }
-        else
-        {
-            ik_yaml_constraint = YAML::Load(problem_description_string);
-        }
 
-        auto ik_prob_constraint = ProblemDescription(ik_yaml_constraint, _model);
-
-        CartesianInterfaceImpl::Ptr constraint_ci = Utils::LoadObject<CartesianInterfaceImpl>("libCartesianOpenSot.so",
-                                                                                              "create_instance",
-                                                                                              _model,
-                                                                                              ik_prob_constraint);
-
-
-        auto ik_solver = std::make_shared<Planning::PositionCartesianSolver>(constraint_ci,
-                                                                             ik_prob_constraint);
-
-        _manifold = std::make_shared<Planning::CartesianConstraint>(ik_solver);
+        _manifold = make_manifold(problem_description_string);
 
         ompl_constraint = _manifold;
 
@@ -284,6 +269,25 @@ bool PlannerExecutor::goal_sampler_service(cartesio_planning::CartesioGoal::Requ
     _goal_model->update();
 
     return true;
+}
+
+Planning::CartesianConstraint::Ptr PlannerExecutor::make_manifold(std::string problem_description_string)
+{
+
+    auto ik_yaml_constraint = YAML::Load(problem_description_string);
+
+    auto ik_prob_constraint = ProblemDescription(ik_yaml_constraint, _model);
+
+    CartesianInterfaceImpl::Ptr constraint_ci = Utils::LoadObject<CartesianInterfaceImpl>("libCartesianOpenSot.so",
+                                                                                          "create_instance",
+                                                                                          _model,
+                                                                                          ik_prob_constraint);
+
+
+    auto ik_solver = std::make_shared<Planning::PositionCartesianSolver>(constraint_ci,
+                                                                         ik_prob_constraint);
+
+    return std::make_shared<Planning::CartesianConstraint>(ik_solver);
 }
 
 bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)

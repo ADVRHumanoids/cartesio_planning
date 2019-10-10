@@ -1,3 +1,6 @@
+#ifndef __PARSE_YAML_UTILS_H__
+#define __PARSE_YAML_UTILS_H__
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -30,11 +33,11 @@
     } \
     /* End macro for option parsing */
 
-namespace
+namespace std
 {
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, std::vector<T> v)
+inline std::ostream& operator<<(std::ostream& os, std::vector<T> v)
 {
     os << "\n";
     for(const auto& elem : v)
@@ -45,7 +48,7 @@ std::ostream& operator<<(std::ostream& os, std::vector<T> v)
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, std::list<std::string> v)
+inline std::ostream& operator<<(std::ostream& os, std::list<std::string> v)
 {
     os << "\n";
     for(const auto& elem : v)
@@ -57,3 +60,5 @@ std::ostream& operator<<(std::ostream& os, std::list<std::string> v)
 }
 
 }
+
+#endif
