@@ -339,6 +339,8 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     Eigen::VectorXd qstart, qgoal;
     _start_model->getJointPosition(qstart);
     _goal_model->getJointPosition(qgoal);
+    enforce_bounds(qstart);
+    enforce_bounds(qgoal);
 
     _planner->setStartAndGoalStates(qstart, qgoal);
 
@@ -427,4 +429,12 @@ void PlannerExecutor::publish_tf(ros::Time time)
     _goal_viz->setRGBA(goal_color);
     _goal_viz->publishMarkers(time, red_links);
 
+}
+
+void PlannerExecutor::enforce_bounds(Eigen::VectorXd & q) const
+{
+    Eigen::VectorXd qmin, qmax;
+    _planner->getBounds(qmin, qmax);
+
+    q = q.cwiseMin(qmax).cwiseMax(qmin);
 }

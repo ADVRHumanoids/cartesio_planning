@@ -57,6 +57,7 @@ private:
 
 
     void publish_tf(ros::Time time);
+    void enforce_bounds(Eigen::VectorXd& q) const;
 
     ros::NodeHandle _nh, _nhpr;
     YAML::Node _planner_config;

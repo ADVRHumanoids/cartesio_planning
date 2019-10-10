@@ -19,6 +19,11 @@
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/prm/LazyPRMstar.h>
+#include <ompl/geometric/planners/prm/SPARS.h>
+#include <ompl/geometric/planners/prm/SPARStwo.h>
+#include <ompl/geometric/planners/kpiece/KPIECE1.h>
+#include <ompl/geometric/planners/kpiece/BKPIECE1.h>
+#include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
 
 #include "cartesio_ompl_planner.h"
 #include "utils/parse_yaml_utils.h"
@@ -467,6 +472,31 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
     ADD_PLANNER_AND_IF("LazyPRM")
     {
         return std::make_shared<ompl::geometric::LazyPRM>(_space_info);
+    }
+
+    ADD_PLANNER_AND_IF("SPARS")
+    {
+        return std::make_shared<ompl::geometric::SPARS>(_space_info);
+    }
+
+    ADD_PLANNER_AND_IF("SPARStwo")
+    {
+        return std::make_shared<ompl::geometric::SPARStwo>(_space_info);
+    }
+
+    ADD_PLANNER_AND_IF("KPIECE1")
+    {
+        return std::make_shared<ompl::geometric::KPIECE1>(_space_info);
+    }
+
+    ADD_PLANNER_AND_IF("BKPIECE1")
+    {
+        return std::make_shared<ompl::geometric::BKPIECE1>(_space_info);
+    }
+
+    ADD_PLANNER_AND_IF("LBKPIECE1")
+    {
+        return std::make_shared<ompl::geometric::LBKPIECE1>(_space_info);
     }
 
     std::cout << "Valid planners are \n";
