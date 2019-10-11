@@ -152,7 +152,7 @@ private:
             polyframes.push_back(msg->frames_in_contact[i]);
 
 
-        if(msg->action.data() == msg->CLEAR)
+        if(msg->action.data() == msg->SET)
             _ch.setPolygonFrames(polyframes);
         else if(msg->action.data() == msg->ADD)
             _ch.addPolygonFrames(polyframes);
