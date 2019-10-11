@@ -51,3 +51,17 @@ bool ValidityPredicateAggregate::checkAll(std::vector<std::string> * failed_pred
 
     return success;
 }
+
+bool ValidityPredicateAggregate::check(const std::string& id)
+{
+    if(_functions.count(id) == 0)
+    {
+        throw std::runtime_error("given id %s does not exists");
+    }
+
+    if(_functions[id]() != _expected_values[id])
+    {
+        return false;
+    }
+    return true;
+}
