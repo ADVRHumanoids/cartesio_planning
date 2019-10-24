@@ -71,7 +71,7 @@ int main(int argc, char** argv)
     geometry_msgs::Pose pose;
     pose.position.x = nhpr.param("x", 0.4);
     pose.position.y = nhpr.param("y", -0.1);
-    pose.position.z = nhpr.param("z", -0.2);
+    pose.position.z = nhpr.param("z", 0.8);
     pose.orientation.w = 1.0;
 
     /* Define a box to be attached */
@@ -81,6 +81,7 @@ int main(int argc, char** argv)
     primitive.dimensions[0] = 0.2;
     primitive.dimensions[1] = 0.4;
     primitive.dimensions[2] = 0.2;
+
 
     attached_object.object.primitives.push_back(primitive);
     attached_object.object.primitive_poses.push_back(pose);

@@ -3,6 +3,8 @@
     <arg name="solver" default="OpenSot"/>
     <arg name="prefix" default=""/>
     <arg name="use_goal_generator" default="false"/>
+    <arg name="world_frame_link" default="l_sole"/>
+
 
     <param name="robot_description"
         textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
@@ -27,6 +29,7 @@
         <param name="use_goal_generator" value="$(arg use_goal_generator)"/>
         <param name="planner_config"
             textfile="$(find cartesio_planning)/configs/problem/comanplus_example_manipulation_config.yaml"/>
+        <param name="world_frame_link" value="$(arg world_frame_link)"/>
     </node>
 
     <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/>
@@ -51,13 +54,13 @@
     <node type="rviz" name="rviz" pkg="rviz"
         args="-d $(find cartesio_planning)/configs/rviz/example_comanplus_manipulation.rviz" output="screen"/>
     
-<!-- Here we select or to use either the goal generator or CartesI/O -->
     <node if="$(arg use_goal_generator)" pkg="cartesian_interface" type="marker_spawner" name="goal_marker_spawner" output="screen">
         <param name="ns" value="planner/goal_sampler"/>
         <param name="tf_prefix" value="planner/goal_sampler"/>
     </node>
     <include unless="$(arg use_goal_generator)" file="$(find cartesian_interface)/launch/cartesio.launch">
         <arg name="tf_prefix" value="ci"/>
+        <arg name="world_frame_link" value="$(arg world_frame_link)"/>
     </include>
 
 </launch>
