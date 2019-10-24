@@ -57,6 +57,28 @@ void PlannerExecutor::init_load_model()
 
     _goal_model->setJointPosition(qhome);
     _goal_model->update();
+
+    std::string world_frame_link;
+    if(_nhpr.hasParam("world_frame_link"))
+    {
+        _nhpr.getParam("world_frame_link", world_frame_link);
+        Eigen::Affine3d T;
+        if(_model->getPose(world_frame_link,T))
+        {
+            ROS_INFO("Setting planner world frame in %s", world_frame_link.c_str());
+
+            _model->setFloatingBasePose(T.inverse());
+            _model->update();
+
+            _start_model->setFloatingBasePose(T.inverse());
+            _start_model->update();
+
+            _goal_model->setFloatingBasePose(T.inverse());
+            _goal_model->update();
+        }
+        else
+            ROS_ERROR("world_frame_link %s does not exists, keeping original world!", world_frame_link.c_str());
+    }
 }
 
 void PlannerExecutor::init_load_config()
