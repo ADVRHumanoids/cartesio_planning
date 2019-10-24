@@ -92,7 +92,7 @@ public:
 
             visualization_msgs::Marker ch_marker;
 
-            ch_marker.header.frame_id = "ci/world_odom";
+            ch_marker.header.frame_id = "world";
             ch_marker.header.stamp = ros::Time::now();
             ch_marker.ns = "convex_hull";
             ch_marker.id = 0;
