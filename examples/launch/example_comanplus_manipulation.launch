@@ -2,7 +2,7 @@
 
     <arg name="solver" default="OpenSot"/>
     <arg name="prefix" default=""/>
-    <arg name="use_goal_generator" default="false"/>
+    <arg name="use_goal_generator" default="true"/>
     <arg name="world_frame_link" default="l_sole"/>
 
 

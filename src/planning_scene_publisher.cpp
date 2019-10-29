@@ -49,60 +49,12 @@
 #include <moveit/robot_state/conversions.h>
 
 
-int main(int argc, char** argv)
+ros::ServiceClient srv;
+
+void collision_object_cb(const moveit_msgs::CollisionObjectConstPtr msg)
 {
-    ros::init(argc, argv, "planning_scene_ros_api_tutorial");
-
-    ros::NodeHandle node_handle, nhpr("~");
-
-    // Define the attached object message
-    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    // We will use this message to add or
-    // subtract the object from the world
-    // and to attach the object to the robot
     moveit_msgs::AttachedCollisionObject attached_object;
-    attached_object.link_name = "TCP_R";
-    /* The header must contain a valid TF frame*/
-    attached_object.object.header.frame_id = "world";
-    /* The id of the object */
-    attached_object.object.id = "box";
-
-    /* A default pose */
-    geometry_msgs::Pose pose;
-    pose.position.x = nhpr.param("x", 0.4);
-    pose.position.y = nhpr.param("y", -0.1);
-    pose.position.z = nhpr.param("z", 0.8);
-    pose.orientation.w = 1.0;
-
-    /* Define a box to be attached */
-    shape_msgs::SolidPrimitive primitive;
-    primitive.type = primitive.BOX;
-    primitive.dimensions.resize(3);
-    primitive.dimensions[0] = 0.2;
-    primitive.dimensions[1] = 0.4;
-    primitive.dimensions[2] = 0.2;
-
-
-    attached_object.object.primitives.push_back(primitive);
-    attached_object.object.primitive_poses.push_back(pose);
-
-    // Note that attaching an object to the robot requires
-    // the corresponding operation to be specified as an ADD operation
-    attached_object.object.operation = attached_object.object.ADD;
-
-    if(nhpr.param("add", true))
-    {
-        attached_object.object.operation = attached_object.object.ADD;
-    }
-    else
-    {
-        attached_object.object.operation = attached_object.object.MOVE;
-    }
-
-
-    // Since we are attaching the object to the robot hand to simulate picking up the object,
-    // we want the collision checker to ignore collisions between the object and the robot hand
-    attached_object.touch_links = std::vector<std::string>{ "RWrMot2", "RWrMot3", "r_wrist", "RSoftHandLink" };
+    attached_object.object = *msg;
 
     // Add an object into the environment
     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -110,17 +62,32 @@ int main(int argc, char** argv)
     // the set of collision objects in the "world" part of the
     // planning scene. Note that we are using only the "object"
     // field of the attached_object message here.
-    ROS_INFO("Adding the object into the world at the location of the hand.");
     moveit_msgs::PlanningScene planning_scene;
     planning_scene.world.collision_objects.push_back(attached_object.object);
     planning_scene.is_diff = true;
 
-    auto srv = node_handle.serviceClient<moveit_msgs::ApplyPlanningScene>("planner/apply_planning_scene");
+
     srv.waitForExistence();
 
-    moveit_msgs::ApplyPlanningScene msg;
-    msg.request.scene = planning_scene;
+    moveit_msgs::ApplyPlanningScene msg2;
+    msg2.request.scene = planning_scene;
 
-    srv.call(msg);
+    srv.call(msg2);
+}
+
+int main(int argc, char** argv)
+{
+    ros::init(argc, argv, "planning_scene_ros_api_tutorial");
+
+    ros::NodeHandle node_handle, nhpr("~");
+
+
+    ros::Subscriber sub = node_handle.subscribe("planner/collision_objects", 1000, collision_object_cb);
+
+
+    srv = node_handle.serviceClient<moveit_msgs::ApplyPlanningScene>("planner/apply_planning_scene");
+
+
+    ros::spin();
 
 }
