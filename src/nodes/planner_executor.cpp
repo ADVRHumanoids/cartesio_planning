@@ -108,6 +108,9 @@ void PlannerExecutor::init_load_planner()
                 std::string,
                 "constraint_problem_description");
 
+
+
+
         std::string problem_description_string;
         YAML::Node ik_yaml_constraint;
 
@@ -366,12 +369,13 @@ bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
     _manifold->function(q, error);
     _manifold->getTolerance();
 
+
     const double err_threshold = _manifold->getTolerance();
     double err = error.cwiseAbs().maxCoeff();
     if(err > err_threshold)
     {
         valid = false;
-        std::cout << "Invalid state, not on manifold (error = " << err << ")" << std::endl;
+        std::cout << "Invalid state, not on manifold (error = " << err << " > "<<err_threshold<<")" << std::endl;
     }
 
     return valid;
@@ -392,6 +396,10 @@ void PlannerExecutor::on_start_state_recv(const sensor_msgs::JointStateConstPtr 
 
     if(_manifold)
     {
+        if(_model != _start_model)
+        {
+            _model->syncFrom(*_start_model, XBot::Sync::Position);
+        }
         _manifold->reset(); // note: manifold is set according to start state
     }
 
@@ -406,8 +414,14 @@ void PlannerExecutor::on_goal_state_recv(const sensor_msgs::JointStateConstPtr &
     {
         q[msg->name[i]] = msg->position[i];
     }
-
     _goal_model->setJointPosition(q);
+    _goal_model->update();
+
+    Eigen::VectorXd qq;
+    _goal_model->getJointPosition(qq);
+
+    _manifold->project(qq);
+    _goal_model->setJointPosition(qq);
     _goal_model->update();
 
 }
@@ -501,9 +515,14 @@ void PlannerExecutor::publish_tf(ros::Time time)
     if(!start_valid)
     {
         start_color << 178./255., 0, 77./255., 0.5;
+        ROS_WARN("START state is NOT valid!");
     }
 
     std::vector<std::string> red_links = _vc_context.planning_scene->getCollidingLinks();
+
+    for(unsigned int i = 0; i < red_links.size(); ++i)
+        ROS_WARN("start robot: colliding link %i --> %s",i ,red_links[i].c_str());
+
     _start_viz->setRGBA(start_color);
     _start_viz->publishMarkers(time, red_links);
 
@@ -515,9 +534,14 @@ void PlannerExecutor::publish_tf(ros::Time time)
     if(!goal_valid)
     {
         goal_color << 178./255., 77./255., 0, 0.5;
+        ROS_WARN("GOAL state is NOT valid!");
     }
 
     red_links = _vc_context.planning_scene->getCollidingLinks();
+
+    for(unsigned int i = 0; i < red_links.size(); ++i)
+        ROS_WARN("goal robot: colliding link %i --> %s",i ,red_links[i].c_str());
+
     _goal_viz->setRGBA(goal_color);
     _goal_viz->publishMarkers(time, red_links);
 
