@@ -2,8 +2,8 @@
 
     <arg name="solver" default="OpenSot"/>
     <arg name="prefix" default=""/>
-    <arg name="use_goal_generator" default="true"/>
-    <arg name="world_frame_link" default="l_sole"/>
+    <arg name="use_goal_generator" default="false"/>
+    <arg name="world_frame_link" default="base_link"/>
 
 
     <param name="robot_description"
@@ -58,9 +58,10 @@
         <param name="ns" value="planner/goal_sampler"/>
         <param name="tf_prefix" value="planner/goal_sampler"/>
     </node>
-    <include unless="$(arg use_goal_generator)" file="$(find cartesian_interface)/launch/cartesio.launch">
+
+    <!--include unless="$(arg use_goal_generator)" file="$(find cartesian_interface)/launch/cartesio.launch">
         <arg name="tf_prefix" value="ci"/>
         <arg name="world_frame_link" value="$(arg world_frame_link)"/>
-    </include>
+    </include-->
 
 </launch>

@@ -4,7 +4,8 @@ solver_options:
     control_dt: 0.50
 
 stack:
-    - ["LeftFoot", "RightFoot"]
+    - ["RightFoot", "LeftHand", "RightHand"]
+    #- ["LeftFoot", "RightFoot"]
     #- ["Waist"]
 
 constraints: ["JointLimits"]
@@ -36,10 +37,11 @@ LeftHand:
     type: "Cartesian"
     distal_link: "TCP_L"
     lambda: 1.0
+    indices: [0, 1, 2]
 
 RightHand:
     type: "Cartesian"
     distal_link: "TCP_R"
     lambda: 1.0
-    # indices: [0, 1, 2]
+    indices: [0, 1, 2]
 

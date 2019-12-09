@@ -5,8 +5,8 @@ solver_options:
 
 stack:
     - ["LeftFoot", "RightFoot", "LeftHand", "RightHand"]
-#    - ["TorsoRPY"]
-#    - ["Postural"]
+    - ["TorsoRPY"]
+    - ["Postural"]
     
 constraints: ["JointLimits"] #, "VelocityLimits"]
 
