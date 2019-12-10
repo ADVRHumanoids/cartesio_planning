@@ -64,4 +64,30 @@
         <arg name="world_frame_link" value="$(arg world_frame_link)"/>
     </include-->
 
+  <node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+        <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
+        <param name="scale_x" type="double" value="2."/>
+        <param name="scale_y" type="double" value="1.5"/>
+        <param name="scale_z" type="double" value=".1"/>
+        <param name="frame_id" value="world"/>
+        <param name="name_id" value="floor"/>
+        <param name="show_control_axis" type="bool" value="False"/>
+        <rosparam param="position">[0.165824, 0., -1.02294]</rosparam>
+        <rosparam param="orientation">[1.17151e-09, 0.0192186, -5.05542e-11, 0.999816]</rosparam>
+        <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
+  </node>
+
+  <node name="mesh_viz_wall" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+        <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
+        <param name="scale_x" type="double" value=".1"/>
+        <param name="scale_y" type="double" value="1.5"/>
+        <param name="scale_z" type="double" value="1.5"/>
+        <param name="frame_id" value="world"/>
+        <param name="name_id" value="wall"/>
+        <param name="show_control_axis" type="bool" value="False"/>
+        <rosparam param="position">[-0.592418, 0., -0.27291]</rosparam>
+        <rosparam param="orientation">[-2.48178e-10, -0.00436655, -3.31116e-11, 0.999991]</rosparam>
+        <remap from="mesh_viz_wall/wall" to="planner/collision_objects"/>
+  </node>
+
 </launch>
