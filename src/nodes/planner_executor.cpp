@@ -437,6 +437,7 @@ void PlannerExecutor::setStartState(const XBot::JointNameMap& q)
     }
 }
 
+
 void PlannerExecutor::on_start_state_recv(const sensor_msgs::JointStateConstPtr & msg)
 {
     // tbd: input checking
