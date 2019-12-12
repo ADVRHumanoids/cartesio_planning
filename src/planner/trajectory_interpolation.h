@@ -39,7 +39,7 @@ public:
 
     TrajectoryInterpolation(int q_size);
 
-    double compute(std::vector<Eigen::VectorXd> trajectory,
+    double compute(const std::vector<Eigen::VectorXd>& trajectory,
                    std::vector<double> * time_point_vec = nullptr);
 
     Eigen::VectorXd evaluate(double t) const;

@@ -35,7 +35,7 @@ TrajectoryInterpolation::TrajectoryInterpolation(int _q_size):
     _qddot_max.setConstant(q_size, 5.0);
 }
 
-double TrajectoryInterpolation::compute(std::vector<Eigen::VectorXd> trajectory,
+double TrajectoryInterpolation::compute(const std::vector<Eigen::VectorXd>& trajectory,
                                       std::vector<double> * time_point_vec)
 {
     const int n_points = trajectory.size();
