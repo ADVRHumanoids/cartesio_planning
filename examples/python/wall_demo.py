@@ -68,7 +68,7 @@ class Plan(smach.State):
         else:
             self.planner_type = 'RRTConnect'
 
-        if(time_input != 0):
+        if(time_input > 0.):
             self.planner_time = time_input
         else:
             self.planner_time = 10.
