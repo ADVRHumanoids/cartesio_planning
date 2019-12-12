@@ -34,6 +34,40 @@ public:
 
     void run();
 
+    void setStartState(const JointNameMap &q);
+    void setGoalState(const JointNameMap &q);
+
+    /**
+     * @brief callPlanner
+     * @param time
+     * @param planner_type
+     * @param raw_trajectory non-smooth trajectory from planner
+     * @return enum StatusType
+            {
+                /// Uninitialized status
+                UNKNOWN = 0,
+                /// Invalid start state or no start state specified
+                INVALID_START,
+                /// Invalid goal state
+                INVALID_GOAL,
+                /// The goal is of a type that a planner does not recognize
+                UNRECOGNIZED_GOAL_TYPE,
+                /// The planner failed to find a solution
+                TIMEOUT,
+                /// The planner found an approximate solution
+                APPROXIMATE_SOLUTION,
+                /// The planner found an exact solution
+                EXACT_SOLUTION,
+                /// The planner crashed
+                CRASH,
+                /// The planner did not find a solution for some other reason
+                ABORT,
+                /// The number of possible status values
+                TYPE_COUNT
+            };
+     */
+    int callPlanner(const double time, const std::string& planner_type, std::vector<Eigen::VectorXd>& raw_trajectory);
+
 private:
 
     typedef std::shared_ptr<Planning::PlanningSceneWrapper> PlanningScenePtr;

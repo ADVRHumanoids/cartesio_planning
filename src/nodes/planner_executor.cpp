@@ -381,16 +381,8 @@ bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
     return valid;
 }
 
-void PlannerExecutor::on_start_state_recv(const sensor_msgs::JointStateConstPtr & msg)
+void PlannerExecutor::setStartState(const XBot::JointNameMap& q)
 {
-    // tbd: input checking
-
-    XBot::JointNameMap q;
-    for(int i = 0; i < msg->name.size(); i++)
-    {
-        q[msg->name[i]] = msg->position[i];
-    }
-
     _start_model->setJointPosition(q);
     _start_model->update();
 
@@ -402,7 +394,34 @@ void PlannerExecutor::on_start_state_recv(const sensor_msgs::JointStateConstPtr 
         }
         _manifold->reset(); // note: manifold is set according to start state
     }
+}
 
+void PlannerExecutor::on_start_state_recv(const sensor_msgs::JointStateConstPtr & msg)
+{
+    // tbd: input checking
+
+    XBot::JointNameMap q;
+    for(int i = 0; i < msg->name.size(); i++)
+    {
+        q[msg->name[i]] = msg->position[i];
+    }
+
+
+    setStartState(q);
+
+}
+
+void PlannerExecutor::setGoalState(const XBot::JointNameMap& q)
+{
+    _goal_model->setJointPosition(q);
+    _goal_model->update();
+
+    Eigen::VectorXd qq;
+    _goal_model->getJointPosition(qq);
+
+    _manifold->project(qq);
+    _goal_model->setJointPosition(qq);
+    _goal_model->update();
 }
 
 void PlannerExecutor::on_goal_state_recv(const sensor_msgs::JointStateConstPtr & msg)
@@ -414,21 +433,62 @@ void PlannerExecutor::on_goal_state_recv(const sensor_msgs::JointStateConstPtr &
     {
         q[msg->name[i]] = msg->position[i];
     }
-    _goal_model->setJointPosition(q);
-    _goal_model->update();
 
-    Eigen::VectorXd qq;
-    _goal_model->getJointPosition(qq);
-
-    _manifold->project(qq);
-    _goal_model->setJointPosition(qq);
-    _goal_model->update();
-
+    setGoalState(q);
 }
 
 bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Request& req,
                                       cartesio_planning::CartesioPlanner::Response& res)
 {
+
+
+    if(req.time <= 0)
+    {
+        res.status.msg.data = "time arg should be > 0";
+        res.status.val = ompl::base::PlannerStatus::ABORT;
+        return true;
+    }
+
+
+    if(req.planner_type == "")
+    {
+        req.planner_type = "RRTstar";
+    }
+
+    std::cout << "Requested planner " << req.planner_type << std::endl;
+
+
+
+    std::vector<Eigen::VectorXd> raw_trajectory;
+    res.status.val = callPlanner(req.time, req.planner_type, raw_trajectory);
+    res.status.msg.data = _planner->getPlannerStatus().asString();
+
+    if(res.status.val)
+    {
+        trajectory_msgs::JointTrajectory msg;
+        msg.joint_names = _model->getEnabledJointNames();
+        auto t = ros::Duration(0);
+
+        for(auto x : raw_trajectory)
+        {
+            trajectory_msgs::JointTrajectoryPoint point;
+            point.positions.assign(x.data(), x.data() + x.size());
+            t += ros::Duration(0.1);
+            point.time_from_start = t;
+            msg.points.push_back(point);
+        }
+
+        _trj_pub.publish(msg);
+    }
+
+    return true;
+}
+
+int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, std::vector<Eigen::VectorXd>& raw_trajectory)
+{
+    if(time <= 0.)
+        return ompl::base::PlannerStatus::ABORT;
+
     // check start and goal state correctness
     std::cout << "Checking start state validity.." << std::endl;
     if(!check_state_valid(_start_model))
@@ -450,45 +510,12 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
 
     _planner->setStartAndGoalStates(qstart, qgoal);
 
-    if(req.time <= 0)
-    {
-        res.status.msg.data = "time arg should be > 0";
-        res.status.val = ompl::base::PlannerStatus::ABORT;
-        return true;
-    }
-
-
-    if(req.planner_type == "")
-    {
-        req.planner_type = "RRTstar";
-    }
-
-    std::cout << "Requested planner " << req.planner_type << std::endl;
-
-    _planner->solve(req.time, req.planner_type);
-
-    res.status.val = ompl::base::PlannerStatus::StatusType(_planner->getPlannerStatus());
-    res.status.msg.data = _planner->getPlannerStatus().asString();
+    _planner->solve(time, planner_type);
 
     if(_planner->getPlannerStatus())
-    {
-        trajectory_msgs::JointTrajectory msg;
-        msg.joint_names = _model->getEnabledJointNames();
-        auto t = ros::Duration(0);
+        raw_trajectory = _planner->getSolutionPath();
 
-        for(auto x : _planner->getSolutionPath())
-        {
-            trajectory_msgs::JointTrajectoryPoint point;
-            point.positions.assign(x.data(), x.data() + x.size());
-            t += ros::Duration(0.1);
-            point.time_from_start = t;
-            msg.points.push_back(point);
-        }
-
-        _trj_pub.publish(msg);
-    }
-
-    return true;
+    return ompl::base::PlannerStatus::StatusType(_planner->getPlannerStatus());
 }
 
 bool PlannerExecutor::get_planning_scene_service(moveit_msgs::GetPlanningScene::Request& req,
