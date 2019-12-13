@@ -211,6 +211,7 @@ add_executable(previewer
     )
 
 target_link_libraries(previewer
+    trajectory_interpolation
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
