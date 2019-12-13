@@ -23,7 +23,7 @@
 
 #include "nodes/goal_generation.h"
 
-#include "planner/trajectory_interpolation.h"
+#include "planner/cartesian_trajectory_interpolation.h"
 
 namespace XBot { namespace Cartesian {
 
@@ -70,6 +70,14 @@ public:
             };
      */
     int callPlanner(const double time, const std::string& planner_type, const double interpolation_time, std::vector<Eigen::VectorXd>& trajectory);
+    /**
+     * @param base_distal_links couple of base_link and distal_link to compute Cartesian trajectory
+     * @param cartesian_trajectories vector of Cartesian trajactories (each element correspond to couple base_link, distal_link)
+     */
+    int callPlanner(const double time, const std::string& planner_type, const double interpolation_time,
+                    const std::vector<std::pair<std::string, std::string> > base_distal_links,
+                    std::vector<Eigen::VectorXd>& trajectory,
+                    std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories);
 
 private:
 
@@ -117,6 +125,9 @@ private:
     XBot::Cartesian::Planning::RobotViz::Ptr _start_viz, _goal_viz;
 
     ros::Publisher _trj_pub;
+    std::vector<ros::Publisher> _cartesian_trajectory_publishers;
+    std::vector<std::string> _base_links, _distal_links;
+
     ros::ServiceServer _planner_srv;
     ros::ServiceServer _get_planning_scene_srv;
     ros::ServiceServer _apply_planning_scene_srv;
@@ -125,7 +136,7 @@ private:
     bool _use_goal_generator;
     ros::ServiceServer _service_goal_sampler;
 
-    TrajectoryInterpolation::Ptr _interpolator;
+    CartesianTrajectoryInterpolation::Ptr _interpolator;
 };
 
 } }

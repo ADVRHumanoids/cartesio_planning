@@ -30,6 +30,8 @@
         <param name="planner_config"
             textfile="$(find cartesio_planning)/configs/problem/comanplus_example_manipulation_config.yaml"/>
         <param name="world_frame_link" value="$(arg world_frame_link)"/>
+        <rosparam param="base_links">['base_link']</rosparam>
+        <rosparam param="distal_links">['l_sole']</rosparam>
     </node>
 
     <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/>

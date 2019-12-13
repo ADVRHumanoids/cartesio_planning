@@ -45,6 +45,7 @@ public:
                    std::vector<double> * time_point_vec = nullptr);
 
     Eigen::VectorXd evaluate(double t) const;
+    void evaluate(double t, Eigen::VectorXd& q, Eigen::VectorXd& qdot) const;
 
     bool isValid() const;
 
@@ -65,6 +66,7 @@ private:
         double t_start, t_end;
 
         Eigen::VectorXd eval(double abs_t) const;
+        void eval(double abs_t, Eigen::VectorXd& q, Eigen::VectorXd& qdot) const;
     };
 
     std::vector<Poly> _spline;

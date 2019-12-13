@@ -261,6 +261,29 @@ Eigen::VectorXd TrajectoryInterpolation::evaluate(double t) const
     throw std::runtime_error("uh oh!");
 }
 
+void TrajectoryInterpolation::evaluate(double t, Eigen::VectorXd& q, Eigen::VectorXd& qdot) const
+{
+    if(t < 0)
+    {
+        t = 0;
+    }
+
+    if(t > _spline.back().t_end)
+    {
+        t = _spline.back().t_end;
+    }
+
+    for(int i = 0; i < _spline.size(); i++)
+    {
+        if(t >= _spline[i].t_start && t <= _spline[i].t_end)
+        {
+            _spline[i].eval(t, q, qdot);
+        }
+    }
+
+    throw std::runtime_error("uh oh!");
+}
+
 bool TrajectoryInterpolation::isValid() const
 {
     return !_spline.empty();
@@ -299,5 +322,15 @@ Eigen::VectorXd TrajectoryInterpolation::Poly::eval(double abs_t) const
     q += a_3 * t*t*t;
 
     return q;
+}
 
+void TrajectoryInterpolation::Poly::eval(double abs_t, Eigen::VectorXd& q, Eigen::VectorXd& qdot) const
+{
+    q = eval(abs_t);
+
+    double t = abs_t - t_start;
+
+    qdot = a_1;
+    qdot += 2.*a_2 * t;
+    qdot += 3.*a_3 * t*t;
 }

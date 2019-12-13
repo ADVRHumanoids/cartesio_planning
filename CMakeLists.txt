@@ -77,6 +77,7 @@ add_message_files(
     CartesioPlannerStatus.msg
     CartesioPlannerGoalStatus.msg
     SetContactFrames.msg
+    CartesianTrajectory.msg
     )
 
 ## Generate services in the 'srv' folder
@@ -181,6 +182,9 @@ target_link_libraries(cartesio_planning
 add_library(trajectory_interpolation SHARED src/planner/trajectory_interpolation.cpp)
 target_link_libraries(trajectory_interpolation PRIVATE casadi)
 
+add_library(cartesian_trajectory_interpolation SHARED src/planner/cartesian_trajectory_interpolation.cpp)
+target_link_libraries(cartesian_trajectory_interpolation PRIVATE trajectory_interpolation ${XBotInterface_LIBRARIES})
+
 
 add_executable(stability_test
     src/stability_test.cpp
@@ -246,7 +250,7 @@ target_link_libraries(planning_scene_publisher ${catkin_LIBRARIES})
 
 # Executor
 add_executable(planning_server src/nodes/planner_executor_main.cpp src/nodes/planner_executor.cpp)
-target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning trajectory_interpolation)
+target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning cartesian_trajectory_interpolation)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -322,6 +326,13 @@ install(TARGETS trajectory_interpolation
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
+
+install(TARGETS cartesian_trajectory_interpolation
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
 
 install(TARGETS stability_test
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
