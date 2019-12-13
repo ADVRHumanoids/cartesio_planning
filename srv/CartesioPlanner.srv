@@ -17,6 +17,8 @@ string planner_type
 
 int32 time
 
+float32 interpolation_time
+
 ---
 
 cartesio_planning/CartesioPlannerStatus status

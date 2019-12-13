@@ -207,7 +207,6 @@ add_executable(previewer
     )
 
 target_link_libraries(previewer
-    trajectory_interpolation
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
@@ -247,7 +246,7 @@ target_link_libraries(planning_scene_publisher ${catkin_LIBRARIES})
 
 # Executor
 add_executable(planning_server src/nodes/planner_executor_main.cpp src/nodes/planner_executor.cpp)
-target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning)
+target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning trajectory_interpolation)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries

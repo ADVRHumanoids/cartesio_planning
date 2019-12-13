@@ -25,6 +25,7 @@ PlannerExecutor::PlannerExecutor():
     init_subscribe_start_goal();
     init_trj_publisiher();
     init_planner_srv();
+    init_interpolator();
 }
 
 void PlannerExecutor::run()
@@ -270,6 +271,13 @@ void PlannerExecutor::init_goal_generator()
     }
 }
 
+void PlannerExecutor::init_interpolator()
+{
+    _interpolator = std::make_shared<TrajectoryInterpolation>(_model->getJointNum());
+
+    ///TODO: qdot, qddot limits?
+}
+
 bool PlannerExecutor::goal_sampler_service(cartesio_planning::CartesioGoal::Request &req,
                                            cartesio_planning::CartesioGoal::Response &res)
 {
@@ -449,6 +457,13 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
         return true;
     }
 
+    if(req.interpolation_time <= 0)
+    {
+        res.status.msg.data = "interpolation_time arg should be > 0";
+        res.status.val = ompl::base::PlannerStatus::ABORT;
+        return true;
+    }
+
 
     if(req.planner_type == "")
     {
@@ -459,23 +474,23 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
 
 
 
-    std::vector<Eigen::VectorXd> raw_trajectory;
-    res.status.val = callPlanner(req.time, req.planner_type, raw_trajectory);
+    std::vector<Eigen::VectorXd> trajectory;
+    res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, trajectory);
     res.status.msg.data = _planner->getPlannerStatus().asString();
 
     if(res.status.val)
     {
         trajectory_msgs::JointTrajectory msg;
         msg.joint_names = _model->getEnabledJointNames();
-        auto t = ros::Duration(0);
+        auto t = ros::Duration(0.);
 
-        for(auto x : raw_trajectory)
+        for(auto x : trajectory)
         {
             trajectory_msgs::JointTrajectoryPoint point;
             point.positions.assign(x.data(), x.data() + x.size());
-            t += ros::Duration(0.1);
             point.time_from_start = t;
             msg.points.push_back(point);
+            t += ros::Duration(req.interpolation_time);
         }
 
         _trj_pub.publish(msg);
@@ -484,7 +499,8 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     return true;
 }
 
-int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, std::vector<Eigen::VectorXd>& raw_trajectory)
+int PlannerExecutor::callPlanner(const double time, const std::string& planner_type,
+                                 const double interpolation_time, std::vector<Eigen::VectorXd>& trajectory)
 {
     if(time <= 0.)
         return ompl::base::PlannerStatus::ABORT;
@@ -512,8 +528,17 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
 
     _planner->solve(time, planner_type);
 
+    std::vector<Eigen::VectorXd> raw_trajectory;
     if(_planner->getPlannerStatus())
         raw_trajectory = _planner->getSolutionPath();
+
+    _interpolator->compute(raw_trajectory);
+    double t = 0.;
+    while(t <= _interpolator->getTrajectoryEndTime())
+    {
+        trajectory.push_back(_interpolator->evaluate(t));
+        t += interpolation_time;
+    }
 
     return ompl::base::PlannerStatus::StatusType(_planner->getPlannerStatus());
 }
