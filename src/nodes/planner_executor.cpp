@@ -11,6 +11,8 @@
 #include <cartesian_interface/utils/LoadConfig.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
 
+#include "cartesio_planning/CartesianTrajectory.h"
+
 using namespace XBot::Cartesian;
 
 PlannerExecutor::PlannerExecutor():
@@ -229,7 +231,37 @@ void PlannerExecutor::init_subscribe_start_goal()
 
 void PlannerExecutor::init_trj_publisiher()
 {
-    _trj_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 1);
+    if(_nhpr.hasParam("distal_links"))
+    {
+        XmlRpc::XmlRpcValue v;
+        _nhpr.getParam("distal_links", v);
+        for(int i =0; i < v.size(); i++)
+            _distal_links.push_back(v[i]);
+
+        if(_nhpr.hasParam("base_links"))
+        {
+            XmlRpc::XmlRpcValue v;
+            _nhpr.getParam("base_links", v);
+            for(int i =0; i < v.size(); i++)
+                _base_links.push_back(v[i]);
+        }
+        else
+        {
+            for(unsigned int i = 0; i < _distal_links.size(); ++i)
+                _base_links.push_back("world");
+        }
+
+
+        if(_base_links.size() != _distal_links.size())
+        {
+            throw std::runtime_error("base_links and distal_links params should have same size!");
+        }
+
+        for(unsigned int i = 0; i < _distal_links.size(); ++i)
+            _cartesian_trajectory_publishers.push_back(_nh.advertise<cartesio_planning::CartesianTrajectory>(_distal_links[i]+"_cartesian_trajectory",1, true));
+    }
+
+    _trj_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 1, true);
 }
 
 void PlannerExecutor::init_planner_srv()
@@ -273,7 +305,7 @@ void PlannerExecutor::init_goal_generator()
 
 void PlannerExecutor::init_interpolator()
 {
-    _interpolator = std::make_shared<TrajectoryInterpolation>(_model->getJointNum());
+    _interpolator = std::make_shared<CartesianTrajectoryInterpolation>();
 
     ///TODO: qdot, qddot limits?
 }
@@ -475,7 +507,17 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
 
 
     std::vector<Eigen::VectorXd> trajectory;
-    res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, trajectory);
+    std::vector<std::vector<Eigen::Affine3d> > cartesian_trajectories;
+    if(_distal_links.empty())
+        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, trajectory);
+    else
+    {
+        std::vector<std::pair<std::string, std::string> > base_distal_links;
+        for(unsigned int i = 0; i < _distal_links.size(); ++i)
+            base_distal_links.push_back(std::pair<std::string, std::string>(_base_links[i], _distal_links[i]));
+        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, base_distal_links,
+                                     trajectory, cartesian_trajectories);
+    }
     res.status.msg.data = _planner->getPlannerStatus().asString();
 
     if(res.status.val)
@@ -494,9 +536,59 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
         }
 
         _trj_pub.publish(msg);
+
+        if(cartesian_trajectories.size() > 0)
+        {
+
+            for(unsigned int i = 0; i < cartesian_trajectories.size(); ++i)
+            {
+                cartesio_planning::CartesianTrajectory msg;
+                auto t = ros::Duration(0.);
+
+                msg.base_link = _base_links[i];
+                msg.distal_link = _distal_links[i];
+
+                for(Eigen::Affine3d p : cartesian_trajectories[i])
+                {
+                    geometry_msgs::Pose pp;
+                    pp.position.x = p.translation()[0]; pp.position.y = p.translation()[1]; pp.position.z = p.translation()[2];
+                    Eigen::Quaterniond q(p.linear());
+                    pp.orientation.x = q.x(); pp.orientation.y = q.y(); pp.orientation.z = q.z(); pp.orientation.w = q.w();
+                    msg.frames.push_back(pp);
+                    t += ros::Duration(req.interpolation_time);
+                }
+
+                _cartesian_trajectory_publishers[i].publish(msg);
+            }
+        }
     }
 
     return true;
+}
+int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, const double interpolation_time,
+                const std::vector<std::pair<std::string, std::string> > base_distal_links,
+                std::vector<Eigen::VectorXd>& trajectory,
+                std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories)
+{
+    int ret = callPlanner(time, planner_type, interpolation_time, trajectory);
+
+    if(_interpolator->isValid())
+    {
+        for(unsigned int i = 0; i < base_distal_links.size(); ++i)
+        {
+            std::vector<Eigen::Affine3d> cartesian_trajectory;
+            double t = 0.;
+            while(t <= _interpolator->getTrajectoryEndTime())
+            {
+                cartesian_trajectory.push_back(_interpolator->evaluate(t, base_distal_links[i].first, base_distal_links[i].second));
+                t += interpolation_time;
+            }
+            cartesian_trajectories.push_back(cartesian_trajectory);
+        }
+
+    }
+
+    return ret;
 }
 
 int PlannerExecutor::callPlanner(const double time, const std::string& planner_type,
