@@ -23,6 +23,8 @@
 
 #include "nodes/goal_generation.h"
 
+#include "planner/trajectory_interpolation.h"
+
 namespace XBot { namespace Cartesian {
 
 class PlannerExecutor
@@ -41,7 +43,8 @@ public:
      * @brief callPlanner
      * @param time
      * @param planner_type
-     * @param raw_trajectory non-smooth trajectory from planner
+     * @param interpolation_time is the time used for interpolation
+     * @param trajectory interpolated trajectory from planner
      * @return enum StatusType
             {
                 /// Uninitialized status
@@ -66,7 +69,7 @@ public:
                 TYPE_COUNT
             };
      */
-    int callPlanner(const double time, const std::string& planner_type, std::vector<Eigen::VectorXd>& raw_trajectory);
+    int callPlanner(const double time, const std::string& planner_type, const double interpolation_time, std::vector<Eigen::VectorXd>& trajectory);
 
 private:
 
@@ -80,6 +83,7 @@ private:
     void init_trj_publisiher();
     void init_planner_srv();
     void init_goal_generator();
+    void init_interpolator();
 
 
 
@@ -120,6 +124,8 @@ private:
     GoalGenerator::Ptr _goal_generator;
     bool _use_goal_generator;
     ros::ServiceServer _service_goal_sampler;
+
+    TrajectoryInterpolation::Ptr _interpolator;
 };
 
 } }

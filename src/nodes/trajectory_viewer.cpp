@@ -6,8 +6,6 @@
 #include <XBotInterface/ModelInterface.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>
 
-#include "planner/trajectory_interpolation.h"
-
 int main(int argc, char ** argv)
 {
     // initialize ros
@@ -18,15 +16,14 @@ int main(int argc, char ** argv)
     auto opt = XBot::ConfigOptionsFromParamServer();
     auto model = XBot::ModelInterface::getModel(opt);
 
-    // construct trajectory interpolator
-    TrajectoryInterpolation trj(model->getJointNum());
 
-    double time = 0; // playback trajectory time
-
+    std::shared_ptr<ros::Rate> rate;
+    std::vector<Eigen::VectorXd> trj_points;
+    int k = 0;
     // on trajectory received callback
-    auto on_trj_received = [&trj, &time](const trajectory_msgs::JointTrajectoryConstPtr& msg)
+    auto on_trj_received = [&trj_points, &k, &rate](const trajectory_msgs::JointTrajectoryConstPtr& msg)
     {
-        std::vector<Eigen::VectorXd> trj_points;
+        trj_points.clear();
         for(auto pi : msg->points)
         {
             auto pi_eigen = Eigen::VectorXd::Map(pi.positions.data(),
@@ -35,8 +32,9 @@ int main(int argc, char ** argv)
             trj_points.push_back(pi_eigen);
         }
 
-        trj.compute(trj_points); // this optimizes the trajectory
-        time = 0; // initialize the playback time
+
+        rate = std::make_shared<ros::Rate>(1./(msg->points[1].time_from_start.nsec/1e9)); //We assume constant time along the traj.
+        k = 0;
     };
 
     // joint trajectory subscriber
@@ -45,39 +43,39 @@ int main(int argc, char ** argv)
     // custom robot state publisher
     XBot::Cartesian::Utils::RobotStatePublisher rspub(model);
 
-    ros::Rate rate(100.);
 
-
+    ros::Rate fixed_rate(100.);
     while(ros::ok())
     {
-        rate.sleep();
-
-        ros::spinOnce();
-
-        // we haven't received anything yet
-        if(!trj.isValid())
+        if(rate)
         {
-            continue;
+            rate->sleep();
+
+            ros::spinOnce();
+
+
+            // evaluate trajectory at time
+            auto qi = trj_points[k];
+
+            // set model accordingly
+            model->setJointPosition(qi);
+            model->update();
+
+            k += 1;
+
+            // rewind trajectory playback
+            if(k >= trj_points.size())
+            {
+                k = 0;
+            }
+
+            // publish model tf
+            rspub.publishTransforms(ros::Time::now(), "planner");
         }
-
-        // evaluate trajectory at time
-        auto qi = trj.evaluate(time);
-
-        // set model accordingly
-        model->setJointPosition(qi);
-        model->update();
-
-        // increment time
-        time += rate.expectedCycleTime().toSec();
-
-        // rewind trajectory playback
-        if(time > trj.getTrajectoryEndTime())
+        else
         {
-            time = 0.0;
+            fixed_rate.sleep();
+            ros::spinOnce();
         }
-
-        // publish model tf
-        rspub.publishTransforms(ros::Time::now(), "planner");
-
     }
 }

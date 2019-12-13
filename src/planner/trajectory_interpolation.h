@@ -4,6 +4,7 @@
 #include <eigen3/Eigen/Dense>
 #include <vector>
 #include <iostream>
+#include <memory>
 
 /**
  * @brief The TrajectoryInterpolation class computes a minimum time
@@ -36,6 +37,7 @@ class TrajectoryInterpolation
 {
 
 public:
+    typedef std::shared_ptr<TrajectoryInterpolation> Ptr;
 
     TrajectoryInterpolation(int q_size);
 

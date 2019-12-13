@@ -73,8 +73,10 @@ class Plan(smach.State):
         else:
             self.planner_time = 10.
 
+        self.interpolation_time = 0.01
+
         compute_plan = rospy.ServiceProxy('planner/compute_plan', CartesioPlanner)
-        resp = compute_plan(self.planner_type, self.planner_time)
+        resp = compute_plan(self.planner_type, self.planner_time, self.interpolation_time)
         print('Planner return ', resp.status.msg)
         if(resp.status.val is 6):
             return 'plan_ok'
