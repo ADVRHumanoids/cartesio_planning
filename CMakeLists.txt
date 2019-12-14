@@ -89,6 +89,8 @@ add_service_files(
     FILES
     CartesioPlanner.srv
     CartesioGoal.srv
+    CartesioJointStates.srv
+    CartesioFrames.srv
     )
 
 ## Generate actions in the 'action' folder
@@ -170,7 +172,9 @@ add_library(cartesio_planning SHARED
     src/validity_checker/collisions/planning_scene_wrapper.cpp
     src/validity_checker/validity_checker_factory.cpp
     src/validity_checker/validity_predicate_aggregate.cpp
-    src/nodes/goal_generation.cpp)
+    src/nodes/goal_generation.cpp
+    src/nodes/planner_client.cpp
+    )
 
 target_link_libraries(cartesio_planning
     PUBLIC
@@ -380,6 +384,12 @@ install(DIRECTORY launch/
     PATTERN ".svn" EXCLUDE
     )
 
+install(DIRECTORY src/nodes/
+    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+    FILES_MATCHING PATTERN "planner_client.h"
+    PATTERN ".svn" EXCLUDE
+)
+
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
 #   # myfile1
@@ -399,6 +409,7 @@ install(DIRECTORY launch/
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+add_subdirectory(bindings/python/)
 
 add_subdirectory(examples/)
 
