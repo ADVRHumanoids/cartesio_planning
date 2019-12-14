@@ -1,0 +1,5 @@
+sensor_msgs/JointState joint_states
+
+---
+
+cartesio_planning/CartesioPlannerGoalStatus status

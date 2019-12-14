@@ -21,6 +21,8 @@
 
 #include "cartesio_planning/CartesioPlanner.h"
 
+#include "cartesio_planning/CartesioJointStates.h"
+
 #include "nodes/goal_generation.h"
 
 #include "planner/cartesian_trajectory_interpolation.h"
@@ -98,6 +100,10 @@ private:
 
     void on_start_state_recv(const sensor_msgs::JointStateConstPtr& msg);
     void on_goal_state_recv(const sensor_msgs::JointStateConstPtr& msg);
+    bool start_service(cartesio_planning::CartesioJointStates::Request& req,
+                       cartesio_planning::CartesioJointStates::Response& res);
+    bool goal_service(cartesio_planning::CartesioJointStates::Request& req,
+                       cartesio_planning::CartesioJointStates::Response& res);
     bool planner_service(cartesio_planning::CartesioPlanner::Request& req,
                          cartesio_planning::CartesioPlanner::Response& res);
     bool get_planning_scene_service(moveit_msgs::GetPlanningScene::Request& req,
@@ -131,6 +137,7 @@ private:
     ros::ServiceServer _planner_srv;
     ros::ServiceServer _get_planning_scene_srv;
     ros::ServiceServer _apply_planning_scene_srv;
+    ros::ServiceServer _start_srv, _goal_srv;
 
     GoalGenerator::Ptr _goal_generator;
     bool _use_goal_generator;

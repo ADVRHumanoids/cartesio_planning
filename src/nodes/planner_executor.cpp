@@ -211,6 +211,11 @@ void PlannerExecutor::init_load_validity_checker()
 
 void PlannerExecutor::init_subscribe_start_goal()
 {
+
+    _start_srv = _nh.advertiseService("start_pose/joint_states", &PlannerExecutor::start_service, this);
+    _goal_srv = _nh.advertiseService("goal_pose/joint_states", &PlannerExecutor::goal_service, this);
+//    _goal_srv = _nh.advertiseService("goal/joint_states", &PlannerExecutor::goal_service, this);
+
     _start_sub = _nh.subscribe("start/joint_states", 1,
                                &PlannerExecutor::on_start_state_recv, this);
 
@@ -487,6 +492,39 @@ void PlannerExecutor::on_goal_state_recv(const sensor_msgs::JointStateConstPtr &
     }
 
     setGoalState(q);
+}
+
+bool PlannerExecutor::start_service(cartesio_planning::CartesioJointStates::Request& req,
+                                    cartesio_planning::CartesioJointStates::Response& res)
+{
+
+    // tbd: input checking
+
+    XBot::JointNameMap q;
+    for(int i = 0; i < req.joint_states.name.size(); i++)
+    {
+        q[req.joint_states.name[i]] = req.joint_states.position[i];
+    }
+
+    setStartState(q);
+    return true;
+
+}
+
+bool PlannerExecutor::goal_service(cartesio_planning::CartesioJointStates::Request& req,
+                                    cartesio_planning::CartesioJointStates::Response& res)
+{
+
+    // tbd: input checking
+
+    XBot::JointNameMap q;
+    for(int i = 0; i < req.joint_states.name.size(); i++)
+    {
+        q[req.joint_states.name[i]] = req.joint_states.position[i];
+    }
+
+    setGoalState(q);
+    return true;
 }
 
 bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Request& req,
