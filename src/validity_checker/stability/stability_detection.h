@@ -6,6 +6,7 @@
 #include <XBotInterface/ModelInterface.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <cartesio_planning/SetContactFrames.h>
+#include <cartesio_planning/CartesioFrames.h>
 
 class convex_hull;
 
@@ -81,6 +82,8 @@ public:
         _vis_pub = _nh.advertise<visualization_msgs::Marker>( "convex_hull", 0 );
 
         _frame_sub = _nh.subscribe("contact_frames", 10, &ConvexHullROS::set_contact_frames, this);
+
+        _frame_srv = _nh.advertiseService("contact_frames", &ConvexHullROS::frame_server, this);
     }
 
     void publish()
@@ -143,6 +146,7 @@ private:
     ros::Publisher _vis_pub;
     const XBot::ModelInterface& _model;
     ros::Subscriber _frame_sub;
+    ros::ServiceServer _frame_srv;
 
     void set_contact_frames(cartesio_planning::SetContactFrames::ConstPtr msg)
     {
@@ -159,6 +163,28 @@ private:
         else if(msg->action.data() == msg->REMOVE)
             _ch.removePolygonFrames(polyframes);
     }
+
+    bool frame_server(cartesio_planning::CartesioFrames::Request& req,
+                      cartesio_planning::CartesioFrames::Response& res)
+    {
+        /* check conditions */
+
+        ConvexHullStability::PolygonFrames polyframes;
+        for(unsigned int i = 0; i < req.frames_in_contact.size(); ++i)
+            polyframes.push_back(req.frames_in_contact[i]);
+
+
+        if(req.action.data() == req.SET)
+            _ch.setPolygonFrames(polyframes);
+        else if(req.action.data() == req.ADD)
+            _ch.addPolygonFrames(polyframes);
+        else if(req.action.data() == req.REMOVE)
+            _ch.removePolygonFrames(polyframes);
+
+
+        return true;
+    }
+
 };
 
 }
