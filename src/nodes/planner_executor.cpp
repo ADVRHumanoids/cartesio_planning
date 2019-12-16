@@ -258,7 +258,8 @@ void PlannerExecutor::init_trj_publisiher()
         }
 
         for(unsigned int i = 0; i < _distal_links.size(); ++i)
-            _cartesian_trajectory_publishers.push_back(_nh.advertise<cartesio_planning::CartesianTrajectory>(_distal_links[i]+"_cartesian_trajectory",1, true));
+            _cartesian_trajectory_publishers.push_back(_nh.advertise<cartesio_planning::CartesianTrajectory>
+                                                       (_distal_links[i]+"/cartesian_trajectory",1, true));
     }
 
     _trj_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 1, true);
@@ -555,6 +556,7 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
                     Eigen::Quaterniond q(p.linear());
                     pp.orientation.x = q.x(); pp.orientation.y = q.y(); pp.orientation.z = q.z(); pp.orientation.w = q.w();
                     msg.frames.push_back(pp);
+                    msg.time_from_start.push_back(t);
                     t += ros::Duration(req.interpolation_time);
                 }
 
