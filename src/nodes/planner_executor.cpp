@@ -13,6 +13,8 @@
 
 #include "cartesio_planning/CartesianTrajectory.h"
 
+#include <bprinter/table_printer.h>
+
 using namespace XBot::Cartesian;
 
 PlannerExecutor::PlannerExecutor():
@@ -546,28 +548,118 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
         return true;
     }
 
+    /* fill cartesian frames specified in topic */
+    if(req.base_links.size() > req.distal_links.size())
+    {
+        throw std::runtime_error("There are more base links than distal links!");
+    }
+
+    std::vector<std::string> distal_links;
+    for(auto elem : req.distal_links)
+    {
+        distal_links.push_back(elem);
+    }
+
+    std::vector<std::string> base_links;
+    if(req.base_links.empty())
+    {
+        res.status.msg.data = "Filling missing base links with frame 'world'.";
+        for(auto elem : distal_links)
+            base_links.push_back("world");
+    }
+    else
+    {
+        for(auto elem : req.base_links)
+        {
+            base_links.push_back(elem);
+        }
+    }
 
     if(req.planner_type == "")
     {
         req.planner_type = "RRTstar";
     }
 
-    std::cout << "Requested planner " << req.planner_type << std::endl;
-
-
+    std::cout << "Requested planner: " << req.planner_type << std::endl;
 
     std::vector<Eigen::VectorXd> trajectory;
     std::vector<std::vector<Eigen::Affine3d> > cartesian_trajectories;
-    if(_distal_links.empty())
-        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, trajectory);
-    else
+
+//    bprinter::TablePrinter tp(&std::cout);
+//    tp.PrintHeader();
+//    tp <<
+//    tp.PrintFooter();
+
+    if (req.trajectory_space == "Joint")
     {
-        std::vector<std::pair<std::string, std::string> > base_distal_links;
-        for(unsigned int i = 0; i < _distal_links.size(); ++i)
-            base_distal_links.push_back(std::pair<std::string, std::string>(_base_links[i], _distal_links[i]));
-        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, base_distal_links,
-                                     trajectory, cartesian_trajectories);
+        std::cout << "Joint space selected. Computing Joint trajectory." << std::endl;
+        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, trajectory);
     }
+    else if (req.trajectory_space == "")
+    {
+        if (_distal_links.empty() && distal_links.empty())
+        {
+            std::cout << "No space trajectory defined, and no cartesian frames were inserted. Computing Joint trajectory." << std::endl;
+            res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, trajectory);
+        }
+        else
+        {
+            std::vector<std::pair<std::string, std::string> > base_distal_links;
+            if (!distal_links.empty())
+            {
+                std::cout << "No space trajectory defined, but cartesian frames were inserted. Computing Cartesian trajectory using selected frames." << std::endl;
+                for(unsigned int i = 0; i < _distal_links.size(); ++i)
+                    base_distal_links.push_back(std::pair<std::string, std::string>(base_links[i], distal_links[i]));
+            }
+            else
+            {
+                std::cout << "No space trajectory defined, but found cartesian frames from param. Computing Cartesian trajectory using param frames." << std::endl;
+                for(unsigned int i = 0; i < _distal_links.size(); ++i)
+                    base_distal_links.push_back(std::pair<std::string, std::string>(_base_links[i], _distal_links[i]));
+            }
+            res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, base_distal_links,
+                                         trajectory, cartesian_trajectories);
+
+            for (auto elem :base_distal_links)
+            {
+                std::cout << "Base frame: " << elem.first << " -- Distal frame: " << elem.second << std::endl;
+            }
+        }
+    }
+    else if (req.trajectory_space == "Cartesian")
+    {
+        if (_distal_links.empty() && distal_links.empty())
+        {
+            std::cout << "No cartesian frames specified." << std::endl;
+            res.status.val = ompl::base::PlannerStatus::ABORT;
+        }
+        else
+        {
+            std::vector<std::pair<std::string, std::string> > base_distal_links;
+            if (!distal_links.empty())
+            {
+                std::cout << "Computing Cartesian trajectory using selected frames." << std::endl;
+                for(unsigned int i = 0; i < distal_links.size(); ++i)
+                    base_distal_links.push_back(std::pair<std::string, std::string>(base_links[i], distal_links[i]));
+            }
+            else
+            {
+                std::cout << "Computing Cartesian trajectory using param frames." << std::endl;
+                for(unsigned int i = 0; i < _distal_links.size(); ++i)
+                    base_distal_links.push_back(std::pair<std::string, std::string>(_base_links[i], _distal_links[i]));
+            }
+            res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, base_distal_links,
+                                         trajectory, cartesian_trajectories);
+
+            for (auto elem :base_distal_links)
+            {
+                std::cout << "Base frame: " << elem.first << " -- Distal frame: " << elem.second << std::endl;
+            }
+        }
+    }
+
+
+
     res.status.msg.data = _planner->getPlannerStatus().asString();
 
     if(res.status.val)
@@ -586,6 +678,8 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
         }
 
         _trj_pub.publish(msg);
+
+
 
         if(cartesian_trajectories.size() > 0)
         {
@@ -616,6 +710,7 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
 
     return true;
 }
+
 int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, const double interpolation_time,
                 const std::vector<std::pair<std::string, std::string> > base_distal_links,
                 std::vector<Eigen::VectorXd>& trajectory,

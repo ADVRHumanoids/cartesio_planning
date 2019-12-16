@@ -16,7 +16,15 @@ public:
 
     void setStartState(const XBot::JointNameMap &q);
     void setGoalState(const XBot::JointNameMap &q);
-    void callPlanner(const double time, const std::string& planner_type);
+
+    void callPlanner(const double time,
+                     std::string& planner_type,
+                     const double interpolation_time,
+                     const std::string trajectory_space = "Joint",
+                     const std::vector<std::string> distal_links = std::vector<std::string>(),
+                     const std::vector<std::string> base_links = std::vector<std::string>())
+                     ;
+
     void setContactFrames(std::string action, std::list<std::string> frames_in_contact);
 
 private:

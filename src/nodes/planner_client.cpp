@@ -46,11 +46,28 @@ void PlannerClient::setGoalState(const XBot::JointNameMap &q)
     }
 }
 
-void PlannerClient::callPlanner(const double time, const std::string& planner_type)
+void PlannerClient::callPlanner(const double time,
+                                std::string& planner_type,
+                                const double interpolation_time,
+                                const std::string trajectory_space,
+                                const std::vector<std::string> distal_links,
+                                const std::vector<std::string> base_links)
 {
     cartesio_planning::CartesioPlanner srv;
     srv.request.time = time;
     srv.request.planner_type = planner_type;
+    srv.request.interpolation_time = interpolation_time;
+    srv.request.trajectory_space = trajectory_space;
+
+    for (auto elem : base_links)
+    {
+        srv.request.base_links.push_back(elem);
+    }
+
+    for (auto elem : distal_links)
+    {
+        srv.request.distal_links.push_back(elem);
+    }
 
     if (_client_planner.call(srv))
     {
