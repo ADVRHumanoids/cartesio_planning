@@ -21,6 +21,8 @@ PYBIND11_MODULE(pyplan, m) {
                  py::arg("distal_links") = std::vector<std::string>(),
                  py::arg("base_links") = std::vector<std::string>())
             .def("setContactFrames", &PlannerClient::setContactFrames)
+            .def("getJointTrajectory", &PlannerClient::getJointTrajectory)
+            .def("getCartesianTrajectory", &PlannerClient::getCartesianTrajectory)
         ;
 }
 

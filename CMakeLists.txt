@@ -102,7 +102,8 @@ add_action_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
     DEPENDENCIES
-    std_msgs sensor_msgs actionlib_msgs# Or other packages containing msgs
+    trajectory_msgs
+    std_msgs sensor_msgs# Or other packages containing msgs
     )
 
 ################################################

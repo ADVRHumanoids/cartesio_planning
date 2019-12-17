@@ -72,6 +72,38 @@ void PlannerClient::callPlanner(const double time,
     if (_client_planner.call(srv))
     {
         ROS_INFO("Sent planning request.");
+        if (!srv.response.joint_trajectory.points.empty())
+        {
+            int j = 0;
+            for (auto point_elem : srv.response.joint_trajectory.points)
+            {
+                for (auto joint_elem : srv.response.joint_trajectory.joint_names)
+                {
+                    _joint_trajectory[joint_elem].resize(srv.response.joint_trajectory.points.size());
+                }
+                for (int i = 0; i < srv.response.joint_trajectory.joint_names.size(); i++)
+                {
+                    _joint_trajectory[srv.response.joint_trajectory.joint_names.at(i)](j) = point_elem.positions.at(i);
+                }
+                j++;
+            }
+        }
+
+        if (!srv.response.cartesian_trajectory.empty())
+        {
+            for (int i = 0; i < srv.response.cartesian_trajectory.size(); i++)
+            {
+                std::string base_elem = srv.response.cartesian_trajectory[i].base_link;
+                std::string distal_elem = srv.response.cartesian_trajectory[i].distal_link;
+
+                for (auto elem : srv.response.cartesian_trajectory[i].frames)
+                {
+                    Eigen::Affine3d temp_pose;
+                    tf::poseMsgToEigen(elem, temp_pose);
+                    _cartesian_trajectory[std::make_pair(base_elem, distal_elem)].push_back(temp_pose);
+                }
+            }
+        }
     }
     else
     {
@@ -96,5 +128,21 @@ void PlannerClient::setContactFrames(std::string action, std::list<std::string> 
     else
     {
         ROS_ERROR("Failed to send contact frames.");
+    }
+}
+
+std::map<std::string, Eigen::VectorXd> PlannerClient::getJointTrajectory()
+{
+    if (!_joint_trajectory.empty())
+        return _joint_trajectory;
+}
+
+std::map<std::pair<std::string, std::string>, std::vector<Eigen::Affine3d>> PlannerClient::getCartesianTrajectory()
+{
+    if (!_cartesian_trajectory.empty())
+        return _cartesian_trajectory;
+    else
+    {
+        ROS_ERROR("There is no Cartesian trajectory, you asked for a Joint trajectory.");
     }
 }

@@ -666,6 +666,7 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     {
         trajectory_msgs::JointTrajectory msg;
         msg.joint_names = _model->getEnabledJointNames();
+        res.joint_trajectory.joint_names = _model->getEnabledJointNames();
         auto t = ros::Duration(0.);
 
         for(auto x : trajectory)
@@ -674,23 +675,37 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
             point.positions.assign(x.data(), x.data() + x.size());
             point.time_from_start = t;
             msg.points.push_back(point);
+            res.joint_trajectory.points.push_back(point);
             t += ros::Duration(req.interpolation_time);
         }
 
         _trj_pub.publish(msg);
 
-
-
         if(cartesian_trajectories.size() > 0)
         {
+            res.cartesian_trajectory.resize(cartesian_trajectories.size());
 
             for(unsigned int i = 0; i < cartesian_trajectories.size(); ++i)
             {
                 cartesio_planning::CartesianTrajectory msg;
                 auto t = ros::Duration(0.);
 
-                msg.base_link = _base_links[i];
-                msg.distal_link = _distal_links[i];
+                if (base_links.empty())
+                {
+                    msg.base_link = _base_links[i];
+                    msg.distal_link = _distal_links[i];
+
+                    res.cartesian_trajectory[i].base_link = _base_links[i];
+                    res.cartesian_trajectory[i].distal_link = _distal_links[i];
+                }
+                else
+                {
+                    msg.base_link = base_links[i];
+                    msg.distal_link = distal_links[i];
+
+                    res.cartesian_trajectory[i].base_link = base_links[i];
+                    res.cartesian_trajectory[i].distal_link = distal_links[i];
+                }
 
                 for(Eigen::Affine3d p : cartesian_trajectories[i])
                 {
@@ -700,6 +715,10 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
                     pp.orientation.x = q.x(); pp.orientation.y = q.y(); pp.orientation.z = q.z(); pp.orientation.w = q.w();
                     msg.frames.push_back(pp);
                     msg.time_from_start.push_back(t);
+
+                    res.cartesian_trajectory[i].frames.push_back(pp);
+                    res.cartesian_trajectory[i].time_from_start.push_back(t);
+
                     t += ros::Duration(req.interpolation_time);
                 }
 

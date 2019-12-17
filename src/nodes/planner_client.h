@@ -6,6 +6,8 @@
 #include <cartesio_planning/CartesioPlanner.h>
 #include <cartesio_planning/CartesioFrames.h>
 
+#include <eigen_conversions/eigen_msg.h>
+
 #include <XBotInterface/TypedefAndEnums.h>
 #include <stdio.h>
 
@@ -27,6 +29,10 @@ public:
 
     void setContactFrames(std::string action, std::list<std::string> frames_in_contact);
 
+    std::map<std::string, Eigen::VectorXd> getJointTrajectory();
+    std::map<std::pair<std::string, std::string>, std::vector<Eigen::Affine3d>> getCartesianTrajectory();
+
+
 private:
     ros::NodeHandle nh;
 
@@ -34,6 +40,10 @@ private:
     ros::ServiceClient _client_goal;
     ros::ServiceClient _client_planner;
     ros::ServiceClient _client_frames;
+
+    std::map<std::string, Eigen::VectorXd> _joint_trajectory;
+    std::map<std::pair<std::string, std::string>, std::vector<Eigen::Affine3d>> _cartesian_trajectory;
+
 };
 
 #endif // PLANNER_CLIENT_H

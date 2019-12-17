@@ -1,3 +1,9 @@
+#trajectorty space
+string Joint=Joint
+string Cartesian=Cartesian
+
+string trajectory_space
+
 #planner types
 string BiTRRT=BiTRRT
 string InformedRRTstar=InformedRRTstar
@@ -19,7 +25,12 @@ int32 time
 
 float32 interpolation_time
 
+string[] base_links
+string[] distal_links
+
 ---
 
 cartesio_planning/CartesioPlannerStatus status
+cartesio_planning/CartesianTrajectory[] cartesian_trajectory
+trajectory_msgs/JointTrajectory joint_trajectory
 
