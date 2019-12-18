@@ -23,7 +23,7 @@
 
 
     <node pkg="cartesio_planning" type="planning_server" name="planning_server" output="screen">
-        <remap from="planner/goal/joint_states" to="cartesian/solution"/>
+        <remap from="planner/start/joint_states" to="cartesian/solution"/>
         <param name="solver" value=""/>
         <param name="is_model_floating_base" value="true"/>
         <param name="use_goal_generator" value="$(arg use_goal_generator)"/>
