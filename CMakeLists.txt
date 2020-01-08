@@ -42,6 +42,8 @@ FIND_PACKAGE(PCL 1.7 QUIET COMPONENTS   common
                                         search
                                         io)
 
+find_package(OpenSoT REQUIRED)
+
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -179,6 +181,9 @@ target_link_libraries(cartesio_planning
     ${PCL_LIBRARIES}
     )
 
+add_library(centroidal_statics SHARED src/validity_checker/stability/centroidal_statics.cpp)
+target_link_libraries(centroidal_statics PRIVATE ${OpenSoT_LIBRARIES})
+
 add_library(trajectory_interpolation SHARED src/planner/trajectory_interpolation.cpp)
 target_link_libraries(trajectory_interpolation PRIVATE casadi)
 
@@ -291,6 +296,12 @@ add_dependencies(cartesio_planning ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_
 # )
 
 ## Mark executables and/or libraries for installation
+install(TARGETS centroidal_statics
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
 install(TARGETS ompl_test
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
