@@ -2,6 +2,11 @@
 #define CENTROIDAL_STATICS_H
 
 #include <OpenSoT/utils/ForceOptimization.h>
+#include <ros/ros.h>
+#include <rviz_visual_tools/rviz_visual_tools.h>
+#include <cartesio_planning/SetContactFrames.h>
+#include <eigen_conversions/eigen_msg.h>
+
 
 namespace XBot {
 namespace Cartesian {
@@ -29,6 +34,10 @@ public:
 
     bool setContactRotationMatrix(const std::string& contact_link,
                                   const Eigen::Matrix3d& w_R_c);
+
+    const std::map<std::string, Eigen::Matrix3d>& getContacts(){ return _contacts;}
+    double getFricitonCoefficient(){ return _friction_coeff;}
+
 
     /**
      * @brief checkStability
@@ -66,6 +75,106 @@ private:
     std::vector<Eigen::Vector6d> _Fc;
     Eigen::VectorXd _tau;
 
+};
+
+class CentroidalStaticsROS
+{
+public:
+    typedef std::shared_ptr<CentroidalStaticsROS> Ptr;
+
+    CentroidalStaticsROS(XBot::ModelInterface::ConstPtr model, CentroidalStatics& cs, ros::NodeHandle& nh):
+        _cs(cs),
+        _model(*model),
+        _nh(nh)
+    {
+        _visual_tools = std::make_shared<rviz_visual_tools::RvizVisualTools>("ci/world", "centroidal_statics/friciton_cones");
+
+        _visual_tools->setAlpha(0.3);
+        _visual_tools->enableBatchPublishing(true);
+        _visual_tools->loadMarkerPub(true, true);
+
+        _contact_sub = _nh.subscribe("contacts", 10, &CentroidalStaticsROS::set_contacts, this);
+    }
+
+    void publish()
+    {
+        double mu = _cs.getFricitonCoefficient();
+
+        std::map<std::string, Eigen::Matrix3d> contacts = _cs.getContacts();
+
+        if(!map_compare(_contacts, contacts))
+        {
+            _contacts = contacts;
+
+            for(auto const& contact : _contacts)
+            {
+                //1) We get the pose of the link in contact world frame
+                Eigen::Affine3d w_T_c;
+                _model.getPose(contact.first, w_T_c);
+
+                //2) we substitute the roation with the one stored in the contact
+                w_T_c.linear() = contact.second;
+
+                //3) cones are published around the X axis when Identity is used, we need to locally rotate about -90 on the Y axis
+                Eigen::Matrix3d RotY; RotY.setIdentity();
+                RotY(0,0) = std::cos(-M_PI_2); RotY(0,2) = std::sin(-M_PI_2);
+                RotY(2,0) = -std::sin(-M_PI_2); RotY(2,2) = std::cos(-M_PI_2);
+                w_T_c.linear() = w_T_c.linear()*RotY;
+
+                _visual_tools->publishCone(w_T_c, std::atan(mu), rviz_visual_tools::GREEN, 0.07);
+            }
+        }
+        _visual_tools->trigger();
+
+
+    }
+
+private:
+    template <typename Map>
+    bool map_compare (Map const &lhs, Map const &rhs) {
+        // No predicate needed because there is operator== for pairs already.
+        return lhs.size() == rhs.size()
+            && std::equal(lhs.begin(), lhs.end(),
+                          rhs.begin());
+    }
+
+    void set_contacts(cartesio_planning::SetContactFrames::ConstPtr msg)
+    {
+        if(msg->action.data() == msg->SET)
+            _cs.setContactLinks(msg->frames_in_contact);
+        else if(msg->action.data() == msg->ADD)
+            _cs.addContatcLinks(msg->frames_in_contact);
+        else if(msg->action.data() == msg->REMOVE)
+            _cs.removeContactLinks(msg->frames_in_contact);
+
+        _cs.setFrictionCoeff(msg->friction_coefficient);
+
+        if(!msg->rotations.empty() && (msg->action.data() == msg->ADD || msg->action.data() == msg->SET))
+        {
+            if(msg->rotations.size() != msg->frames_in_contact.size())
+                ROS_ERROR("msg->rotations.size() != msg->frames_in_contact.size(), rotations will not be applied!");
+            else
+            {
+                for(unsigned int i = 0; i < msg->rotations.size(); ++i)
+                {
+                    Eigen::Quaterniond q;
+                    tf::quaternionMsgToEigen(msg->rotations[i], q);
+
+                    _cs.setContactRotationMatrix(msg->frames_in_contact[i], q.toRotationMatrix());
+                }
+            }
+        }
+
+    }
+
+    CentroidalStatics& _cs;
+    const XBot::ModelInterface& _model;
+    ros::NodeHandle _nh;
+    ros::Subscriber _contact_sub;
+
+    std::map<std::string, Eigen::Matrix3d> _contacts;
+
+    rviz_visual_tools::RvizVisualToolsPtr _visual_tools;
 };
 
 }

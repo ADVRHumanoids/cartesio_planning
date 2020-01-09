@@ -24,6 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
     moveit_ros_planning
     moveit_ros_planning_interface
     visualization_msgs
+    rviz_visual_tools
     )
 
 find_package(casadi REQUIRED)
@@ -191,11 +192,13 @@ add_library(cartesian_trajectory_interpolation SHARED src/planner/cartesian_traj
 target_link_libraries(cartesian_trajectory_interpolation PRIVATE trajectory_interpolation ${XBotInterface_LIBRARIES})
 
 
-add_executable(stability_test
-    src/stability_test.cpp
-    )
-
+add_executable(stability_test src/stability_test.cpp)
 target_link_libraries(stability_test cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES})
+
+add_executable(centroidal_statics_test src/centroidal_statics_test.cpp)
+target_link_libraries(centroidal_statics_test centroidal_statics ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES})
+
+
 
 # Test executable
 add_executable(ompl_test
@@ -346,6 +349,12 @@ install(TARGETS cartesian_trajectory_interpolation
 
 
 install(TARGETS stability_test
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+install(TARGETS centroidal_statics_test
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
