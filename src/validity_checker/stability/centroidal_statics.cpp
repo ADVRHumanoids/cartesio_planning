@@ -99,6 +99,7 @@ bool CentroidalStatics::checkStability(const double eps, const bool init_solver)
     if(compute())
     {
         double res = _force_optim->getObjective();
+        std::cout<<"res: "<<res<<std::endl;
         if(res <= eps && res >= -res)
             return true;
     }

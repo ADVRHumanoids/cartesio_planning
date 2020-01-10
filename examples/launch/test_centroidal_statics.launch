@@ -1,0 +1,23 @@
+<launch>
+
+    <arg name="solver" default="OpenSot"/>
+    <arg name="prefix" default=""/>
+    <arg name="world_frame_link" default="l_sole"/>
+
+   <param name="robot_description"
+        textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
+
+    <param name="robot_description_semantic"
+        textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
+
+    <param name="cartesian/problem_description"
+        textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
+
+    
+    <include file="$(find cartesian_interface)/launch/cartesio.launch">
+        <arg name="tf_prefix" value="ci"/>
+        <arg name="world_frame_link" value="$(arg world_frame_link)"/>
+    </include>
+
+
+</launch>

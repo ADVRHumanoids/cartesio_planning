@@ -98,6 +98,8 @@ public:
         _visual_tools->loadMarkerPub(true, true);
 
         _contact_sub = _nh.subscribe("contacts", 10, &CentroidalStaticsROS::set_contacts, this);
+
+        _vis_pub = _nh.advertise<visualization_msgs::Marker>("centroidal_statics/forces", 0);
     }
 
     void publish()
@@ -130,6 +132,64 @@ public:
                 _visual_tools->publishCone(w_T_c, M_PI_2-std::atan(mu), rviz_visual_tools::GREEN, 0.07);
             }
         }
+
+        if(_contacts.size() > 0)
+        {
+            //we should check that contacts did not move
+            bool check_stability =  _cs.checkStability(1e-6, false);
+
+            std::vector<Eigen::Vector6d> Fcs = _cs.getForces();
+
+            int i = 0;
+            ros::Time t = ros::Time::now();
+            for(auto const& contact : _contacts)
+            {
+                Eigen::Vector6d F = Fcs[i];
+
+                visualization_msgs::Marker marker;
+                marker.header.frame_id = "ci/"+contact.first;
+                marker.header.stamp = t;
+                marker.ns = "computed_contact_forces";
+                marker.id = i;
+                marker.type = visualization_msgs::Marker::ARROW;
+                marker.action = visualization_msgs::Marker::ADD;
+
+                geometry_msgs::Point p;
+                p.x = 0.; p.y = 0.; p.z = 0.;
+                marker.points.push_back(p);
+                p.x = F[0]/std::sqrt(std::pow(F[0],2) + std::pow(F[1],2) + std::pow(F[2],2));
+                p.y = F[1]/std::sqrt(std::pow(F[0],2) + std::pow(F[1],2) + std::pow(F[2],2));
+                p.z = F[2]/std::sqrt(std::pow(F[0],2) + std::pow(F[1],2) + std::pow(F[2],2));
+                marker.points.push_back(p);
+
+                marker.scale.x = 0.05;
+                marker.scale.y = 0.1;
+                marker.color.a = 1.0; // Don't forget to set the alpha!
+
+                if(check_stability)
+                {
+                    marker.color.r = 0.0;
+                    marker.color.g = 1.0;
+                    marker.color.b = 0.0;
+                }
+                else
+                {
+                    marker.color.r = 1.0;
+                    marker.color.g = 0.0;
+                    marker.color.b = 0.0;
+                }
+
+                _vis_pub.publish( marker );
+
+                i++;
+
+            }
+
+
+
+        }
+
+
         _visual_tools->trigger();
 
 
@@ -192,6 +252,7 @@ private:
     std::map<std::string, Eigen::Matrix3d> _contacts;
 
     rviz_visual_tools::RvizVisualToolsPtr _visual_tools;
+    ros::Publisher _vis_pub;
 };
 
 }
