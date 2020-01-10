@@ -77,6 +77,10 @@ private:
 
 };
 
+/**
+ * @brief The CentroidalStaticsROS class
+ * NOTE: contact position will change only when contacts are changed/updated
+ */
 class CentroidalStaticsROS
 {
 public:
@@ -106,6 +110,8 @@ public:
         {
             _contacts = contacts;
 
+            _visual_tools->deleteAllMarkers();
+
             for(auto const& contact : _contacts)
             {
                 //1) We get the pose of the link in contact world frame
@@ -121,7 +127,7 @@ public:
                 RotY(2,0) = -std::sin(-M_PI_2); RotY(2,2) = std::cos(-M_PI_2);
                 w_T_c.linear() = w_T_c.linear()*RotY;
 
-                _visual_tools->publishCone(w_T_c, std::atan(mu), rviz_visual_tools::GREEN, 0.07);
+                _visual_tools->publishCone(w_T_c, M_PI_2-std::atan(mu), rviz_visual_tools::GREEN, 0.07);
             }
         }
         _visual_tools->trigger();
@@ -138,16 +144,27 @@ private:
                           rhs.begin());
     }
 
+    /**
+     * @brief set_contacts
+     * NOTE: when SET and ADD are used, the friction coefficient is updated with the one of the message which is the same for
+     * all the contacts
+     * @param msg
+     */
     void set_contacts(cartesio_planning::SetContactFrames::ConstPtr msg)
     {
         if(msg->action.data() == msg->SET)
+        {
             _cs.setContactLinks(msg->frames_in_contact);
+            _cs.setFrictionCoeff(msg->friction_coefficient);
+        }
         else if(msg->action.data() == msg->ADD)
+        {
             _cs.addContatcLinks(msg->frames_in_contact);
+            _cs.setFrictionCoeff(msg->friction_coefficient);
+        }
         else if(msg->action.data() == msg->REMOVE)
             _cs.removeContactLinks(msg->frames_in_contact);
 
-        _cs.setFrictionCoeff(msg->friction_coefficient);
 
         if(!msg->rotations.empty() && (msg->action.data() == msg->ADD || msg->action.data() == msg->SET))
         {
