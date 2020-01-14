@@ -146,6 +146,13 @@ public:
             {
                 Eigen::Vector6d F = Fcs[i];
 
+                Eigen::Affine3d w_T_c;
+                _model.getPose(contact.first, w_T_c);
+                Eigen::Matrix6d Adj; Adj.setIdentity();
+                Adj.block(0,0,3,3) = w_T_c.linear().transpose();
+                Adj.block(3,3,3,3) = w_T_c.linear().transpose();
+                F = Adj*F;
+
                 visualization_msgs::Marker marker;
                 marker.header.frame_id = "ci/"+contact.first;
                 marker.header.stamp = t;
@@ -210,7 +217,7 @@ private:
      * all the contacts
      * @param msg
      */
-    void set_contacts(cartesio_planning::SetContactFrames::ConstPtr msg)
+public: void set_contacts(cartesio_planning::SetContactFrames::ConstPtr msg)
     {
         if(msg->action.data() == msg->SET)
         {
@@ -244,6 +251,7 @@ private:
 
     }
 
+private:
     CentroidalStatics& _cs;
     const XBot::ModelInterface& _model;
     ros::NodeHandle _nh;

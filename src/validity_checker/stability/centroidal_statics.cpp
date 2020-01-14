@@ -64,6 +64,7 @@ bool CentroidalStatics::setContactRotationMatrix(const std::string& contact_link
         return false;
 
     _contacts[contact_link] = w_R_c;
+     _force_optim->setContactRotationMatrix(contact_link, _contacts[contact_link]);
     return true;
 }
 
@@ -99,7 +100,7 @@ bool CentroidalStatics::checkStability(const double eps, const bool init_solver)
     if(compute())
     {
         double res = _force_optim->getObjective();
-        std::cout<<"res: "<<res<<std::endl;
+
         if(res <= eps && res >= -res)
             return true;
     }
