@@ -49,12 +49,12 @@ public:
     const Eigen::VectorXd& getTorques(){ return _tau;}
     const std::vector<Eigen::Vector6d>& getForces(){ return _Fc;}
 
-private:
     /**
      * @brief init initialize contact force optimization
      */
     void init();
 
+private:
     /**
      * @brief compute contact forces and tau joints
      * @param Fc
@@ -91,47 +91,17 @@ public:
         _model(*model),
         _nh(nh)
     {
-        _visual_tools = std::make_shared<rviz_visual_tools::RvizVisualTools>("ci/world", "centroidal_statics/friciton_cones");
-
-        _visual_tools->setAlpha(0.3);
-        _visual_tools->enableBatchPublishing(true);
-        _visual_tools->loadMarkerPub(true, true);
+        _cs.init();
 
         _contact_sub = _nh.subscribe("contacts", 10, &CentroidalStaticsROS::set_contacts, this);
 
         _vis_pub = _nh.advertise<visualization_msgs::Marker>("centroidal_statics/forces", 0);
     }
 
+
     void publish()
     {
-        double mu = _cs.getFricitonCoefficient();
-
-        std::map<std::string, Eigen::Matrix3d> contacts = _cs.getContacts();
-
-        if(!map_compare(_contacts, contacts))
-        {
-            _contacts = contacts;
-
-            _visual_tools->deleteAllMarkers();
-
-            for(auto const& contact : _contacts)
-            {
-                //1) We get the pose of the link in contact world frame
-                Eigen::Affine3d w_T_c;
-                _model.getPose(contact.first, w_T_c);
-
-                //2) we substitute the roation with the one stored in the contact
-                w_T_c.linear() = contact.second;
-
-                //3) cones are published around the X axis when Identity is used, we need to locally rotate about -90 on the Y axis
-                Eigen::Matrix3d RotY; RotY.setIdentity();
-                RotY(0,0) = std::cos(-M_PI_2); RotY(0,2) = std::sin(-M_PI_2);
-                RotY(2,0) = -std::sin(-M_PI_2); RotY(2,2) = std::cos(-M_PI_2);
-                w_T_c.linear() = w_T_c.linear()*RotY;
-
-                _visual_tools->publishCone(w_T_c, M_PI_2-std::atan(mu), rviz_visual_tools::GREEN, 0.07);
-            }
-        }
+        _contacts = _cs.getContacts();
 
         if(_contacts.size() > 0)
         {
@@ -144,6 +114,8 @@ public:
             for(auto const& contact : _contacts)
             {
                 Eigen::Vector6d F = Fcs[k];
+
+                //std::cout<<contact.first<<"  "<<F.transpose()<<std::endl;
 
                 Eigen::Affine3d w_T_c;
                 _model.getPose(contact.first, w_T_c);
@@ -164,9 +136,14 @@ public:
                 geometry_msgs::Point p;
                 p.x = 0.; p.y = 0.; p.z = 0.;
                 marker.points.push_back(p);
-                p.x = F[0]/std::sqrt(std::pow(F[0],2) + std::pow(F[1],2) + std::pow(F[2],2));
-                p.y = F[1]/std::sqrt(std::pow(F[0],2) + std::pow(F[1],2) + std::pow(F[2],2));
-                p.z = F[2]/std::sqrt(std::pow(F[0],2) + std::pow(F[1],2) + std::pow(F[2],2));
+                if(F.segment(0,3).norm() < 1e-3)
+                    p.x = p.y = p.z = 0.0;
+                else
+                {
+                    p.x = F[0]/std::sqrt(std::pow(F[0],2) + std::pow(F[1],2) + std::pow(F[2],2));
+                    p.y = F[1]/std::sqrt(std::pow(F[0],2) + std::pow(F[1],2) + std::pow(F[2],2));
+                    p.z = F[2]/std::sqrt(std::pow(F[0],2) + std::pow(F[1],2) + std::pow(F[2],2));
+                }
                 marker.points.push_back(p);
 
                 marker.scale.x = 0.05;
@@ -259,20 +236,11 @@ public:
         }
 
 
-        _visual_tools->trigger();
 
 
     }
 
 private:
-    template <typename Map>
-    bool map_compare (Map const &lhs, Map const &rhs) {
-        // No predicate needed because there is operator== for pairs already.
-        return lhs.size() == rhs.size()
-            && std::equal(lhs.begin(), lhs.end(),
-                          rhs.begin());
-    }
-
     /**
      * @brief set_contacts
      * NOTE: when SET and ADD are used, the friction coefficient is updated with the one of the message which is the same for
@@ -321,7 +289,6 @@ private:
 
     std::map<std::string, Eigen::Matrix3d> _contacts;
 
-    rviz_visual_tools::RvizVisualToolsPtr _visual_tools;
     ros::Publisher _vis_pub;
 
 

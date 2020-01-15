@@ -80,6 +80,8 @@ void CentroidalStatics::init()
 
     for(auto link : _contact_links)
         _force_optim->setContactRotationMatrix(link, _contacts[link]);
+
+    _is_initialized = true;
 }
 
 bool CentroidalStatics::compute()
@@ -92,10 +94,8 @@ bool CentroidalStatics::compute()
 bool CentroidalStatics::checkStability(const double eps, const bool init_solver)
 {
     if(!_is_initialized || init_solver)
-    {
         init();
-        _is_initialized = true;
-    }
+
 
     if(compute())
     {
