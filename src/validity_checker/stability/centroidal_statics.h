@@ -135,16 +135,15 @@ public:
 
         if(_contacts.size() > 0)
         {
-            //we should check that contacts did not move
             bool check_stability =  _cs.checkStability(1e-6, false);
 
             std::vector<Eigen::Vector6d> Fcs = _cs.getForces();
 
-            int i = 0;
+            int i = 0; int k = 0;
             ros::Time t = ros::Time::now();
             for(auto const& contact : _contacts)
             {
-                Eigen::Vector6d F = Fcs[i];
+                Eigen::Vector6d F = Fcs[k];
 
                 Eigen::Affine3d w_T_c;
                 _model.getPose(contact.first, w_T_c);
@@ -153,6 +152,7 @@ public:
                 Adj.block(3,3,3,3) = w_T_c.linear().transpose();
                 F = Adj*F;
 
+                //Piselloni
                 visualization_msgs::Marker marker;
                 marker.header.frame_id = "ci/"+contact.first;
                 marker.header.stamp = t;
@@ -187,8 +187,70 @@ public:
                 }
 
                 _vis_pub.publish( marker );
+                i++;
+
+                //Friction Cones
+                marker.points.clear();
+                marker.ns = "friction_cone";
+                marker.id = i;
+                marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
+                marker.action = visualization_msgs::Marker::ADD;
+
+                Eigen::Matrix3d w_R_fc = contact.second;
+                Eigen::Matrix3d w_R_c = w_T_c.linear();
+                Eigen::Matrix3d c_R_fc = w_R_c.transpose()*w_R_fc;
+                Eigen::Matrix3d RotY; RotY.setIdentity();
+                RotY(0,0) = std::cos(-M_PI_2); RotY(0,2) = std::sin(-M_PI_2);
+                RotY(2,0) = -std::sin(-M_PI_2); RotY(2,2) = std::cos(-M_PI_2);
+                c_R_fc = c_R_fc*RotY;
+                Eigen::Quaterniond q(c_R_fc);
+                marker.pose.orientation.x = q.x();
+                marker.pose.orientation.y = q.y();
+                marker.pose.orientation.z = q.z();
+                marker.pose.orientation.w = q.w();
+
+
+                geometry_msgs::Point pp[3];
+                static const double DELTA_THETA = M_PI/16.0;
+                double theta = 0.;
+                double scale = 0.09;
+                double angle = M_PI_2-std::atan(_cs.getFricitonCoefficient());
+                for (std::size_t i = 0; i < 32; i++)
+                {
+                   pp[0].x = 0;
+                   pp[0].y = 0;
+                   pp[0].z = 0;
+
+                   pp[1].x = scale;
+                   pp[1].y = scale * cos(theta) / angle;
+                   pp[1].z = scale * sin(theta) / angle;
+
+                   pp[2].x = scale;
+                   pp[2].y = scale * cos(theta + DELTA_THETA) / angle;
+                   pp[2].z = scale * sin(theta + DELTA_THETA) / angle;
+
+                   marker.points.push_back(pp[0]);
+                   marker.points.push_back(pp[1]);
+                   marker.points.push_back(pp[2]);
+
+                   theta += DELTA_THETA;
+                 }
+
+                marker.scale.x = 1.0;
+                marker.scale.y = 1.0;
+                marker.scale.z = 1.0;
+
+
+
+
+
+
+                _vis_pub.publish( marker );
+
 
                 i++;
+
+                k++;
 
             }
 
@@ -261,6 +323,8 @@ private:
 
     rviz_visual_tools::RvizVisualToolsPtr _visual_tools;
     ros::Publisher _vis_pub;
+
+
 };
 
 }
