@@ -26,7 +26,7 @@ int main(int argc, char ** argv)
     CentroidalStatics cs(model, links_in_contact, mu, true);
     CentroidalStaticsROS csROS(model, cs, nh);
 
-    auto on_js_received = [&csROS, &cs, &links_in_contact, model](const sensor_msgs::JointStateConstPtr& msg)
+    auto on_js_received = [&csROS, &cs, model](const sensor_msgs::JointStateConstPtr& msg)
     {
         Eigen::VectorXd q(model->getJointNum()); q.setZero();
         for(int i = 0; i < msg->name.size(); i++)
@@ -35,12 +35,15 @@ int main(int argc, char ** argv)
         model->setJointPosition(q);
         model->update();
 
-        for(unsigned int i = 0; i < links_in_contact.size(); ++i)
+        std::map<std::string, Eigen::Matrix3d> links_in_contact =
+                cs.getContacts();
+
+        for(auto contact : links_in_contact)
         {
             Eigen::Affine3d T;
-            model->getPose(links_in_contact[i], T);
-            if(!cs.setContactRotationMatrix(links_in_contact[i], T.linear()))
-                ROS_ERROR("Can not set rotation for link %s", links_in_contact[i]);
+            model->getPose(contact.first, T);
+            if(!cs.setContactRotationMatrix(contact.first, T.linear()))
+                ROS_ERROR("Can not set rotation for link %s", contact.first);
         }
 
         csROS.publish();
