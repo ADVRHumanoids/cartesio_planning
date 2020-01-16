@@ -14,6 +14,7 @@ CentroidalStatics::CentroidalStatics(XBot::ModelInterface::ConstPtr model, const
     Eigen::Matrix3d I; I.setIdentity();
     for(unsigned int i = 0; i < contact_links.size(); ++i)
         _contacts[contact_links[i]] = I;
+    init();
 }
 
 bool CentroidalStatics::setFrictionCoeff(const double friction_coeff)
@@ -36,6 +37,8 @@ void CentroidalStatics::setContactLinks(const std::vector<std::string>& contact_
     Eigen::Matrix3d I; I.setIdentity();
     for(unsigned int i = 0; i < contact_links.size(); ++i)
         _contacts[contact_links[i]] = I;
+
+    init();
 }
 
 void CentroidalStatics::addContatcLinks(const std::vector<std::string>& contact_links)
@@ -46,6 +49,8 @@ void CentroidalStatics::addContatcLinks(const std::vector<std::string>& contact_
         if(_contacts.find(link) == _contacts.end())
             _contacts[link] = I;
     }
+
+    init();
 }
 
 void CentroidalStatics::removeContactLinks(const std::vector<std::string>& contact_links)
@@ -55,6 +60,8 @@ void CentroidalStatics::removeContactLinks(const std::vector<std::string>& conta
         if(_contacts.find(link) != _contacts.end())
             _contacts.erase(link);
     }
+
+    init();
 }
 
 bool CentroidalStatics::setContactRotationMatrix(const std::string& contact_link,

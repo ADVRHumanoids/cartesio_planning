@@ -91,8 +91,6 @@ public:
         _model(*model),
         _nh(nh)
     {
-        _cs.init();
-
         _contact_sub = _nh.subscribe("contacts", 10, &CentroidalStaticsROS::set_contacts, this);
 
         _vis_pub = _nh.advertise<visualization_msgs::Marker>("centroidal_statics/forces", 0);
@@ -336,6 +334,7 @@ private:
     std::map<std::string, Eigen::Matrix3d> _contacts;
 
     ros::Publisher _vis_pub;
+
 
 
 };

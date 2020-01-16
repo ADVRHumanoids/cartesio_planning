@@ -26,7 +26,7 @@ int main(int argc, char ** argv)
     CentroidalStatics cs(model, links_in_contact, mu, true);
     CentroidalStaticsROS csROS(model, cs, nh);
 
-    auto on_js_received = [&csROS, model](const sensor_msgs::JointStateConstPtr& msg)
+    auto on_js_received = [&csROS, &cs, &links_in_contact, model](const sensor_msgs::JointStateConstPtr& msg)
     {
         Eigen::VectorXd q(model->getJointNum()); q.setZero();
         for(int i = 0; i < msg->name.size(); i++)
@@ -35,25 +35,13 @@ int main(int argc, char ** argv)
         model->setJointPosition(q);
         model->update();
 
-        cartesio_planning::SetContactFrames::Ptr msg2 = boost::make_shared<cartesio_planning::SetContactFrames>();
-        msg2->action = msg2->SET;
-
-        msg2->frames_in_contact.push_back("l_sole");
-        msg2->frames_in_contact.push_back("r_sole");
-
-        Eigen::Affine3d T;
-        geometry_msgs::Pose P;
-        model->getPose("l_sole", T);
-        tf::poseEigenToMsg(T, P);
-        msg2->rotations.push_back(P.orientation);
-
-        model->getPose("r_sole", T);
-        tf::poseEigenToMsg(T, P);
-        msg2->rotations.push_back(P.orientation);
-
-        msg2->friction_coefficient = 0.5;
-
-        csROS.set_contacts(boost::static_pointer_cast<cartesio_planning::SetContactFrames>(msg2));
+        for(unsigned int i = 0; i < links_in_contact.size(); ++i)
+        {
+            Eigen::Affine3d T;
+            model->getPose(links_in_contact[i], T);
+            if(!cs.setContactRotationMatrix(links_in_contact[i], T.linear()))
+                ROS_ERROR("Can not set rotation for link %s", links_in_contact[i]);
+        }
 
         csROS.publish();
     };
