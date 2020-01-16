@@ -124,7 +124,7 @@ public:
                 Adj.block(3,3,3,3) = w_T_c.linear().transpose();
                 F = Adj*F;
 
-                //Piselloni
+                //Piselloni (Forze)
                 visualization_msgs::Marker marker;
                 marker.header.frame_id = "ci/"+contact.first;
                 marker.header.stamp = t;
@@ -136,18 +136,16 @@ public:
                 geometry_msgs::Point p;
                 p.x = 0.; p.y = 0.; p.z = 0.;
                 marker.points.push_back(p);
-                if(F.segment(0,3).norm() < 1e-3)
-                    p.x = p.y = p.z = 0.0;
-                else
-                {
-                    p.x = F[0]/std::sqrt(std::pow(F[0],2) + std::pow(F[1],2) + std::pow(F[2],2));
-                    p.y = F[1]/std::sqrt(std::pow(F[0],2) + std::pow(F[1],2) + std::pow(F[2],2));
-                    p.z = F[2]/std::sqrt(std::pow(F[0],2) + std::pow(F[1],2) + std::pow(F[2],2));
-                }
+
+                double Fg = _model.getMass()*9.81;
+                p.x = F[0]/Fg;
+                p.y = F[1]/Fg;
+                p.z = F[2]/Fg;
+
                 marker.points.push_back(p);
 
-                marker.scale.x = 0.05;
-                marker.scale.y = 0.1;
+                marker.scale.x = 0.03;
+                marker.scale.y = 0.09;
                 marker.color.a = 1.0; // Don't forget to set the alpha!
 
                 if(check_stability)
@@ -155,6 +153,45 @@ public:
                     marker.color.r = 0.0;
                     marker.color.g = 1.0;
                     marker.color.b = 0.0;
+                }
+                else
+                {
+                    marker.color.r = 1.0;
+                    marker.color.g = 0.0;
+                    marker.color.b = 0.0;
+                }
+
+                _vis_pub.publish( marker );
+                i++;
+
+                //Piselloni (Momenti)
+                marker.ns = "computed_contact_moments";
+                marker.id = i;
+                marker.type = visualization_msgs::Marker::ARROW;
+                marker.action = visualization_msgs::Marker::ADD;
+
+                marker.points.clear();
+                p.x = 0.; p.y = 0.; p.z = 0.;
+                marker.points.push_back(p);
+
+                double alpha = 10.;
+                p.x = alpha*F[3]/Fg;
+                p.y = alpha*F[4]/Fg;
+                p.z = alpha*F[5]/Fg;
+
+                marker.points.push_back(p);
+
+                marker.scale.x = 0.03;
+                marker.scale.y = 0.09;
+                marker.scale.z = 0.001;
+                marker.color.a = 1.0; // Don't forget to set the alpha!
+
+
+                if(check_stability)
+                {
+                    marker.color.r = 0.0;
+                    marker.color.g = 0.0;
+                    marker.color.b = 1.0;
                 }
                 else
                 {
@@ -217,9 +254,18 @@ public:
                 marker.scale.y = 1.0;
                 marker.scale.z = 1.0;
 
-
-
-
+                if(check_stability)
+                {
+                    marker.color.r = 0.0;
+                    marker.color.g = 0.5;
+                    marker.color.b = 0.5;
+                }
+                else
+                {
+                    marker.color.r = 1.0;
+                    marker.color.g = 0.0;
+                    marker.color.b = 0.0;
+                }
 
 
                 _vis_pub.publish( marker );
