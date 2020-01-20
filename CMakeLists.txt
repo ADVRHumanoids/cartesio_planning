@@ -180,6 +180,7 @@ target_link_libraries(cartesio_planning
     yaml-cpp
     PRIVATE
     ${PCL_LIBRARIES}
+    centroidal_statics
     )
 
 add_library(centroidal_statics SHARED src/validity_checker/stability/centroidal_statics.cpp)

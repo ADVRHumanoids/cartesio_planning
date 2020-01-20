@@ -2,11 +2,11 @@
 
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "validity_checker/stability/stability_detection.h"
+#include "validity_checker/stability/centroidal_statics.h"
 #include "utils/parse_yaml_utils.h"
 
 namespace
 {
-
 /**
  * @brief MakeCollisionChecker
  * @param vc_node
@@ -43,6 +43,35 @@ std::function<bool ()> MakeCollisionChecker(YAML::Node vc_node,
 
     return validity_checker;
 
+}
+
+/**
+ * @brief MakeCentroidalStaticsChecker
+ * @param vc_node
+ * @param model
+ * @return
+ */
+std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
+                                                    XBot::ModelInterface::ConstPtr model,
+                                                    ros::NodeHandle& nh)
+{
+    using namespace XBot::Cartesian::Planning;
+
+    YAML_PARSE_OPTION(vc_node, stability_margin, double, 0.0);
+    YAML_PARSE_OPTION(vc_node, links, std::vector<std::string>, {});
+    YAML_PARSE_OPTION(vc_node, friction_coefficient, double, 0.5);
+    YAML_PARSE_OPTION(vc_node, optimize_torque, bool, true);
+
+    auto cs = std::make_shared<CentroidalStatics>(model, links, friction_coefficient, optimize_torque);
+    auto cs_ros = std::make_shared<CentroidalStaticsROS>(model, *cs, nh);
+
+    auto validity_checker = [=]()
+    {
+        cs_ros->publish();
+        return cs->checkStability();
+    };
+
+    return validity_checker;
 }
 
 /**
@@ -99,6 +128,10 @@ std::function<bool ()> XBot::Cartesian::Planning::MakeValidityChecker(YAML::Node
         else if(vc_type == "ConvexHull")
         {
             return MakeConvexHullChecker(vc_node, model, nh);
+        }
+        else if(vc_type == "CentroidalStatics")
+        {
+            return MakeCentroidalStaticsChecker(vc_node, model, nh);
         }
         else
         {
