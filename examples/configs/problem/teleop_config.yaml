@@ -1,0 +1,16 @@
+state_validity_check:
+    - collisions
+
+
+collisions:
+    type: "CollisionCheck"
+    include_environment: true
+
+
+RRTstar:
+    GoalBias: 0.1
+    KNearest: true
+    Range: 1000
+
+state_space:
+    type: "Atlas"
