@@ -300,7 +300,10 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal);
 
     // trigger callback
-    _on_set_start_goal(ompl_start.get(), ompl_goal.get());
+    if(_on_set_start_goal)
+    {
+        _on_set_start_goal(ompl_start.get(), ompl_goal.get());
+    }
 
 }
 
@@ -318,7 +321,6 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
     // create ompl start and goal variables
     ompl::base::ScopedState<> ompl_start(_space);
     _sw->setState(ompl_start.get(), start);
-
 
     // set start and goal
     _pdef->clearStartStates();

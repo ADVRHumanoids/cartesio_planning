@@ -460,7 +460,9 @@ void PlannerExecutor::setGoalState(const XBot::JointNameMap& q)
     Eigen::VectorXd qq;
     _goal_model->getJointPosition(qq);
 
-    _manifold->project(qq);
+    if(_manifold)
+        _manifold->project(qq);
+
     _goal_model->setJointPosition(qq);
     _goal_model->update();
 }
@@ -612,15 +614,22 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
         throw std::runtime_error("Invalid goal state");
     }
 
+    std::cout<<"start and goal states are valid"<<std::endl;
+
     Eigen::VectorXd qstart, qgoal;
     _start_model->getJointPosition(qstart);
     _goal_model->getJointPosition(qgoal);
+
+    std::cout<<"Enforcing bounds..."<<std::endl;
     enforce_bounds(qstart);
     enforce_bounds(qgoal);
+    std::cout<<"...done!"<<std::endl;
+
 
     _planner->setStartAndGoalStates(qstart, qgoal);
 
     _planner->solve(time, planner_type);
+
 
     std::vector<Eigen::VectorXd> raw_trajectory;
     if(_planner->getPlannerStatus())
