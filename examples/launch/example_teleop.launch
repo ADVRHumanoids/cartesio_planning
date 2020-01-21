@@ -6,9 +6,6 @@
      <param name="robot_description" command="$(find xacro)/xacro.py '$(find teleop_urdf)/urdf/teleop_fixed_base.urdf'" />
      <param name="robot_description_semantic" textfile="$(find teleop_srdf)/srdf/teleop_fixed_base.srdf" />   
 
-
-     <!--param name="cartesian/problem_description" textfile="$(find cartesio_planning)/configs/problem/teleop_goal_generation_stack.yaml"/-->
-
     <!-- start planner -->  
     <node pkg="cartesio_planning" type="planning_server" name="planning_server" output="screen">
         <remap from="planner/goal/joint_states" to="cartesian/solution"/>
@@ -63,6 +60,7 @@
         <param name="show_control_axis" type="bool" value="True"/>
         <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
   </node>
+
 
 
  <node type="rviz" name="rviz" pkg="rviz"

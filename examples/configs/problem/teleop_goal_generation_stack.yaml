@@ -1,5 +1,5 @@
 solver_options:
-    regularization: 1e-4
+    regularization: 1e-2
     back_end: "qpoases"
 
 stack:
