@@ -134,36 +134,80 @@ Visualization Manager:
       Update Topic: /TCP_Cartesian_marker_server/update
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /planner/goal/robot_markers
       Name: MarkerArray
       Namespaces:
-        {}
+        collision: true
+        visual: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /planner/start/robot_markers
       Name: MarkerArray
       Namespaces:
-        {}
+        collision: true
+        visual: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        TCP:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        teleop_link0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        teleop_link1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        teleop_link2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        teleop_link3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        teleop_link4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        teleop_link5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: planner
       Update Interval: 0
-      Value: false
+      Value: true
       Visual Enabled: true
     - Class: moveit_rviz_plugin/PlanningScene
       Enabled: true
@@ -245,7 +289,7 @@ Visualization Manager:
   Global Options:
     Background Color: 255; 255; 255
     Default Light: true
-    Fixed Frame: ci/base_link
+    Fixed Frame: planner/world
     Frame Rate: 30
   Name: root
   Tools:
