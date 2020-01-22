@@ -280,8 +280,8 @@ void PlannerExecutor::init_goal_generator()
         std::string problem_description_string;
         if(!_nh.getParam("problem_description_goal", problem_description_string))
         {
-            ROS_ERROR("param problem_description_goal not provided!");
-            throw std::runtime_error("cartesian/problem_description not provided!");
+            ROS_ERROR("planner/problem_description_goal not provided!");
+            throw std::runtime_error("planner/problem_description_goal not provided!");
         }
 
         auto ik_yaml_constraint = YAML::Load(problem_description_string);
@@ -330,7 +330,8 @@ bool PlannerExecutor::goal_sampler_service(cartesio_planning::CartesioGoal::Requ
         res.sampled_goal.header.stamp = ros::Time::now();
     }
 
-    _manifold->project(q);
+    if(_manifold)
+        _manifold->project(q);
     _goal_model->setJointPosition(q);
     _goal_model->update();
 
