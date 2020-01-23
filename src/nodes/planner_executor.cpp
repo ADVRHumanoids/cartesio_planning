@@ -297,6 +297,14 @@ void PlannerExecutor::init_goal_generator()
 
         _goal_generator = std::make_shared<GoalGenerator>(ci, _vc_context);
 
+        int max_iterations;
+        if(_nhpr.getParam("goal_generator_max_iterations", max_iterations))
+            _goal_generator->setMaxIterations(max_iterations);
+
+        double error_tolerance;
+        if(_nhpr.getParam("goal_generator_error_tolerance", error_tolerance))
+            _goal_generator->setErrorTolerance(error_tolerance);
+
         _service_goal_sampler = _nh.advertiseService("goal_sampler_service",
                                                      &PlannerExecutor::goal_sampler_service, this);
 

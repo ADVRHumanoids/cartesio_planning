@@ -19,6 +19,27 @@ public:
     void update();
 
     bool sample(Eigen::VectorXd& q, double time_out);
+
+    bool setErrorTolerance(const double error_tolerance)
+    {
+        if(_ik)
+        {
+            _ik->setErrorTolerance(error_tolerance);
+            return true;
+        }
+        return false;
+    }
+
+    bool setMaxIterations(const int max_iter)
+    {
+        if(_ik)
+        {
+            _ik->setMaxIterations(max_iter);
+            return true;
+        }
+        return false;
+    }
+
 private:
     XBot::Cartesian::Planning::ValidityCheckContext& _vc_context;
 

@@ -100,6 +100,18 @@ public:
      */
     void reset();
 
+    /**
+     * @brief setErrorTolerance
+     * @param error_tolerance
+     */
+    void setErrorTolerance(const double error_tolerance);
+
+    /**
+     * @brief setMaxIterations
+     * @param max_iter
+     */
+    void setMaxIterations(const int max_iter);
+
 private:
 
     struct TaskData
