@@ -147,6 +147,16 @@ void PositionCartesianSolver::reset()
     _ci->reset(0.0);
 }
 
+void PositionCartesianSolver::setErrorTolerance(const double error_tolerance)
+{
+    _err_tol = error_tolerance;
+}
+
+void PositionCartesianSolver::setMaxIterations(const int max_iter)
+{
+    _max_iter = max_iter;
+}
+
 PositionCartesianSolver::TaskData::TaskData(int a_size):
     size(a_size)
 {
@@ -236,4 +246,6 @@ void PositionCartesianSolver::CartesianTaskData::compute_orientation_error(const
     e_o = 0.5 * (Re.col(0).cross(Rd.col(0)) + Re.col(1).cross(Rd.col(1)) + Re.col(2).cross(Rd.col(2)));
     L = 0.5 * ( S(Rd.col(0))*S(Re.col(0)) + S(Rd.col(1))*S(Re.col(1)) + S(Rd.col(2))*S(Re.col(2)));
 }
+
+
 
