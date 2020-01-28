@@ -47,8 +47,8 @@
     <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_playback"
         args="0 0 0 0 0 0 world planner/world 30"/>
 
-    <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_ci"
-        args="0 0 0 0 0 0 world ci/world 30"/>
+    <!--<node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_ci"
+        args="0 0 0 0 0 0 world ci/world 30"/> -->
 
     <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_goal_sampler"
         args="0 0 0 0 0 0 world planner/goal_sampler/world 30"/>
