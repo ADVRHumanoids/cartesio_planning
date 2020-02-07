@@ -37,11 +37,7 @@ find_package(XBotInterface REQUIRED)
 
 find_package(matlogger2 REQUIRED)
 
-FIND_PACKAGE(PCL 1.7 QUIET COMPONENTS   common
-                                        filters
-                                        surface
-                                        search
-                                        io)
+FIND_PACKAGE(PCL 1.7 REQUIRED)
 
 find_package(OpenSoT REQUIRED)
 
@@ -88,6 +84,7 @@ add_service_files(
     FILES
     CartesioPlanner.srv
     CartesioGoal.srv
+    setX.srv
     )
 
 ## Generate actions in the 'action' folder
@@ -196,6 +193,12 @@ target_link_libraries(cartesian_trajectory_interpolation PRIVATE trajectory_inte
 add_executable(stability_test src/stability_test.cpp)
 target_link_libraries(stability_test cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES})
 
+add_executable(point_cloud_main src/point_cloud_main.cpp)
+target_link_libraries(point_cloud_main cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(octomap_collision_main src/octomap_collision_main.cpp)
+target_link_libraries(octomap_collision_main cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
 add_executable(centroidal_statics_test src/centroidal_statics_test.cpp)
 target_link_libraries(centroidal_statics_test centroidal_statics ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES})
 
@@ -301,6 +304,18 @@ add_dependencies(cartesio_planning ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_
 
 ## Mark executables and/or libraries for installation
 install(TARGETS centroidal_statics
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+    
+install(TARGETS point_cloud_main
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+    
+install(TARGETS octomap_collision_main
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -60,11 +60,10 @@
     <node unless="$(arg use_goal_generator)" pkg="tf" type="static_transform_publisher" name="world_connecter_planner_ci"
         args="0 0 0 0 0 0 world ci/world 30"/>
 
-    <!-- Planning scene -->
-    <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/>
+    
 
     <!-- Obstacle with interactive marker -->     
-      <node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+<!--      <node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
         <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
         <param name="scale_x" type="double" value="2."/>
         <param name="scale_y" type="double" value="1.5"/>
@@ -73,11 +72,26 @@
         <param name="name_id" value="floor"/>
         <param name="show_control_axis" type="bool" value="True"/>
         <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
-  </node>
+     </node>-->
+    
+    <!-- Obstacle with octomap -->
+    <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_collision_main"/>
 
-
-
+    <node pkg="cartesio_planning" type="point_cloud_main" name="point_cloud_main" output="screen"/>
+    
+    
+    <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
+		<param name="resolution" value="0.05" />
+		<param name="frame_id" type="string" value="planner/world" />
+		<param name="sensor_model/max_range" value="5.0" />
+		<remap from="cloud_in" to="/velodyne_points" />
+		<param name="latch" type="bool" value="false"/>
+    </node> 
+    
+    <!-- Planning scene -->
+    <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/>
+    
  <node type="rviz" name="rviz" pkg="rviz"
-        args="-d $(find cartesio_planning)/configs/rviz/example_teleop.rviz" output="screen"/>
+        args="-d $(find cartesio_planning)/configs/rviz/example_teleop_octomap.rviz" output="screen"/>
     
 </launch>

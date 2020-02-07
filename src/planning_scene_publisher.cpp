@@ -47,14 +47,15 @@
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/robot_state/robot_state.h>
 #include <moveit/robot_state/conversions.h>
+#include <moveit/planning_scene/planning_scene.h>
 
 
 ros::ServiceClient srv;
 
-void collision_object_cb(const moveit_msgs::CollisionObjectConstPtr msg)
+void collision_object_cb(const octomap_msgs::OctomapWithPose msg)
 {
-    moveit_msgs::AttachedCollisionObject attached_object;
-    attached_object.object = *msg;
+    octomap_msgs::OctomapWithPose attached_object;
+    attached_object = msg;  
 
     // Add an object into the environment
     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -63,7 +64,7 @@ void collision_object_cb(const moveit_msgs::CollisionObjectConstPtr msg)
     // planning scene. Note that we are using only the "object"
     // field of the attached_object message here.
     moveit_msgs::PlanningScene planning_scene;
-    planning_scene.world.collision_objects.push_back(attached_object.object);
+    planning_scene.world.octomap = attached_object;
     planning_scene.is_diff = true;
 
 
@@ -74,6 +75,31 @@ void collision_object_cb(const moveit_msgs::CollisionObjectConstPtr msg)
 
     srv.call(msg2);
 }
+
+// void collision_object_cb(const moveit_msgs::CollisionObjectConstPtr msg)
+// {
+//     moveit_msgs::AttachedCollisionObject attached_object;
+//     attached_object.object = *msg;
+// 
+//     // Add an object into the environment
+//     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//     // Add the object into the environment by adding it to
+//     // the set of collision objects in the "world" part of the
+//     // planning scene. Note that we are using only the "object"
+//     // field of the attached_object message here.
+//     moveit_msgs::PlanningScene planning_scene;
+//     planning_scene.world.collision_objects.push_back(attached_object.object);
+//     planning_scene.is_diff = true;
+// 
+// 
+//     srv.waitForExistence();
+// 
+//     moveit_msgs::ApplyPlanningScene msg2;
+//     msg2.request.scene = planning_scene;
+// 
+//     srv.call(msg2);
+// }
+
 
 int main(int argc, char** argv)
 {
