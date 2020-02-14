@@ -1,0 +1,22 @@
+manifold:
+    param_name: "problem_description_constraint"
+
+    
+state_validity_check:
+    - collisions
+
+
+collisions:
+    type: "CollisionCheck"
+    include_environment: true
+
+
+RRTstar:
+    GoalBias: 0.1
+    KNearest: true
+    Range: 1000
+
+state_space:
+    floating_base_pos_min: [-1, -1, -1]
+    floating_base_pos_max: [ 1,  1,  1]
+    type: "Atlas"

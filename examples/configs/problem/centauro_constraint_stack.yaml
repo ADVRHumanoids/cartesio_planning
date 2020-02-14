@@ -1,0 +1,50 @@
+solver_options:
+    regularization: 1e-2
+    back_end: "qpoases"
+    control_dt: 0.50
+
+stack:
+    - ["Wheel1", "Wheel2", "Wheel3", "Wheel4"]
+    #- ["LeftFoot", "RightFoot"]
+    #- ["Waist"]
+
+constraints: ["JointLimits"]
+
+Wheel1:
+    type: "Cartesian"
+    distal_link: "wheel_1"
+    indices: [2]
+
+Wheel2:
+    type: "Cartesian"
+    distal_link: "wheel_2"
+    indices: [2]
+
+Wheel3:
+    type: "Cartesian"
+    distal_link: "wheel_3"
+    lambda: 0.1
+    indices: [2]
+
+Wheel4:
+    type: "Cartesian"
+    distal_link: "wheel_4"
+    lambda: 0.1
+    indices: [2]
+
+Postural:
+    type: "Postural"
+    lambda: 0.0
+
+LeftHand:
+    type: "Cartesian"
+    distal_link: "TCP_L"
+    lambda: 1.0
+    indices: [0, 1, 2]
+
+RightHand:
+    type: "Cartesian"
+    distal_link: "TCP_R"
+    lambda: 1.0
+    indices: [0, 1, 2]
+

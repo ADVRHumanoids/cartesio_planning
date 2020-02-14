@@ -1,0 +1,45 @@
+<launch>
+  
+  <!-- load the model urdf-->
+  <param name="robot_description" textfile="$(find centauro)/centauro_urdf/urdf/centauro_generated.urdf"/>
+
+  <!-- gazebo arguments -->
+  <arg name="gazebo" default="true"/>
+  <arg name="command_arg1" value="-u"/>
+  <arg name="command_arg2" value=""/>
+  <arg name="command_arg3" value=""/>
+  <arg name="physics" default="ode"/>
+  <arg name="extra_gazebo_args" default=""/>
+  <arg name="world_name" default="$(find centauro_gazebo)/worlds/centauro.world"/>
+  <arg name="gui" default="true"/>
+  <arg name="script_type" value="gzserver"/>
+  
+  <!-- run gazebo -->
+  <group if="$(arg gazebo)">
+  <!-- start gazebo server-->
+  	<node name="gazebo" pkg="gazebo_ros" type="$(arg script_type)" respawn="false" output="screen"
+		args="$(arg command_arg1) $(arg command_arg2) $(arg command_arg3) -e $(arg physics) $(arg extra_gazebo_args) $(arg world_name) -namespace centauro" />
+
+  	<!-- start gazebo client -->
+    	<node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen" if="$(arg gui)"/>
+
+
+  	<!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
+	<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+       args="-urdf -model centauro -param robot_description"/>
+
+        <rosparam file="$(find centauro_gazebo)/config/centauro_control_joint_state_publisher.yaml" command="load"/>
+
+        <node name="joint_state_spawner" pkg="controller_manager" type="spawner"
+           respawn="false" output="screen" ns="/centauro"
+           args="joint_state_controller">
+	</node>
+
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+           <remap from="/joint_states" to="/centauro/joint_states" />
+	   <param name="publish_frequency" type="double" value="250.0"/>
+        </node>
+
+  </group>
+
+</launch>

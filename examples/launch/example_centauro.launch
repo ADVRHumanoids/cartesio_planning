@@ -1,0 +1,79 @@
+<launch>
+  <arg name="is_model_floating_base" default="true"/>
+  <arg name="use_goal_generator" default="false"/>
+  
+  
+   
+<!--  <include file="$(find centauro_gazebo)/launch/centauro_world.launch" />-->
+  <param name="robot_description" textfile="$(find centauro)/centauro_urdf/urdf/centauro_generated2.urdf"/>
+  <param name="robot_description_semantic" textfile="/home/luca/Desktop/config/centauro.srdf"/> 
+
+  <param name="cartesian/problem_description"
+      textfile="$(find cartesio_planning)/configs/problem/centauro_goal_generation_stack.yaml"/>
+
+  <!-- send problem description to param server: this is used by goal sampler -->
+  <param name="planner/problem_description_goal"
+      textfile="$(find cartesio_planning)/configs/problem/centauro_goal_generation_stack.yaml"/>
+    
+  <!-- send manifold definito to param server -->
+  <param name="planner/problem_description_constraint"
+        textfile="$(find cartesio_planning)/configs/problem/centauro_constraint_stack.yaml"/>
+  
+  <!-- start planner -->  
+  <node pkg="cartesio_planning" type="planning_server" name="planning_server" output="screen">
+      <remap from="planner/goal/joint_states" to="cartesian/solution"/>
+      <param name="solver" value=""/>
+      <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
+      <param name="use_goal_generator" value="$(arg use_goal_generator)"/>
+      <param name="planner_config"
+          textfile="$(find cartesio_planning)/configs/problem/centauro_config.yaml"/>
+  </node> 
+
+  <!-- Previewer of trajectory -->
+  <node pkg="cartesio_planning" type="previewer" name="planner_previewer" output="screen">
+      <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
+  </node>
+  
+  <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_world"
+      args="0 0 0. 0 0 0 world planner/world 30"/>
+
+  <!-- This is needed to connect robot_start marker with "world" frame -->
+  <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_start"
+      args="0 0 0. 0 0 0 world planner/start/world 30"/>
+
+  <!-- This is needed to connect robot_goal marker with "world" frame -->
+  <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_goal"
+      args="0 0 0. 0 0 0 world planner/goal/world 30"/>
+  
+  <!-- CARTESI/O to generate goal state -->
+  <!-- send problem description to param server: this is used by CartesI/O for IK -->
+  <param name="cartesian/problem_description"
+      textfile="$(find cartesio_planning)/configs/problem/centauro_cartesio_stack.yaml"/>
+  <include unless="$(arg use_goal_generator)" file="$(find cartesian_interface)/launch/cartesio.launch">
+      <arg name="tf_prefix" value="ci"/>
+      <arg name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
+  </include>
+    
+  <!-- This is needed to connect cartesio marker with "world" frame -->
+  <node unless="$(arg use_goal_generator)" pkg="tf" type="static_transform_publisher" name="world_connecter_planner_ci"
+      args="0 0 0. 0 0 0 world ci/world 30"/>
+  
+  <!-- Obstacle with interactive marker -->     
+<!--  <node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+      <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
+      <param name="scale_x" type="double" value="2."/>
+      <param name="scale_y" type="double" value="1.5"/>
+      <param name="scale_z" type="double" value=".1"/>
+      <param name="frame_id" value="world"/>
+      <param name="name_id" value="floor"/>
+      <param name="show_control_axis" type="bool" value="True"/>
+      <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
+  </node>-->
+  
+  <!-- Planning scene -->
+  <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/>  
+  
+  <node name="rviz" pkg="rviz" type="rviz" 
+	args="-d $(find cartesio_planning)/configs/rviz/example_centauro_velodyne.rviz" output="screen"/>
+  
+</launch>
