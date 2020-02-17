@@ -25,6 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
     moveit_ros_planning_interface
     visualization_msgs
     rviz_visual_tools
+    actionlib_msgs
     )
 
 find_package(casadi REQUIRED)
@@ -91,16 +92,15 @@ add_service_files(
     )
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files(
+   FILES
+   CartesioGoalGenerator.action
+   )
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
     DEPENDENCIES
-    std_msgs sensor_msgs# Or other packages containing msgs
+    std_msgs sensor_msgs actionlib_msgs# Or other packages containing msgs
     )
 
 ################################################
@@ -135,7 +135,7 @@ generate_messages(
 catkin_package(
     #INCLUDE_DIRS include
     LIBRARIES cartesio_planning
-    CATKIN_DEPENDS cartesian_interface roscpp message_runtime
+    CATKIN_DEPENDS cartesian_interface roscpp message_runtime actionlib_msgs
     #DEPENDS system_lib
     )
 

@@ -1,0 +1,9 @@
+#goal definition
+int32 time
+---
+#result definition
+cartesio_planning/CartesioPlannerGoalStatus status
+sensor_msgs/JointState sampled_goal
+---
+#feedback
+int32 attempts
