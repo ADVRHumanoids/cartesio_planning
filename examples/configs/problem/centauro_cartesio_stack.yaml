@@ -5,6 +5,10 @@ stack:
     - ["Postural", "Com"]
 constraints: ["JointLimits", "VelocityLimits"]
 
+Car_Frame:
+    type: "Cartesian"
+    distal_link: "car_frame"
+
 Wheel_FL:
     type: "Cartesian"
     distal_link: "wheel_1"
