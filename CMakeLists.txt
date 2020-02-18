@@ -103,7 +103,7 @@ add_action_files(
 generate_messages(
     DEPENDENCIES
     trajectory_msgs
-    std_msgs sensor_msgs# Or other packages containing msgs
+    std_msgs sensor_msgs actionlib_msgs# Or other packages containing msgs
     )
 
 ################################################
