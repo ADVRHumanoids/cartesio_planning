@@ -20,4 +20,8 @@
     </include>
 
 
+    <node name="centroidal_statics_test" pkg="cartesio_planning" type="centroidal_statics_test" output="screen">
+        <param name="tf_prefix" value="ci/"/>
+    </node>
+
 </launch>
