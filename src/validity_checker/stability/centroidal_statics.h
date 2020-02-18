@@ -89,11 +89,16 @@ public:
     CentroidalStaticsROS(XBot::ModelInterface::ConstPtr model, CentroidalStatics& cs, ros::NodeHandle& nh):
         _cs(cs),
         _model(*model),
-        _nh(nh)
+        _nh(nh),
+        _tf_prefix("")
     {
         _contact_sub = _nh.subscribe("contacts", 10, &CentroidalStaticsROS::set_contacts, this);
 
         _vis_pub = _nh.advertise<visualization_msgs::Marker>("centroidal_statics/forces", 0);
+
+        std::string tmp;
+        if(_nh.getParam("tf_prefix", tmp))
+            _tf_prefix = tmp;
     }
 
 
@@ -124,7 +129,7 @@ public:
 
                 //Piselloni (Forze)
                 visualization_msgs::Marker marker;
-                marker.header.frame_id = "ci/"+contact.first;
+                marker.header.frame_id = _tf_prefix+contact.first;
                 marker.header.stamp = t;
                 marker.ns = "computed_contact_forces";
                 marker.id = i;
@@ -323,6 +328,8 @@ public: void set_contacts(cartesio_planning::SetContactFrames::ConstPtr msg)
             }
         }
 
+        _cs.setOptimizeTorque(msg->optimize_torque);
+
     }
 
 private:
@@ -335,6 +342,7 @@ private:
 
     ros::Publisher _vis_pub;
 
+    std::string _tf_prefix;
 
 
 };

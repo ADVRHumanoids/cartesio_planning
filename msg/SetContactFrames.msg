@@ -11,3 +11,4 @@ string[] frames_in_contact
 
 geometry_msgs/Quaternion[] rotations
 float64 friction_coefficient
+bool optimize_torque # optimize contact moments

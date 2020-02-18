@@ -68,7 +68,7 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
     auto validity_checker = [=]()
     {
         cs_ros->publish();
-        return cs->checkStability();
+        return cs->checkStability(1e-6, false);
     };
 
     return validity_checker;

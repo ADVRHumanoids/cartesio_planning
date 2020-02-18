@@ -22,12 +22,17 @@ bool CentroidalStatics::setFrictionCoeff(const double friction_coeff)
     if(friction_coeff < 0.)
         return false;
     _friction_coeff = friction_coeff;
+
+    init();
+
     return true;
 }
 
 void CentroidalStatics::setOptimizeTorque(const bool optimize_torque)
 {
     _optimize_torque = optimize_torque;
+
+    init();
 }
 
 void CentroidalStatics::setContactLinks(const std::vector<std::string>& contact_links)
