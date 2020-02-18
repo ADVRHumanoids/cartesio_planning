@@ -15,6 +15,7 @@ int main(int argc, char ** argv)
 {
     ros::init(argc, argv, "centroidal_statics_test");
     ros::NodeHandle nh;
+    ros::NodeHandle nhp("~");
 
     auto cfg = XBot::ConfigOptionsFromParamServer();
     XBot::ModelInterface::Ptr model = XBot::ModelInterface::getModel(cfg);
@@ -24,7 +25,7 @@ int main(int argc, char ** argv)
     links_in_contact.push_back("r_sole");
     double mu = 0.5;
     CentroidalStatics cs(model, links_in_contact, mu, true);
-    CentroidalStaticsROS csROS(model, cs, nh);
+    CentroidalStaticsROS csROS(model, cs, nhp);
 
     auto on_js_received = [&csROS, &cs, model](const sensor_msgs::JointStateConstPtr& msg)
     {

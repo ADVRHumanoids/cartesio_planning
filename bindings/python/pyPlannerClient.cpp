@@ -2,7 +2,7 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
-#include <cartesio_planning/planner_client.h>
+#include <nodes/planner_client.h>
 
 
 namespace py = pybind11;;
