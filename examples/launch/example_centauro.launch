@@ -3,12 +3,16 @@
   <arg name="use_goal_generator" default="false"/>
    
 <!--  <include file="$(find centauro_gazebo)/launch/centauro_world.launch" />-->
-  <param name="model_description/robot_description" 
+<!--  <param name="model_description/robot_description" 
         textfile="$(find centauro_cartesio)/configs/urdf/centauro_car.urdf"/>
     
   <param name="model_description/robot_description_semantic"
-        textfile="$(find centauro_cartesio)/configs/srdf/centauro_car.srdf"/>
-  <param name="robot_description" textfile="$(find centauro)/centauro_urdf/urdf/centauro_generated.urdf"/>
+        textfile="$(find centauro_cartesio)/configs/srdf/centauro_car.srdf"/>-->
+  
+<!--  <param name="robot_description" textfile="$(find centauro)/centauro_urdf/urdf/centauro_generated.urdf"/>
+  <param name="robot_description_semantic" textfile="$(find centauro)/centauro_srdf/srdf/centauro_generated.srdf"/> -->
+  
+  <param name="robot_description" textfile="$(find centauro)/centauro_urdf/urdf/centauro_control.urdf"/>
   <param name="robot_description_semantic" textfile="$(find centauro)/centauro_srdf/srdf/centauro_generated.srdf"/> 
 
   <param name="cartesian/problem_description"
@@ -62,7 +66,9 @@
   <!-- CARTESI/O to generate goal state -->
   <!-- send problem description to param server: this is used by CartesI/O for IK -->
   <param name="cartesian/problem_description"
-      textfile="$(find centauro_cartesio)/configs/centauro_car_model_stack.yaml"/>
+      textfile="$(find centauro_cartesio)/configs/centauro_simple_stack.yaml"/>
+  <param name="cartesian/joint_blacklist" type="yaml" 
+        value="[neck_velodyne]"/>
   <include unless="$(arg use_goal_generator)" file="$(find cartesian_interface)/launch/cartesio.launch">
       <arg name="tf_prefix" value="ci"/>
       <arg name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
@@ -88,15 +94,15 @@
   <!-- Launch octomap -->
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
                 <param name="resolution" value="0.05" />
-                <param name="frame_id" type="string" value="planner/world" />
+                <param name="frame_id" type="string" value="world" />
                 <param name="sensor_model/max_range" value="5.0" />
                 <remap from="cloud_in" to="/velodyne_points" />
                 <param name="latch" type="bool" value="false"/>
-                <param name ="filter_ground" type="bool" value="false"/>
+                <param name ="filter_ground" type="bool" value="false"/>-->
 <!--                 <remap from="octomap_binary" to="planner/collision_objects"/> -->
   </node> 
   
-  <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_collision_main"/>
+ <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_collision_main"/>
 
   
   <!-- Planning scene -->
