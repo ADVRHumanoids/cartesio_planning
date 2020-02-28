@@ -15,8 +15,17 @@ RRTstar:
     GoalBias: 0.1
     KNearest: true
     Range: 1000
+    
+RRTConnect:
+    IntermediateStates: false
 
 state_space:
-    floating_base_pos_min: [-1, -1, -1]
-    floating_base_pos_max: [ 1,  1,  1]
+    floating_base_pos_min: [-0.5, -3.0, -0.5]
+    floating_base_pos_max: [ 6.0,  3.0,  1.0]
     type: "Atlas"
+    exploration: 0.9
+    delta: 0.1
+    epsilon: 0.5
+    aplha: 0.39
+    rho: 0.5
+    lambda: 1000.0

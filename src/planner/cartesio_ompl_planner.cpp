@@ -27,6 +27,9 @@
 #include <ompl/geometric/planners/kpiece/KPIECE1.h>
 #include <ompl/geometric/planners/kpiece/BKPIECE1.h>
 #include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
+#include <ompl/base/objectives/MechanicalWorkOptimizationObjective.h>
+#include <ompl/base/Constraint.h>
+#include <ompl/base/objectives/MinimaxObjective.h>
 
 #include "cartesio_ompl_planner.h"
 #include "utils/parse_yaml_utils.h"
@@ -127,6 +130,11 @@ void OmplPlanner::setup_problem_definition()
 
     // set optimization objective (todo: provide choice to user)
     _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(_space_info));
+//     _pdef->setOptimizationObjective(std::make_shared<ompl::base::MechanicalWorkOptimizationObjective>(_space_info));
+//     _pdef->setOptimizationObjective(std::make_shared<ompl::base::ConstraintObjective>(_constraint, _space_info));
+//     _pdef->setOptimizationObjective(std::make_shared<ompl::base::MinimaxObjective>(_space_info));
+
+  
 }
 
 
@@ -146,6 +154,24 @@ ompl::base::PlannerPtr OmplPlanner::make_RRTstar()
     PLANNER_PARSE_OPTION(GoalBias, double);
     PLANNER_PARSE_OPTION(Range, int);
     PLANNER_PARSE_OPTION(KNearest, bool);
+
+    return planner;
+}
+
+ompl::base::PlannerPtr OmplPlanner::make_RRTConnect()
+{
+
+    auto planner = std::make_shared<ompl::geometric::RRTConnect>(_space_info);
+
+    if(!_options || !_options["RRTConnect"])
+    {
+        std::cout << "No options detected" << std::endl;
+        return planner;
+    }
+
+    auto opt = _options["RRTConnect"];
+
+    PLANNER_PARSE_OPTION(IntermediateStates, bool);
 
     return planner;
 }
@@ -198,12 +224,11 @@ ompl::base::StateSpacePtr OmplPlanner::make_constrained_space()
 }
 
 ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
-{
+{    
     _on_set_start_goal = [this](const ompl::base::State* start,
             const ompl::base::State* goal)
     {
         auto atlas_ss = std::dynamic_pointer_cast<ompl::base::AtlasStateSpace>(_space);
-
         if(atlas_ss)
         {
             atlas_ss->anchorChart(start);
@@ -215,7 +240,25 @@ ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
         }
     };
 
-    return std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, _constraint);
+    auto atlas_ss =  std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, _constraint);
+    if(_options && _options["state_space"])
+    {
+        YAML_PARSE_OPTION(_options["state_space"], exploration, double, 0.5);
+        YAML_PARSE_OPTION(_options["state_space"], delta, double, 0.1);
+	YAML_PARSE_OPTION(_options["state_space"], epsilon, double, 0.5);
+        YAML_PARSE_OPTION(_options["state_space"], alpha, double, M_PI/6);
+        YAML_PARSE_OPTION(_options["state_space"], rho, double, 0.5);
+        YAML_PARSE_OPTION(_options["state_space"], lambda, double, 50.0);
+	
+	atlas_ss->setExploration(exploration);
+	atlas_ss->setDelta(delta);
+	atlas_ss->setEpsilon(epsilon);
+	atlas_ss->setAlpha(alpha);
+	atlas_ss->setRho(rho);
+	atlas_ss->setLambda(lambda);
+    }
+    
+    return atlas_ss;
 }
 
 ompl::base::StateSpacePtr OmplPlanner::make_tangent_bundle()
@@ -431,7 +474,8 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
 
     ADD_PLANNER_AND_IF("RRTConnect")
     {
-        return std::make_shared<ompl::geometric::RRTConnect>(_space_info);
+        return make_RRTConnect();
+      
     }
 
     ADD_PLANNER_AND_IF("RRTsharp")

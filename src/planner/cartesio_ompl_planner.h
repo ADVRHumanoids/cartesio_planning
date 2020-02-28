@@ -74,6 +74,7 @@ private:
 
     ompl::base::PlannerPtr make_planner(const std::string& planner_type);
     ompl::base::PlannerPtr make_RRTstar();
+    ompl::base::PlannerPtr make_RRTConnect();
 
     ompl::base::StateSpacePtr make_constrained_space();
     ompl::base::StateSpacePtr make_atlas_space();
