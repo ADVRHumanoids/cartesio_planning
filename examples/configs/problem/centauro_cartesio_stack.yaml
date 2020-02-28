@@ -1,8 +1,9 @@
 
 stack:
     - ["Wheel_FL", "Wheel_FR", "Wheel_HR", "Wheel_HL"]
-    - ["LeftArm", "RightArm"]
-    - ["Postural", "Com"]
+    #- ["LeftArm", "RightArm"]
+    #- ["Postural", "Com"]
+    - ["Pelvis"]
 constraints: ["JointLimits", "VelocityLimits"]
 
 Car_Frame:
@@ -12,33 +13,44 @@ Car_Frame:
 Wheel_FL:
     type: "Cartesian"
     distal_link: "wheel_1"
+    indices: [2]
 
 Wheel_FR:
     type: "Cartesian"
     distal_link: "wheel_2"
+    indices: [2]
 
 Wheel_HL:
     type: "Cartesian"
     distal_link: "wheel_3"
+    indices: [2]
 
 Wheel_HR:
     type: "Cartesian"
     distal_link: "wheel_4"
+    indices: [2]
 
-LeftArm:
-    type: "Cartesian"
-    distal_link: "arm1_8"
-    lambda: 0.1
+#LeftArm:
+    #type: "Cartesian"
+    #base_link: "pelvis"
+    #distal_link: "arm1_8"
+    #lambda: 0.1
 
-RightArm:
+#RightArm:
+    #type: "Cartesian"
+    #base_link: "pelvis"
+    #distal_link: "arm2_8"
+    #lambda: 0.1
+    
+Pelvis:
     type: "Cartesian"
-    distal_link: "arm2_8"
+    distal_link: "pelvis"
     lambda: 0.1
     
 Postural:
     type: "Postural"
     lambda: 0.01
-    weight:
+    weight: 
         VIRTUALJOINT_1: 0.0
         VIRTUALJOINT_2: 0.0
         VIRTUALJOINT_3: 0.0
@@ -47,8 +59,8 @@ Postural:
         VIRTUALJOINT_6: 0.0
 
     
-Com:
-    type: "Com"
-    lambda: 0.05
-    indices: [0, 1]
-    weight: 10
+#Com:
+    #type: "Com"
+    #lambda: 0.05
+    #indices: [0, 1]
+    #weight: 10

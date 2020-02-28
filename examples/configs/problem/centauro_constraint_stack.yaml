@@ -4,37 +4,42 @@ solver_options:
     control_dt: 0.50
 
 stack:
-    - ["Wheel1", "Wheel2", "Wheel3", "Wheel4"]
-    #- ["LeftFoot", "RightFoot"]
+    - ["Wheel1", "Wheel2", "Wheel3", "Wheel4","Ankle_FL", "Ankle_FR", "Ankle_HL", "Ankle_HR"]
+    #- ["Wheel1", "Wheel2", "Wheel3", "Wheel4"]
+    #- ["Ankle_FL", "Ankle_FR", "Ankle_HL", "Ankle_HR"]
     #- ["Waist"]
 
 constraints: ["JointLimits"]
 
 Wheel1:
     type: "Cartesian"
+    base_link: "world"
     distal_link: "wheel_1"
     indices: [2]
 
 Wheel2:
     type: "Cartesian"
+    base_link: "world"
     distal_link: "wheel_2"
     indices: [2]
 
 Wheel3:
     type: "Cartesian"
+    base_link: "world"
     distal_link: "wheel_3"
-    lambda: 0.1
+    #lambda: 0.1
     indices: [2]
 
 Wheel4:
     type: "Cartesian"
+    base_link: "world"
     distal_link: "wheel_4"
-    lambda: 0.1
+    #lambda: 0.1
     indices: [2]
-
+    
 Postural:
     type: "Postural"
-    lambda: 0.0
+    lambda: 0.1
 
 LeftHand:
     type: "Cartesian"
@@ -47,4 +52,38 @@ RightHand:
     distal_link: "TCP_R"
     lambda: 1.0
     indices: [0, 1, 2]
+   
+Ankle_FL:
+    type: "Cartesian"
+    distal_link: "ankle2_1"
+    indices: [3, 4]
+    #lambda: 0.05
+    #weight: 10
+    
+Ankle_FR:
+    type: "Cartesian"
+    distal_link: "ankle2_2"
+    indices: [3, 4, 5]
+    #lambda: 0.05
+    #weight: 10
+    
+Ankle_HL:
+    type: "Cartesian"
+    distal_link: "ankle2_3"
+    indices: [3, 4, 5]
+    #lambda: 0.05
+    #weight: 10
+    
+Ankle_HR:
+    type: "Cartesian"
+    distal_link: "ankle2_4"
+    indices: [3, 4, 5]
+    #lambda: 0.05
+    #weight: 10
+    
+Pelvis:
+    type: "Cartesian"
+    base_link: "world"
+    distal_link: "pelvis"
+    indices: [5]
 

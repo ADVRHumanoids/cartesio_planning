@@ -4,20 +4,50 @@ solver_options:
     control_dt: 0.50 
 
 stack:
+<<<<<<< HEAD
+    - ["Wheel_1", "Wheel_2", "Wheel_3", "Wheel_4", "Ankle_FL", "Ankle_FR", "Ankle_HL", "Ankle_HR"]
+    - ["Pelvis"]
+    #- ["Postural"]
+#, "Ankle_FL", "Ankle_FR", "Ankle_HL", "Ankle_HR"
+=======
     - ["ArmPosition]
     # - ["Pelvis"]
     - ["Postural"]
 
+>>>>>>> cceb35fc3d0c2b920c4b654bdff02e496501a74b
     
 constraints: ["JointLimits"]
 
 Pelvis:
     type: "Cartesian"
-    distal_link: "TCP"
-    base_link: "base_link"
+    distal_link: "pelvis"
     lambda: 0.1
-    indices: [0,1,2,4]
+    indices: [0, 1, 3, 4, 5]
+    
+Wheel_1:
+    type: "Cartesian"
+    #base_link: "pelvis"
+    distal_link: "wheel_1"
+    indices: [2]
 
+Wheel_2:
+    type: "Cartesian"
+    #base_link: "pelvis"
+    distal_link: "wheel_2"
+    indices: [2]
+    
+Wheel_3:
+    type: "Cartesian"
+    #base_link: "pelvis"
+    distal_link: "wheel_3"
+    indices: [2]
+    
+Wheel_4:
+    type: "Cartesian"
+    #base_link: "pelvis"
+    distal_link: "wheel_4"
+    indices: [2]
+    
 ArmPosition:
     type: "Cartesian"
     distal_link: "TCP"
@@ -34,14 +64,49 @@ ArmOrientation:
 #    use_body_jacobian: true
     
 
-ArmEE:
-    type: "Cartesian"
-    distal_link: "teleop_link5"
-    base_link: "base_link"
-    lambda: 0.1
-    indices: [0,1,2,3,4]
+#ArmEE:
+    #type: "Cartesian"
+    #distal_link: "teleop_link5"
+    #base_link: "base_link"
+    #lambda: 0.1
+    #indices: [0,1,2,3,4]
 
 Postural:
     type: "Postural"
-    lambda: 0.01
+    lambda: 0.0025
+    weight: 
+        VIRTUALJOINT_1: 0.0
+        VIRTUALJOINT_2: 0.0
+        VIRTUALJOINT_3: 0.0
+        VIRTUALJOINT_4: 0.0
+        VIRTUALJOINT_5: 0.0
+        VIRTUALJOINT_6: 0.0
     
+    
+Ankle_FL:
+    type: "Cartesian"
+    distal_link: "ankle2_1"
+    indices: [3, 4]
+    #lambda: 0.05
+    #weight: 10
+    
+Ankle_FR:
+    type: "Cartesian"
+    distal_link: "ankle2_2"
+    indices: [3, 4]
+    #lambda: 0.05
+    #weight: 10
+    
+Ankle_HL:
+    type: "Cartesian"
+    distal_link: "ankle2_3"
+    indices: [3, 4]
+    #lambda: 0.05
+    #weight: 10
+    
+Ankle_HR:
+    type: "Cartesian"
+    distal_link: "ankle2_4"
+    indices: [3, 4]
+    #lambda: 0.05
+    #weight: 10
