@@ -4,17 +4,11 @@ solver_options:
     control_dt: 0.50 
 
 stack:
-<<<<<<< HEAD
     - ["Wheel_1", "Wheel_2", "Wheel_3", "Wheel_4", "Ankle_FL", "Ankle_FR", "Ankle_HL", "Ankle_HR"]
     - ["Pelvis"]
-    #- ["Postural"]
 #, "Ankle_FL", "Ankle_FR", "Ankle_HL", "Ankle_HR"
-=======
-    - ["ArmPosition]
-    # - ["Pelvis"]
-    - ["Postural"]
+    #- ["Postural"]
 
->>>>>>> cceb35fc3d0c2b920c4b654bdff02e496501a74b
     
 constraints: ["JointLimits"]
 

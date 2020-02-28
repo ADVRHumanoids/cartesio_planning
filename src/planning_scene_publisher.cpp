@@ -53,8 +53,6 @@
 ros::ServiceClient srv;
 
 void collision_object_cb(const octomap_msgs::OctomapWithPose msg)
-<<<<<<< HEAD
-=======
 {
     octomap_msgs::OctomapWithPose attached_object;
     attached_object = msg;  
