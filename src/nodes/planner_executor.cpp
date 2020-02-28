@@ -136,7 +136,7 @@ void PlannerExecutor::init_load_planner()
 
     if(_model->isFloatingBase())
     {
-        qmax.head<6>() << 1, 1, 1, M_PI, M_PI, M_PI;
+        qmax.head<6>() << 10.0, 10.0, 10.0, 10*M_PI, 10*M_PI, 10*M_PI;
         qmin.head<6>() << -qmax.head<6>();
 
         YAML_PARSE_OPTION(_planner_config["state_space"],
@@ -512,7 +512,7 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     if(req.planner_type == "")
     {
         req.planner_type = "RRTstar";
-    }
+    } 
 
     std::cout << "Requested planner " << req.planner_type << std::endl;
 
