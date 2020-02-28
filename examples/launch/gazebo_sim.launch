@@ -1,7 +1,7 @@
 <launch>
   
   <!-- load the model urdf-->
-  <param name="robot_description" textfile="$(find centauro)/centauro_urdf/urdf/centauro_generated.urdf"/>
+  <param name="robot_description" textfile="$(find centauro)/centauro_urdf/urdf/centauro_generated_lb.urdf"/>
 
   <!-- gazebo arguments -->
   <arg name="gazebo" default="true"/>
