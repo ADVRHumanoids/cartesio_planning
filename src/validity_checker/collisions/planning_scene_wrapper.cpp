@@ -138,7 +138,7 @@ void PlanningSceneWrapper::update()
             {
                 T.translation().x(),
                 T.translation().y(),
-                T.translation().z(),
+                T.translation().z() - 0.93455,
                 rotation.x(),
                 rotation.y(),
                 rotation.z(),
