@@ -170,7 +170,7 @@ double TrajectoryInterpolation::compute(const std::vector<Eigen::VectorXd>& traj
     casadi::Dict opts;
     opts["ipopt.tol"] = 1e-4;
     opts["ipopt.max_iter"] = 1000;
-    opts["ipopt.linear_solver"] = "ma57";
+//     opts["ipopt.linear_solver"] = "ma57";
     opts["ipopt.hessian_approximation"] = "limited-memory";
 
     // Create an NLP solver and buffers
