@@ -1,7 +1,7 @@
 <launch>
   <arg name="is_model_floating_base" default="true"/>
 
-  <arg name="use_goal_generator" default="false"/>  
+  <arg name="use_goal_generator" default="true"/>  
   
   <!-- Pass throuh filter parameters -->
   <param name="lower_limit" value="-0.85"/>
@@ -10,11 +10,8 @@
   <param name="filter_behavior" type="bool" value="true"/>
    
   <!--  <include file="$(find centauro_gazebo)/launch/centauro_world.launch" />-->
-  <param name="robot_description" textfile="$(find centauro)/centauro_urdf/urdf/centauro_control_lb.urdf"/>
-  <param name="robot_description_semantic" textfile="$(find centauro)/centauro_srdf/srdf/centauro_generated_lb.srdf"/> 
-
-  <param name="cartesian/problem_description"
-      textfile="$(find cartesio_planning)/configs/problem/centauro_goal_generation_stack.yaml"/>
+  <param name="robot_description" textfile="$(find centauro)/centauro_urdf/urdf/centauro_control.urdf"/>
+  <param name="robot_description_semantic" textfile="$(find centauro)/centauro_srdf/srdf/centauro_generated.srdf"/> 
 
   <!-- send problem description to param server: this is used by goal sampler -->
   <param name="planner/problem_description_goal"
@@ -60,30 +57,21 @@
   <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_goal_sampler"
       args="0 0 0 0 0 0 world planner/goal_sampler/world 30"/>
  
-  
-  <!-- Goal sampler to generate goal state -->
-  <node if="$(arg use_goal_generator)" pkg="cartesian_interface" type="marker_spawner" name="goal_marker_spawner" output="screen">
-      <param name="ns" value="planner/goal_sampler"/>
-      <param name="tf_prefix" value="planner/goal_sampler"/>
-  </node>
-  
   <!-- CARTESI/O to generate goal state -->
   <!-- send problem description to param server: this is used by CartesI/O for IK -->
   <param name="cartesian/problem_description"
       textfile="$(find cartesio_planning)/configs/problem/centauro_cartesio_stack.yaml"/>
   <param name="cartesian/joint_blacklist" type="yaml" 
       value="[neck_velodyne]"/>
-  <param name="cartesian/joint_blacklist" type="yaml" 
-        value="[neck_velodyne]"/>
   <include unless="$(arg use_goal_generator)" file="$(find cartesian_interface)/launch/cartesio.launch">
       <arg name="tf_prefix" value="ci"/>
       <arg name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
   </include>
   
-  <node pkg="PCL_Perception" type="pass_through" name="pass_through"/>
+<!--   <node pkg="PCL_Perception" type="pass_through" name="pass_through"/> -->
     
   <!-- Include octomap -->
-  <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
+<!--  <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
       <param name="frame_id" type="string" value="world"/>
       <param name="resolution" value="0.05"/>
       <remap from="cloud_in" to="filtered_cloud"/>
@@ -91,12 +79,34 @@
       <param name="filter_ground" type="bool" value="true"/>
       <param name="base_frame_id" type="string" value="world"/>
       <param name="ground_filter/distance" value="0.15"/>
-      <!--<param name="ground_filter/plane_distance" value="0.25"/>-->
+      <param name="ground_filter/plane_distance" value="0.25"/>
       <param name="ground_filter/plane_distance" value="0.6"/>
-  </node>
+  </node>-->
   
   <!-- Obstacle with octomap -->
-  <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_collision_main"/>
+<!--   <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_collision_main"/> -->
+  
+  <node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+      <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
+      <param name="scale_x" type="double" value="2."/>
+      <param name="scale_y" type="double" value="1.5"/>
+      <param name="scale_z" type="double" value=".1"/>
+      <param name="frame_id" value="world"/>
+      <param name="name_id" value="floor"/>
+      <param name="show_control_axis" type="bool" value="True"/>
+      <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
+  </node>
+  
+    <node name="mesh_viz_floor1" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+      <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
+      <param name="scale_x" type="double" value="2."/>
+      <param name="scale_y" type="double" value="1.5"/>
+      <param name="scale_z" type="double" value=".1"/>
+      <param name="frame_id" value="world"/>
+      <param name="name_id" value="floor1"/>
+      <param name="show_control_axis" type="bool" value="True"/>
+      <remap from="mesh_viz_floor1/floor1" to="planner/collision_objects"/>
+  </node>
   
   <!-- This is needed to connect cartesio marker with "world" frame -->
   <node unless="$(arg use_goal_generator)" pkg="tf" type="static_transform_publisher" name="world_connecter_planner_ci"

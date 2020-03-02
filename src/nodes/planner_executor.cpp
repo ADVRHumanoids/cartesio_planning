@@ -136,7 +136,7 @@ void PlannerExecutor::init_load_planner()
 
     if(_model->isFloatingBase())
     {
-        qmax.head<6>() << 10.0, 10.0, 10.0, 10*M_PI, 10*M_PI, 10*M_PI;
+        qmax.head<6>() << 1.0, 1.0, 1.0, 2*M_PI, 2*M_PI, 2*M_PI;
         qmin.head<6>() << -qmax.head<6>();
 
         YAML_PARSE_OPTION(_planner_config["state_space"],
@@ -299,11 +299,19 @@ void PlannerExecutor::init_goal_generator()
 
         int max_iterations;
         if(_nhpr.getParam("goal_generator_max_iterations", max_iterations))
+        {
             _goal_generator->setMaxIterations(max_iterations);
+        }
 
         double error_tolerance;
         if(_nhpr.getParam("goal_generator_error_tolerance", error_tolerance))
+        {
             _goal_generator->setErrorTolerance(error_tolerance);
+        }
+        else
+        {
+            _goal_generator->setErrorTolerance(_manifold->getTolerance());
+        }
 
         _service_goal_sampler = _nh.advertiseService("goal_sampler_service",
                                                      &PlannerExecutor::goal_sampler_service, this);
@@ -340,6 +348,7 @@ bool PlannerExecutor::goal_sampler_service(cartesio_planning::CartesioGoal::Requ
 
     if(_manifold)
         _manifold->project(q);
+    
     _goal_model->setJointPosition(q);
     _goal_model->update();
 
