@@ -129,20 +129,40 @@ void PlanningSceneWrapper::update()
             std::string parent_link = jmodel->parent_link_name;
             std::string child_link = jmodel->child_link_name;
 
-            Eigen::Affine3d T;
-            _model->getPose(child_link, parent_link, T);
+            // transform from parent link to child link
+            Eigen::Affine3d p_T_c; 
+            _model->getPose(child_link, parent_link, p_T_c);
+            
+            // transform from parent link to joint predecessor frame
+            Eigen::Affine3d p_T_j; 
+            p_T_j.setIdentity();
+            p_T_j.translation().x() = jmodel->parent_to_joint_origin_transform.position.x;
+            p_T_j.translation().y() = jmodel->parent_to_joint_origin_transform.position.y;
+            p_T_j.translation().z() = jmodel->parent_to_joint_origin_transform.position.z;
+            
+            Eigen::Quaterniond p_q_j(
+                jmodel->parent_to_joint_origin_transform.rotation.w,
+                jmodel->parent_to_joint_origin_transform.rotation.x,
+                jmodel->parent_to_joint_origin_transform.rotation.y,
+                jmodel->parent_to_joint_origin_transform.rotation.z
+                               );
+            
+            p_T_j.linear() = p_q_j.toRotationMatrix();
+            
+            // joint transform
+            Eigen::Affine3d Tj = p_T_j.inverse() * p_T_c; 
 
-            Eigen::Quaterniond rotation(T.linear());
+            Eigen::Quaterniond Tj_rotation(Tj.linear());
 
             std::vector<double> jpos =
             {
-                T.translation().x(),
-                T.translation().y(),
-                T.translation().z() - 0.93455,
-                rotation.x(),
-                rotation.y(),
-                rotation.z(),
-                rotation.w()
+                Tj.translation().x(),
+                Tj.translation().y(),
+                Tj.translation().z() /*- 0.93455*/,
+                Tj_rotation.x(),
+                Tj_rotation.y(),
+                Tj_rotation.z(),
+                Tj_rotation.w()
             };
 
             robot_state.setJointPositions(jname, jpos);
