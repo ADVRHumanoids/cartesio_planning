@@ -30,13 +30,13 @@
         <param name="planner_config"
             textfile="$(find cartesio_planning)/configs/problem/comanplus_example_manipulation_config.yaml"/>
         <param name="world_frame_link" value="$(arg world_frame_link)"/>
-        <rosparam param="base_links">['base_link']</rosparam>
-        <rosparam param="distal_links">['l_sole']</rosparam>
     </node>
 
     <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/>
 
-    <node pkg="cartesio_planning" type="previewer" name="planner_previewer" output="screen"/>
+    <node pkg="cartesio_planning" type="previewer" name="planner_previewer" output="screen">
+	<param name="is_model_floating_base" value="true"/>
+    </node>
 
     <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_start"
         args="0 0 0 0 0 0 world planner/start/world 30"/>
