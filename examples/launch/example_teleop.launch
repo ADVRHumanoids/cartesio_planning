@@ -1,6 +1,6 @@
 <launch>
      <arg name="is_model_floating_base" default="false"/>
-     <arg name="use_goal_generator" default="false"/>
+     <arg name="use_goal_generator" default="true"/>
      
      <!-- send the teleop robot XML to param server -->
      <param name="robot_description" command="$(find xacro)/xacro.py '$(find teleop_urdf)/urdf/teleop_fixed_base.urdf'" />
