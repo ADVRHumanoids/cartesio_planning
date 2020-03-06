@@ -1,7 +1,7 @@
 <launch>
   <arg name="is_model_floating_base" default="true"/>
 
-  <arg name="use_goal_generator" default="true"/>  
+  <arg name="use_goal_generator" default="false"/>  
   
   <!-- Pass throuh filter parameters -->
   <param name="lower_limit" value="-0.85"/>
@@ -59,14 +59,14 @@
  
   <!-- CARTESI/O to generate goal state -->
   <!-- send problem description to param server: this is used by CartesI/O for IK -->
-  <param name="cartesian/problem_description"
+<!--  <param name="cartesian/problem_description"
       textfile="$(find cartesio_planning)/configs/problem/centauro_cartesio_stack.yaml"/>
   <param name="cartesian/joint_blacklist" type="yaml" 
       value="[neck_velodyne]"/>
   <include unless="$(arg use_goal_generator)" file="$(find cartesian_interface)/launch/cartesio.launch">
       <arg name="tf_prefix" value="ci"/>
       <arg name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
-  </include>
+  </include>-->
   
 <!--   <node pkg="PCL_Perception" type="pass_through" name="pass_through"/> -->
     
@@ -91,23 +91,24 @@
       <param name="scale_x" type="double" value="2."/>
       <param name="scale_y" type="double" value="1.5"/>
       <param name="scale_z" type="double" value=".1"/>
+      <rosparam param="position"> [1.8668, -1.19083, 0.732845] </rosparam>
+      <rosparam param="orientation"> [-0.322441, 0.625265, -0.636097, 0.31695] </rosparam>
       <param name="frame_id" value="world"/>
       <param name="name_id" value="floor"/>
       <param name="show_control_axis" type="bool" value="True"/>
       <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
   </node>
   
-    <node name="mesh_viz_floor1" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+  <!--<node name="mesh_viz_floor1" pkg="mesh_viz" type="mesh_viz_node" output="screen">
       <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
       <param name="scale_x" type="double" value="2."/>
       <param name="scale_y" type="double" value="1.5"/>
-      <param name="scale_z" type="double" value=".1"/>
+      <param name="scale_z" type="double" value=".1"/>  
       <param name="frame_id" value="world"/>
       <param name="name_id" value="floor1"/>
       <param name="show_control_axis" type="bool" value="True"/>
       <remap from="mesh_viz_floor1/floor1" to="planner/collision_objects"/>
-  </node>
-  
+  </node>-->
   <!-- This is needed to connect cartesio marker with "world" frame -->
   <node unless="$(arg use_goal_generator)" pkg="tf" type="static_transform_publisher" name="world_connecter_planner_ci"
       args="0 0 0. 0 0 0 world ci/world 30"/>
@@ -119,6 +120,6 @@
   <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/> 
   
   <node name="rviz" pkg="rviz" type="rviz" 
-	args="-d $(find cartesio_planning)/configs/rviz/example_centauro_velodyne.rviz" output="screen"/>
+	args="-d $(find cartesio_planning)/configs/rviz/example_centauro_velodyne.rviz" output="screen"/>-->
   
 </launch>

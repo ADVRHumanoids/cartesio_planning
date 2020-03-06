@@ -1,7 +1,7 @@
 
 stack:
     - ["Wheel_FL", "Wheel_FR", "Wheel_HR", "Wheel_HL"]
-    #- ["LeftArm", "RightArm"]
+    - ["LeftArm", "RightArm"]
     #- ["Postural", "Com"]
     - ["Pelvis"]
 constraints: ["JointLimits", "VelocityLimits"]
@@ -30,17 +30,17 @@ Wheel_HR:
     distal_link: "wheel_4"
     indices: [2]
 
-#LeftArm:
-    #type: "Cartesian"
-    #base_link: "pelvis"
-    #distal_link: "arm1_8"
-    #lambda: 0.1
+LeftArm:
+    type: "Cartesian"
+    base_link: "pelvis"
+    distal_link: "arm1_8"
+    lambda: 0.1
 
-#RightArm:
-    #type: "Cartesian"
-    #base_link: "pelvis"
-    #distal_link: "arm2_8"
-    #lambda: 0.1
+RightArm:
+    type: "Cartesian"
+    base_link: "pelvis"
+    distal_link: "arm2_8"
+    lambda: 0.1
     
 Pelvis:
     type: "Cartesian"

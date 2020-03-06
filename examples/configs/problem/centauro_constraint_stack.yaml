@@ -1,12 +1,12 @@
 solver_options:
-    regularization: 1e-2
+    regularization: 1e-3
     back_end: "qpoases"
-    control_dt: 0.50
+    control_dt: 0.1
 
 stack:
-    - ["Wheel1", "Wheel2", "Wheel3", "Wheel4","Ankle_FL", "Ankle_FR", "Ankle_HL", "Ankle_HR"]
+    - ["Wheel1", "Wheel2", "Wheel3", "Wheel4"]#,"Ankle_FL", "Ankle_FR", "Ankle_HL", "Ankle_HR"]
     #- ["Wheel1", "Wheel2", "Wheel3", "Wheel4"]
-    #- ["Ankle_FL", "Ankle_FR", "Ankle_HL", "Ankle_HR"]
+    - ["Ankle_FL", "Ankle_FR", "Ankle_HL", "Ankle_HR"]
     #- ["Waist"]
 
 constraints: ["JointLimits"]
@@ -57,28 +57,28 @@ Ankle_FL:
     type: "Cartesian"
     distal_link: "ankle2_1"
     indices: [3, 4]
-    #lambda: 0.05
+    lambda: 0.05
     #weight: 10
     
 Ankle_FR:
     type: "Cartesian"
     distal_link: "ankle2_2"
-    indices: [3, 4, 5]
-    #lambda: 0.05
+    indices: [3, 4]
+    lambda: 0.05
     #weight: 10
     
 Ankle_HL:
     type: "Cartesian"
     distal_link: "ankle2_3"
-    indices: [3, 4, 5]
-    #lambda: 0.05
+    indices: [3, 4]
+    lambda: 0.05
     #weight: 10
     
 Ankle_HR:
     type: "Cartesian"
     distal_link: "ankle2_4"
-    indices: [3, 4, 5]
-    #lambda: 0.05
+    indices: [3, 4]
+    lambda: 0.05
     #weight: 10
     
 Pelvis:

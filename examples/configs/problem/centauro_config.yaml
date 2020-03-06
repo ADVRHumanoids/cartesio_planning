@@ -14,18 +14,19 @@ collisions:
 RRTstar:
     GoalBias: 0.1
     KNearest: true
-    Range: 1000
+    Range: 1
     
 RRTConnect:
-    IntermediateStates: false
+    IntermediateStates: true
+    Range: 0.9
 
 state_space:
     floating_base_pos_min: [-0.5, -3.0, -0.5]
     floating_base_pos_max: [ 6.0,  3.0,  1.0]
-    type: "Atlas"
+    type: "Projected"
     exploration: 0.9
-    delta: 0.1
+    delta: 0.5
     epsilon: 0.5
     aplha: 0.39
-    rho: 0.5
-    lambda: 1000.0
+    rho: 1.0
+    lambda: 1500.0

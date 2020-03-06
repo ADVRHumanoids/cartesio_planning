@@ -67,7 +67,7 @@ ArmOrientation:
 
 Postural:
     type: "Postural"
-    lambda: 0.0025
+    lambda: 0.1
     weight: 
         VIRTUALJOINT_1: 0.0
         VIRTUALJOINT_2: 0.0
