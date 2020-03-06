@@ -30,9 +30,14 @@
 #include <ompl/base/objectives/MechanicalWorkOptimizationObjective.h>
 #include <ompl/base/Constraint.h>
 #include <ompl/base/objectives/MinimaxObjective.h>
+#include <ompl/base/PlannerData.h>
+
+#include <ompl/base/objectives/StateCostIntegralObjective.h>
 
 #include "cartesio_ompl_planner.h"
 #include "utils/parse_yaml_utils.h"
+
+#include <matlogger2/matlogger2.h>
 
 using namespace XBot::Cartesian::Planning;
 
@@ -133,6 +138,7 @@ void OmplPlanner::setup_problem_definition()
 //     _pdef->setOptimizationObjective(std::make_shared<ompl::base::MechanicalWorkOptimizationObjective>(_space_info));
 //     _pdef->setOptimizationObjective(std::make_shared<ompl::base::ConstraintObjective>(_constraint, _space_info));
 //     _pdef->setOptimizationObjective(std::make_shared<ompl::base::MinimaxObjective>(_space_info));
+//     _pdef->setOptimizationObjective(std::make_shared<ompl::base::StateCostIntegralObjective>(_space_info));
 
   
 }
@@ -172,6 +178,7 @@ ompl::base::PlannerPtr OmplPlanner::make_RRTConnect()
     auto opt = _options["RRTConnect"];
 
     PLANNER_PARSE_OPTION(IntermediateStates, bool);
+    PLANNER_PARSE_OPTION(Range, double);
 
     return planner;
 }
@@ -245,7 +252,7 @@ ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
     {
         YAML_PARSE_OPTION(_options["state_space"], exploration, double, 0.5);
         YAML_PARSE_OPTION(_options["state_space"], delta, double, 0.1);
-	YAML_PARSE_OPTION(_options["state_space"], epsilon, double, 0.5);
+	    YAML_PARSE_OPTION(_options["state_space"], epsilon, double, 0.5);
         YAML_PARSE_OPTION(_options["state_space"], alpha, double, M_PI/6);
         YAML_PARSE_OPTION(_options["state_space"], rho, double, 0.5);
         YAML_PARSE_OPTION(_options["state_space"], lambda, double, 50.0);
@@ -399,17 +406,17 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
         print();
 
         _solved = _planner->ompl::base::Planner::solve(timeout);
-
+        
         if(_solved)
         {
             auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
-            geom_path->interpolate();
+//             geom_path->interpolate();
 
             if(!geom_path->check())
                 return false;
         }
-
+        
         return _solved;
     }
     return false;

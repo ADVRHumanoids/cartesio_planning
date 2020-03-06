@@ -11,6 +11,8 @@
 #include <cartesian_interface/utils/LoadConfig.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
 
+#include <matlogger2/matlogger2.h>
+
 #include "cartesio_planning/CartesianTrajectory.h"
 
 using namespace XBot::Cartesian;
@@ -188,8 +190,6 @@ void PlannerExecutor::init_load_validity_checker()
 {
     _vc_context = Planning::ValidityCheckContext(_planner_config,
                                                  _model, _nh);
-
-    _vc_context.planning_scene->startMonitor();
 
     _vc_context.planning_scene->startMonitor();
 
@@ -584,7 +584,7 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
             }
         }
     }
-
+    _manifold->flushLogger();
     return true;
 }
 int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, const double interpolation_time,
@@ -605,7 +605,7 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
                 cartesian_trajectory.push_back(_interpolator->evaluate(t, base_distal_links[i].first, base_distal_links[i].second));
                 t += interpolation_time;
             }
-            cartesian_trajectories.push_back(cartesian_trajectory);
+             cartesian_trajectories.push_back(cartesian_trajectory);
         }
 
     }
@@ -651,7 +651,18 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
 
     std::vector<Eigen::VectorXd> raw_trajectory;
     if(_planner->getPlannerStatus())
+    {
         raw_trajectory = _planner->getSolutionPath();
+        auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/vertices/raw_traj");
+        logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+        for (int i = 0; i < raw_trajectory.size(); i++)
+            logger->add("x_traj", raw_trajectory[i](0));
+        for (int i = 0; i < raw_trajectory.size(); i++)
+            logger->add("y_traj", raw_trajectory[i](1));
+        for (int i = 0; i < raw_trajectory.size(); i++)
+            logger->add("z_traj", raw_trajectory[i](2));
+    }   
+
 
     _interpolator->compute(raw_trajectory);
     double t = 0.;

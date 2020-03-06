@@ -2,6 +2,7 @@
 #define CARTESIAN_CONSTRAINT_H
 
 #include <ompl/base/Constraint.h>
+#include <matlogger2/matlogger2.h>
 
 #include "../ik/position_ik_solver.h"
 
@@ -22,13 +23,16 @@ public: // Constraint interface
     void jacobian(const Eigen::Ref<const Eigen::VectorXd>& x,
                   Eigen::Ref<Eigen::MatrixXd> out) const override;
 
-    bool project(Eigen::Ref<Eigen::VectorXd> x) const;
+    bool project(Eigen::Ref<Eigen::VectorXd> x) const override;
 
     void reset();
+    
+    void flushLogger();
 
 private:
 
     PositionCartesianSolver::Ptr _ik_solver;
+    XBot::MatLogger2::Ptr _logger;
 
 };
 
