@@ -179,6 +179,7 @@ target_link_libraries(cartesio_planning
     PRIVATE
     ${PCL_LIBRARIES}
     centroidal_statics
+    matlogger2::matlogger2
     )
 
 add_library(centroidal_statics SHARED src/validity_checker/stability/centroidal_statics.cpp)
@@ -263,7 +264,7 @@ target_link_libraries(planning_scene_publisher ${catkin_LIBRARIES})
 
 # Executor
 add_executable(planning_server src/nodes/planner_executor_main.cpp src/nodes/planner_executor.cpp)
-target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning cartesian_trajectory_interpolation)
+target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning cartesian_trajectory_interpolation matlogger2::matlogger2)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
