@@ -42,6 +42,7 @@ void CartesianConstraint::jacobian(const Eigen::Ref<const Eigen::VectorXd>& x,
 bool CartesianConstraint::project(Eigen::Ref<Eigen::VectorXd> x) const
 {
 //     return Constraint::project(x);
+    if(!_logger) _logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/my_log");
     
     Eigen::Vector3d x_bef {x(0), x(1), x(2)};
     _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
