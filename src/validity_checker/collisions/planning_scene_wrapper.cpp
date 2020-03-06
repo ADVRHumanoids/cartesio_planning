@@ -158,7 +158,7 @@ void PlanningSceneWrapper::update()
             {
                 Tj.translation().x(),
                 Tj.translation().y(),
-                Tj.translation().z() /*- 0.93455*/,
+                Tj.translation().z(),
                 Tj_rotation.x(),
                 Tj_rotation.y(),
                 Tj_rotation.z(),
