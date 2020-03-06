@@ -4,8 +4,8 @@
 namespace
 {
 /**
-     * @brief operator << to insert an Eigen vector into a std vector
-     */
+    * @brief operator << to insert an Eigen vector into a std vector
+    */
     void operator<<(std::vector<double>& v, Eigen::VectorXd vi)
     {
         v.insert(v.end(), vi.data(), vi.data() + vi.size());
@@ -14,8 +14,8 @@ namespace
 }
 
 /**
- * Utility to print a vector to a given output stream
- */
+* Utility to print a vector to a given output stream
+*/
 template <typename T>
 std::ostream& print(std::ostream& os, const std::vector<T>& v)
 {
@@ -36,7 +36,7 @@ TrajectoryInterpolation::TrajectoryInterpolation(int _q_size):
 }
 
 double TrajectoryInterpolation::compute(const std::vector<Eigen::VectorXd>& trajectory,
-                                      std::vector<double> * time_point_vec)
+                                    std::vector<double> * time_point_vec)
 {
     const int n_points = trajectory.size();
     const int n_segments = n_points - 1;
@@ -58,6 +58,49 @@ double TrajectoryInterpolation::compute(const std::vector<Eigen::VectorXd>& traj
     {
         T_min[i] = ((trajectory[i+1] - trajectory[i]).array().abs()/_qdot_max).maxCoeff();
         std::cout << "T_min[" << i << "] = " << T_min[i] << std::endl;
+    }
+    
+    // FALLBACK TO PIECEWISE-CONSTANT
+    if(n_segments > 200)
+    {
+        
+        // Contruct spline
+        _spline.clear();
+
+        if(time_point_vec)
+        {
+            time_point_vec->clear();
+            time_point_vec->push_back(0);
+        }
+
+        for(int i = 0; i < n_segments; i++)
+        {
+            Poly p;
+            p.a_0 = trajectory[i];
+            p.a_1.setZero(p.a_0.size());
+            p.a_2.setZero(p.a_0.size());
+            p.a_3.setZero(p.a_0.size());
+
+            if(_spline.empty())
+            {
+                p.t_start = 0.0;
+            }
+            else
+            {
+                p.t_start = _spline.back().t_end;
+            }
+
+            p.t_end = p.t_start + T_min[i];
+
+            _spline.push_back(p);
+
+            if(time_point_vec)
+            {
+                time_point_vec->push_back(p.t_end);
+            }
+        }
+
+        return _spline.back().t_end;
     }
 
     auto optvar = casadi::MX::sym("V", n_segments * (1 + 3 * q_size)); // a_1, a_2, a_3, T
@@ -170,7 +213,7 @@ double TrajectoryInterpolation::compute(const std::vector<Eigen::VectorXd>& traj
     casadi::Dict opts;
     opts["ipopt.tol"] = 1e-4;
     opts["ipopt.max_iter"] = 1000;
-//     opts["ipopt.linear_solver"] = "ma57";
+    opts["ipopt.linear_solver"] = "ma57";
     opts["ipopt.hessian_approximation"] = "limited-memory";
 
     // Create an NLP solver and buffers
