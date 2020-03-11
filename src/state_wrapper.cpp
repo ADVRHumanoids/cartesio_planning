@@ -42,3 +42,6 @@ void StateWrapper::getState(const ompl::base::State * state,
         value = Eigen::VectorXd::Map(state->as<ompl::base::RealVectorStateSpace::StateType>()->values, _size);
     }
 }
+
+
+

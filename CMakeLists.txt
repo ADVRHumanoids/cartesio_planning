@@ -218,6 +218,16 @@ target_link_libraries(ompl_test ${OMPL_LIBRARIES}
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
+    
+add_executable(ompl_test_control
+    src/ompl_test_control.cpp
+    )
+    
+target_link_libraries(ompl_test_control ${OMPL_LIBRARIES}
+    cartesio_planning
+    ${XBotInterface_LIBRARIES}
+    ${catkin_LIBRARIES}
+    matlogger2::matlogger2)
 
 # Previewer node
 add_executable(previewer
@@ -328,6 +338,13 @@ install(TARGETS ompl_test
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
+    
+install(TARGETS ompl_test_control
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
 
 install(TARGETS previewer
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

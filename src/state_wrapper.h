@@ -30,9 +30,10 @@ public:
 
     void setState(ompl::base::State * state,
                   const Eigen::VectorXd& value) const;
-
+    
     void getState(const ompl::base::State * state,
                   Eigen::VectorXd& value) const;
+                  
 
 private:
 

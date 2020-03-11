@@ -661,6 +661,8 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
             logger->add("y_traj", raw_trajectory[i](1));
         for (int i = 0; i < raw_trajectory.size(); i++)
             logger->add("z_traj", raw_trajectory[i](2));
+        
+        std::cout << raw_trajectory << std::endl;
     }   
 
 
