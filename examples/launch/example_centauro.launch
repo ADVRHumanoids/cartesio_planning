@@ -120,6 +120,6 @@
   <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/> 
   
   <node name="rviz" pkg="rviz" type="rviz" 
-	args="-d $(find cartesio_planning)/configs/rviz/example_centauro_velodyne.rviz" output="screen"/>-->
+	args="-d $(find cartesio_planning)/configs/rviz/example_centauro_velodyne.rviz" output="screen"/>
   
 </launch>
