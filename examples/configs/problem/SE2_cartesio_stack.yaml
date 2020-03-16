@@ -1,0 +1,10 @@
+
+stack:
+    - ["Box"]
+
+constraints: ["JointLimits", "VelocityLimits"]
+
+Box:
+    type:"Cartesian"
+    distal_link:"base_link"
+    

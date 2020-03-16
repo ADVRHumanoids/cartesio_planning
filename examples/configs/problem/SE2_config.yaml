@@ -1,0 +1,25 @@
+state_validity_check:
+    - collisions
+    
+planner:
+    low: -1.0
+    high: 1.0
+
+
+collisions:
+    type: "CollisionCheck"
+    include_environment: true
+
+
+RRTstar:
+    GoalBias: 0.1
+    KNearest: true
+    Range: 1
+    
+RRTConnect:
+    IntermediateStates: true
+    Range: 0.9
+
+state_space:
+    type: "Atlas"
+
