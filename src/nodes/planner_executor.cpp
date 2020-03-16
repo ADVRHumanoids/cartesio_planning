@@ -25,6 +25,7 @@ PlannerExecutor::PlannerExecutor():
     init_load_model();
     init_load_planner();
     init_load_validity_checker();
+    init_load_propagator();
     init_goal_generator();
     init_subscribe_start_goal();
     init_trj_publisiher();
@@ -170,17 +171,43 @@ void PlannerExecutor::init_load_planner()
     if(ompl_constraint)
     {
         std::cout << "Constructing a constrained ompl planner" << std::endl;
-        _planner = std::make_shared<Planning::OmplPlanner>(qmin,
-                                                           qmax,
-                                                           ompl_constraint,
-                                                           _planner_config);
+        if (!_planner_config["planner"])
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin,
+                                                               qmax,
+                                                               ompl_constraint,
+                                                               _planner_config);
+        else
+        {
+            std::cout << "Planning with control" << std::endl;
+            YAML_PARSE_OPTION(_planner_config["planner"], low, double, -1);
+            YAML_PARSE_OPTION(_planner_config["planner"], high, double, 1);
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin,
+                                                               qmax,
+                                                               low,
+                                                               high,
+                                                               ompl_constraint,
+                                                               _planner_config);
+        }
+                
     }
     else
     {
         std::cout << "Constructing an unconstrained ompl planner" << std::endl;
-        _planner = std::make_shared<Planning::OmplPlanner>(qmin,
-                                                           qmax,
-                                                           _planner_config);
+        if (!_planner_config["planner"])
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin,
+                                                               qmax,
+                                                               _planner_config);
+        else
+        {
+            std::cout << "Planning with control" << std::endl;
+            YAML_PARSE_OPTION(_planner_config["planner"], low, double, -1);
+            YAML_PARSE_OPTION(_planner_config["planner"], high, double, 1);
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin,
+                                                               qmax,
+                                                               low,
+                                                               high,
+                                                               _planner_config);
+        }
     }
 
 
@@ -207,6 +234,15 @@ void PlannerExecutor::init_load_validity_checker()
     };
 
     _planner->setStateValidityPredicate(validity_predicate);
+}
+
+void PlannerExecutor::init_load_propagator() 
+{
+    if (_planner_config["planner"])
+    {
+        auto si = _planner->getCSpaceInfo();
+        si->setStatePropagator(&propagate);
+    }
 }
 
 void PlannerExecutor::init_subscribe_start_goal()
@@ -584,7 +620,7 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
             }
         }
     }
-    _manifold->flushLogger();
+//     _manifold->flushLogger();
     return true;
 }
 int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, const double interpolation_time,
@@ -653,16 +689,16 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
     if(_planner->getPlannerStatus())
     {
         raw_trajectory = _planner->getSolutionPath();
-        auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/vertices/raw_traj");
-        logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
-        for (int i = 0; i < raw_trajectory.size(); i++)
-            logger->add("x_traj", raw_trajectory[i](0));
-        for (int i = 0; i < raw_trajectory.size(); i++)
-            logger->add("y_traj", raw_trajectory[i](1));
-        for (int i = 0; i < raw_trajectory.size(); i++)
-            logger->add("z_traj", raw_trajectory[i](2));
+//         auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/vertices/raw_traj");
+//         logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+//         for (int i = 0; i < raw_trajectory.size(); i++)
+//             logger->add("x_traj", raw_trajectory[i](0));
+//         for (int i = 0; i < raw_trajectory.size(); i++)
+//             logger->add("y_traj", raw_trajectory[i](1));
+//         for (int i = 0; i < raw_trajectory.size(); i++)
+//             logger->add("z_traj", raw_trajectory[i](2));
         
-        std::cout << raw_trajectory << std::endl;
+//         std::cout << raw_trajectory << std::endl;
     }   
 
 
@@ -740,3 +776,21 @@ void PlannerExecutor::enforce_bounds(Eigen::VectorXd & q) const
 
     q = q.cwiseMin(qmax).cwiseMax(qmin);
 }
+
+void PlannerExecutor::propagate ( const ompl::base::State* start, 
+                                  const ompl::control::Control* control, 
+                                  const double duration, 
+                                  ompl::base::State* result ) 
+{
+    // define control and state types
+    const auto pos = start->as<ompl::base::RealVectorStateSpace::StateType>()->values;
+    const auto ctrl = control->as<ompl::control::RealVectorControlSpace::ControlType>()->values;
+    auto r_result = result->as<ompl::base::RealVectorStateSpace::StateType>()->values;
+    
+    // propagate the states
+    r_result[0] = pos[0] + duration * ctrl[0] * cos(pos[2]);
+    r_result[1] = pos[1] + duration * ctrl[0] * sin(pos[2]);
+    r_result[2] = pos[2] + duration * ctrl[1];   
+}
+
+

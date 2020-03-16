@@ -8,7 +8,7 @@ CartesianConstraint::CartesianConstraint(PositionCartesianSolver::Ptr ik_solver)
     _ik_solver(ik_solver)
 {
     setTolerance(_ik_solver->getErrorThreshold());
-    _logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/my_log");
+//     _logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/my_log");
 }
 
 void CartesianConstraint::function(const Eigen::Ref<const Eigen::VectorXd>& x,
@@ -43,9 +43,9 @@ bool CartesianConstraint::project(Eigen::Ref<Eigen::VectorXd> x) const
 {
 //     return Constraint::project(x);
     
-    Eigen::Vector3d x_bef {x(0), x(1), x(2)};
-    _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
-    _logger->add("vertices_before", x_bef);
+//     Eigen::Vector3d x_bef {x(0), x(1), x(2)};
+//     _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+//     _logger->add("vertices_before", x_bef);
     
     auto model = _ik_solver->getModel();
 
@@ -62,10 +62,10 @@ bool CartesianConstraint::project(Eigen::Ref<Eigen::VectorXd> x) const
     model->getJointPosition(q_proj);
     x = q_proj;
     
-    Eigen::Vector3d x_aft {x(0), x(1), x(2)};
-    _logger->add("vertices_after", x_aft);
-    _logger->add("bool", _ik_solver->solve());
-
+//     Eigen::Vector3d x_aft {x(0), x(1), x(2)};
+//     _logger->add("vertices_after", x_aft);
+//     _logger->add("bool", _ik_solver->solve());
+// 
     return true;
 
 }
@@ -75,12 +75,12 @@ void CartesianConstraint::reset()
     _ik_solver->reset();
 }
 
-void CartesianConstraint::flushLogger()
-{
-    _logger.reset();
-    _logger = _logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/my_log");
-
-}
+// void CartesianConstraint::flushLogger()
+// {
+//     _logger.reset();
+//     _logger = _logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/my_log");
+// 
+// }
 
 
 } } }

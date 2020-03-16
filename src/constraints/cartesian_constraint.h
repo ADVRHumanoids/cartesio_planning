@@ -2,7 +2,6 @@
 #define CARTESIAN_CONSTRAINT_H
 
 #include <ompl/base/Constraint.h>
-#include <matlogger2/matlogger2.h>
 
 #include "../ik/position_ik_solver.h"
 
@@ -27,12 +26,12 @@ public: // Constraint interface
 
     void reset();
     
-    void flushLogger();
+//     void flushLogger();
 
 private:
 
     PositionCartesianSolver::Ptr _ik_solver;
-    XBot::MatLogger2::Ptr _logger;
+//     XBot::MatLogger2::Ptr _logger;
 
 };
 

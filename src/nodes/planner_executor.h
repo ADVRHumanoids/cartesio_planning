@@ -18,6 +18,16 @@
 #include "validity_checker/validity_predicate_aggregate.h"
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "validity_checker/validity_checker_context.h"
+#include <ompl/control/spaces/RealVectorControlSpace.h>
+#include <ompl/control/spaces/RealVectorControlSpace.h>
+#include <ompl/control/planners/kpiece/KPIECE1.h>
+#include <ompl/control/planners/rrt/RRT.h>
+#include <ompl/control/planners/est/EST.h>
+#include <ompl/control/planners/syclop/SyclopRRT.h>
+#include <ompl/control/planners/syclop/SyclopEST.h>
+#include <ompl/control/planners/pdst/PDST.h>
+#include <ompl/control/planners/syclop/GridDecomposition.h>
+#include <ompl/config.h>
 
 #include "cartesio_planning/CartesioPlanner.h"
 
@@ -78,6 +88,14 @@ public:
                     const std::vector<std::pair<std::string, std::string> > base_distal_links,
                     std::vector<Eigen::VectorXd>& trajectory,
                     std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories);
+    
+    static void propagate(const ompl::base::State *start,
+                          const ompl::control::Control *control,
+                          const double duration,
+                          ompl::base::State *result);
+
+    
+
 
 private:
 
@@ -87,6 +105,7 @@ private:
     void init_load_config();
     void init_load_planner();
     void init_load_validity_checker();
+    void init_load_propagator();
     void init_subscribe_start_goal();
     void init_trj_publisiher();
     void init_planner_srv();
@@ -106,6 +125,7 @@ private:
                                       moveit_msgs::ApplyPlanningScene::Response& res);
     bool goal_sampler_service(cartesio_planning::CartesioGoal::Request& req,
                               cartesio_planning::CartesioGoal::Response& res);
+    
 
 
     Planning::CartesianConstraint::Ptr make_manifold(std::string problem_description_string);

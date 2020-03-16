@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(cartesio_planning)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
 
 option(COMPILE_TESTS "Compile internal tests" FALSE)
 
@@ -168,7 +168,8 @@ add_library(cartesio_planning SHARED
     src/validity_checker/collisions/planning_scene_wrapper.cpp
     src/validity_checker/validity_checker_factory.cpp
     src/validity_checker/validity_predicate_aggregate.cpp
-    src/nodes/goal_generation.cpp)
+    src/nodes/goal_generation.cpp
+    src/nodes/my_grid_decomposition.cpp)
 
 target_link_libraries(cartesio_planning
     PUBLIC
@@ -203,6 +204,9 @@ target_link_libraries(octomap_collision_main cartesio_planning ${XBotInterface_L
 
 add_executable(centroidal_statics_test src/centroidal_statics_test.cpp)
 target_link_libraries(centroidal_statics_test centroidal_statics ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES})
+
+add_executable(state_publisher src/state_publisher.cpp)
+target_link_libraries(state_publisher ${catkin_LIBRARIES})
 
 
 
@@ -316,6 +320,12 @@ add_dependencies(cartesio_planning ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_
 
 ## Mark executables and/or libraries for installation
 install(TARGETS centroidal_statics
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+    
+install(TARGETS state_publisher
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

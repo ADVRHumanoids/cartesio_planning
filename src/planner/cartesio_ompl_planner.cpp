@@ -31,6 +31,7 @@
 #include <ompl/base/Constraint.h>
 #include <ompl/base/objectives/MinimaxObjective.h>
 #include <ompl/base/PlannerData.h>
+#include <ompl/control/planners/syclop/SyclopRRT.h>
 
 #include <ompl/base/objectives/StateCostIntegralObjective.h>
 
@@ -44,6 +45,7 @@ using namespace XBot::Cartesian::Planning;
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
                          YAML::Node options):
+    _cbounds(2),
     _bounds(bounds_min.size()),
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
@@ -70,9 +72,48 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
+                         double low,
+                         double high,
+                         YAML::Node options):
+    _bounds(bounds_min.size()),
+    _cbounds(2),
+    _size(bounds_min.size()),
+    _solved(ompl::base::PlannerStatus::UNKNOWN),
+    _options(options)
+{
+    _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::REALVECTOR, _size);
+
+    // create euclidean state space
+    _ambient_space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
+
+    // unconstrained case -> state space = ambient state space
+    _space = _ambient_space;
+
+    // set bounds to state space
+    set_bounds(bounds_min, bounds_max);
+    
+    // create control space
+    _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, 2);
+    
+//     set bounds to control space
+    _cbounds.setLow(low);
+    _cbounds.setHigh(high);
+    _cspace->setBounds(_cbounds);
+
+    // create space information
+    _cspace_info = std::make_shared<ompl::control::SpaceInformation>(_space, _cspace);
+
+    // setup problem definition
+    setup_problem_definition();
+
+}
+
+OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
+                         const Eigen::VectorXd& bounds_max,
                          ompl::base::ConstraintPtr constraint,
                          YAML::Node options):
     _bounds(bounds_min.size()),
+    _cbounds(2),
     _constraint(constraint),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
     _size(bounds_min.size()),
@@ -94,6 +135,45 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
     // setup problem definition
     setup_problem_definition();
+}
+
+OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
+                         const Eigen::VectorXd& bounds_max,
+                         double low,
+                         double high,
+                         ompl::base::ConstraintPtr constraint,
+                         YAML::Node options):
+    _bounds(bounds_min.size()),
+    _cbounds(2),
+    _size(bounds_min.size()),
+    _solved(ompl::base::PlannerStatus::UNKNOWN),
+    _options(options)
+{
+    _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::REALVECTOR, _size);
+
+    // create euclidean state space
+    _ambient_space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
+
+    // unconstrained case -> state space = ambient state space
+    _space = make_constrained_space();
+
+    // set bounds to state space
+    set_bounds(bounds_min, bounds_max);
+    
+    // create control space
+    _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, 2);
+    
+//     set bounds to control space
+    _cbounds.setLow(low);
+    _cbounds.setHigh(high);
+    _cspace->setBounds(_cbounds);
+
+    // create space information
+    _cspace_info = std::make_shared<ompl::control::SpaceInformation>(_space, _cspace);
+
+    // setup problem definition
+    setup_problem_definition();
+
 }
 
 void OmplPlanner::set_bounds(const Eigen::VectorXd& bounds_min,
@@ -166,7 +246,6 @@ ompl::base::PlannerPtr OmplPlanner::make_RRTstar()
 
 ompl::base::PlannerPtr OmplPlanner::make_RRTConnect()
 {
-
     auto planner = std::make_shared<ompl::geometric::RRTConnect>(_space_info);
 
     if(!_options || !_options["RRTConnect"])
@@ -252,7 +331,7 @@ ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
     {
         YAML_PARSE_OPTION(_options["state_space"], exploration, double, 0.5);
         YAML_PARSE_OPTION(_options["state_space"], delta, double, 0.1);
-	    YAML_PARSE_OPTION(_options["state_space"], epsilon, double, 0.5);
+	YAML_PARSE_OPTION(_options["state_space"], epsilon, double, 0.5);
         YAML_PARSE_OPTION(_options["state_space"], alpha, double, M_PI/6);
         YAML_PARSE_OPTION(_options["state_space"], rho, double, 0.5);
         YAML_PARSE_OPTION(_options["state_space"], lambda, double, 50.0);
@@ -298,6 +377,12 @@ ompl::base::SpaceInformationPtr OmplPlanner::getSpaceInfo() const
 {
     return _space_info;
 }
+
+ompl::control::SpaceInformationPtr OmplPlanner::getCSpaceInfo() const 
+{
+    return _cspace_info;
+}
+
 
 void OmplPlanner::getBounds(Eigen::VectorXd & qmin, Eigen::VectorXd & qmax) const
 {
@@ -393,7 +478,6 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
 
 bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 {
-
     _planner = make_planner(planner_type);
 
 
@@ -481,8 +565,7 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
 
     ADD_PLANNER_AND_IF("RRTConnect")
     {
-        return make_RRTConnect();
-      
+        return make_RRTConnect();      
     }
 
     ADD_PLANNER_AND_IF("RRTsharp")
@@ -553,6 +636,12 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
     ADD_PLANNER_AND_IF("LBKPIECE1")
     {
         return std::make_shared<ompl::geometric::LBKPIECE1>(_space_info);
+    }
+    
+    ADD_PLANNER_AND_IF("SyclopRRT")
+    {
+        auto decomp = std::make_shared<MyGridDecomposition>(32,_bounds);
+        return std::make_shared<ompl::control::SyclopRRT>(_cspace_info, decomp);
     }
 
     std::cout << "Valid planners are \n";

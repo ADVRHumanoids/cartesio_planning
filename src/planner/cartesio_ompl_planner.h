@@ -16,6 +16,11 @@
 #include <ompl/base/samplers/UniformValidStateSampler.h>
 #include <ompl/base/samplers/ObstacleBasedValidStateSampler.h>
 
+#include <ompl/control/spaces/RealVectorControlSpace.h>
+#include <ompl/control/planners/syclop/SyclopRRT.h>
+
+#include "nodes/my_grid_decomposition.h"
+
 #include <Eigen/Dense>
 #include <yaml-cpp/yaml.h>
 
@@ -41,6 +46,20 @@ public:
                 const Eigen::VectorXd& bounds_max,
                 ompl::base::ConstraintPtr constraint,
                 YAML::Node options);
+    
+    // constructors for planning with controls
+    OmplPlanner(const Eigen::VectorXd& bounds_min,
+                const Eigen::VectorXd& bounds_max,
+                double low,
+                double high,
+                YAML::Node options);
+    
+    OmplPlanner(const Eigen::VectorXd& bounds_min,
+                const Eigen::VectorXd& bounds_max,
+                double low,
+                double high,
+                ompl::base::ConstraintPtr constraint,
+                YAML::Node options);
 
     void setStateValidityPredicate(StateValidityPredicate svc);
 
@@ -49,7 +68,7 @@ public:
 
     void setStartAndGoalStates(const Eigen::VectorXd& start,
                                std::shared_ptr<ompl::base::GoalSampleableRegion> goal);
-
+    
     void print(std::ostream &out = std::cout);
 
     bool solve(const double timeout, const std::string& planner_type);
@@ -59,6 +78,8 @@ public:
     std::vector<Eigen::VectorXd> getSolutionPath() const;
 
     ompl::base::SpaceInformationPtr getSpaceInfo() const;
+    
+    ompl::control::SpaceInformationPtr getCSpaceInfo() const;
 
     void getBounds(Eigen::VectorXd& qmin, Eigen::VectorXd& qmax) const;
 
@@ -84,14 +105,18 @@ private:
     ompl::base::ConstraintPtr _constraint;
 
     ompl::base::RealVectorBounds _bounds;
+    ompl::base::RealVectorBounds _cbounds;
     std::shared_ptr<ompl::base::RealVectorStateSpace> _ambient_space;
     std::shared_ptr<ompl::base::SpaceInformation> _space_info;
+    std::shared_ptr<ompl::control::SpaceInformation> _cspace_info;
 
     std::shared_ptr<ompl::base::ProblemDefinition> _pdef;
     std::shared_ptr<ompl::base::Planner> _planner;
+//     std::shared_ptr<ompl::control::Syclop> _cplanner;
     ompl::base::PlannerStatus _solved;
 
     std::shared_ptr<ompl::base::StateSpace> _space;
+    std::shared_ptr<ompl::control::RealVectorControlSpace> _cspace;
     std::function<void(void)> _on_reset_space;
     std::function<void(const ompl::base::State* start,
                        const ompl::base::State* goal)> _on_set_start_goal;
@@ -104,8 +129,8 @@ private:
 
 };
 
-}
                                      }
                }
+}
 
 #endif
