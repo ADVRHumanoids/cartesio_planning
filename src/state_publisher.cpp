@@ -8,12 +8,12 @@
 #include <RobotInterfaceROS/ConfigFromParam.h>
 
 
-int main(int argc, char** argv) {
-    ros::init(argc, argv, "state_publisher");
+int main ( int argc, char** argv ) {
+    ros::init ( argc, argv, "state_publisher" );
     ros::NodeHandle n;
-    ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("joint_states", 1);
+    ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState> ( "joint_states", 1 );
     tf::TransformBroadcaster broadcaster;
-    ros::Rate loop_rate(30);
+    ros::Rate loop_rate ( 30 );
 
     const double degree = M_PI/180;
 
@@ -26,11 +26,11 @@ int main(int argc, char** argv) {
     odom_trans.header.frame_id = "world";
     odom_trans.child_frame_id = "base_link";
 
-    while (ros::ok()) {
+    while ( ros::ok() ) {
         //update joint_state
         joint_state.header.stamp = ros::Time::now();
-        joint_state.name.resize(3);
-        joint_state.position.resize(3);
+        joint_state.name.resize ( 3 );
+        joint_state.position.resize ( 3 );
         joint_state.name[0] ="j_x";
         joint_state.position[0] = x;
         joint_state.name[1] ="j_y";
@@ -45,11 +45,11 @@ int main(int argc, char** argv) {
         odom_trans.transform.translation.x = x;
         odom_trans.transform.translation.y = y;
         odom_trans.transform.translation.z = 0.1;
-        odom_trans.transform.rotation = tf::createQuaternionMsgFromYaw(rot);
+        odom_trans.transform.rotation = tf::createQuaternionMsgFromYaw ( rot );
 
         //send the joint state and transform
-        joint_pub.publish(joint_state);
-        broadcaster.sendTransform(odom_trans);
+        joint_pub.publish ( joint_state );
+        broadcaster.sendTransform ( odom_trans );
 
         // This will adjust as needed per iteration
         loop_rate.sleep();

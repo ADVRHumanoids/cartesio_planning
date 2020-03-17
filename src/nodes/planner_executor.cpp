@@ -681,6 +681,7 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
 
 
     _planner->setStartAndGoalStates(qstart, qgoal);
+    std::cout << "start and goal states set" << std::endl;
 
     _planner->solve(time, planner_type);
 

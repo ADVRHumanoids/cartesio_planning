@@ -18,57 +18,52 @@
 
 double x = 0.5;
 
-bool setX(cartesio_planning::setX::Request& req, cartesio_planning::setX::Response& res)
-{
-  x = req.x;
-  
-  return true;
+bool setX ( cartesio_planning::setX::Request& req, cartesio_planning::setX::Response& res ) {
+    x = req.x;
+
+    return true;
 }
 
-int main (int argc, char ** argv)
-{
-  ros::init(argc, argv, "point_cloud_generator");
-  ros::NodeHandle nh;
-  ros::Publisher pub = nh.advertise<pcl::PointCloud<pcl::PointXYZ> >("/velodyne_points",1000);
-  ros::ServiceServer service = nh.advertiseService("setX", setX);
-  
-  pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud (new pcl::PointCloud<pcl::PointXYZ>);
-  
-  ros::Rate rate(10);
-  while (ros::ok())
-  {
-      double res = 0.05;
-      double length = 0.3;
-      std::vector<double> y {-0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15};
-      std::vector<double> z {0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3};
-      
-      point_cloud->header.frame_id = "planner/world";
-      point_cloud->header.stamp = pcl_conversions::toPCL(ros::Time::now());
-  
-      point_cloud->height = 1;
-      point_cloud->width = 7 * z.size();
-      point_cloud->points.resize(point_cloud->height * point_cloud->width);
-      
-      int j = 0;
-      
-      for (int i = 0; i < z.size(); i++)
-      {
-	for (int k = 0; k < y.size(); k++)
-	{
-	  point_cloud->points[j].x = x;
-	  point_cloud->points[j].y = y[k];
-	  point_cloud->points[j].z = z[i];
-	  j++;
-	}
-      }
-      
-      pub.publish(point_cloud);
-      
-      ros::spinOnce();
-      
-      rate.sleep();
-      
-  }
-  
+int main ( int argc, char ** argv ) {
+    ros::init ( argc, argv, "point_cloud_generator" );
+    ros::NodeHandle nh;
+    ros::Publisher pub = nh.advertise<pcl::PointCloud<pcl::PointXYZ> > ( "/velodyne_points",1000 );
+    ros::ServiceServer service = nh.advertiseService ( "setX", setX );
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud ( new pcl::PointCloud<pcl::PointXYZ> );
+
+    ros::Rate rate ( 10 );
+    while ( ros::ok() ) {
+        double res = 0.05;
+        double length = 0.3;
+        std::vector<double> y {-0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15};
+        std::vector<double> z {0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3};
+
+        point_cloud->header.frame_id = "planner/world";
+        point_cloud->header.stamp = pcl_conversions::toPCL ( ros::Time::now() );
+
+        point_cloud->height = 1;
+        point_cloud->width = 7 * z.size();
+        point_cloud->points.resize ( point_cloud->height * point_cloud->width );
+
+        int j = 0;
+
+        for ( int i = 0; i < z.size(); i++ ) {
+            for ( int k = 0; k < y.size(); k++ ) {
+                point_cloud->points[j].x = x;
+                point_cloud->points[j].y = y[k];
+                point_cloud->points[j].z = z[i];
+                j++;
+            }
+        }
+
+        pub.publish ( point_cloud );
+
+        ros::spinOnce();
+
+        rate.sleep();
+
+    }
+
 
 }

@@ -32,6 +32,7 @@
 #include <ompl/base/objectives/MinimaxObjective.h>
 #include <ompl/base/PlannerData.h>
 #include <ompl/control/planners/syclop/SyclopRRT.h>
+#include <ompl/control/planners/syclop/SyclopEST.h>
 
 #include <ompl/base/objectives/StateCostIntegralObjective.h>
 
@@ -94,6 +95,8 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     
     // create control space
     _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, 2);
+    std::cout << "Create a control space" << std::endl;
+
     
 //     set bounds to control space
     _cbounds.setLow(low);
@@ -102,9 +105,11 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
     // create space information
     _cspace_info = std::make_shared<ompl::control::SpaceInformation>(_space, _cspace);
+    std::cout << "Real Vector control space info created" << std::endl;
+
 
     // setup problem definition
-    setup_problem_definition();
+    //setup_problem_definition();
 
 }
 
@@ -132,7 +137,6 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
     // create **constrained** space information
     _space_info = std::make_shared<ompl::base::ConstrainedSpaceInformation>(_space);
-
     // setup problem definition
     setup_problem_definition();
 }
@@ -163,7 +167,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     // create control space
     _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, 2);
     
-//     set bounds to control space
+    // set bounds to control space
     _cbounds.setLow(low);
     _cbounds.setHigh(high);
     _cspace->setBounds(_cbounds);
@@ -207,20 +211,20 @@ void OmplPlanner::setup_problem_definition()
         vss->setNrAttempts(10000);
         return vss;
     };
-
+    
     _space_info->setValidStateSamplerAllocator(vss_alloc);
 
     // create problem definition
-    _pdef = std::make_shared<ompl::base::ProblemDefinition>(_space_info);
-
-    // set optimization objective (todo: provide choice to user)
-    _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(_space_info));
-//     _pdef->setOptimizationObjective(std::make_shared<ompl::base::MechanicalWorkOptimizationObjective>(_space_info));
-//     _pdef->setOptimizationObjective(std::make_shared<ompl::base::ConstraintObjective>(_constraint, _space_info));
-//     _pdef->setOptimizationObjective(std::make_shared<ompl::base::MinimaxObjective>(_space_info));
-//     _pdef->setOptimizationObjective(std::make_shared<ompl::base::StateCostIntegralObjective>(_space_info));
-
-  
+    if (!_options["planner"])
+    {
+        _pdef = std::make_shared<ompl::base::ProblemDefinition>(_space_info);
+        _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(_space_info));
+    }
+    else
+    {
+        _pdef = std::make_shared<ompl::base::ProblemDefinition>(_cspace_info);
+        _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(_cspace_info));
+    }
 }
 
 
@@ -406,8 +410,11 @@ void OmplPlanner::setStateValidityPredicate(StateValidityPredicate svp)
 
         return svp(x);
     };
-
-    _space_info->setStateValidityChecker(ompl_svc);
+    
+    if (!_options["planner"])
+        _space_info->setStateValidityChecker(ompl_svc);
+    else
+        _cspace_info->setStateValidityChecker(ompl_svc);
 }
 
 
@@ -427,13 +434,16 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
     ompl::base::ScopedState<> ompl_goal(_space);
     _sw->setState(ompl_start.get(), start);
     _sw->setState(ompl_goal.get(), goal);
-
+    
     // this resets problem definition
-    setup_problem_definition();
-
+    if (!_options["planner"])
+        setup_problem_definition();
+    else    
+        _pdef = std::make_shared<ompl::base::ProblemDefinition>(_cspace_info);
+ 
     // set start and goal
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal);
-
+    
     // trigger callback
     if(_on_set_start_goal)
     {
@@ -480,12 +490,10 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 {
     _planner = make_planner(planner_type);
 
-
     if(_planner)
     {
         _planner->setProblemDefinition(_pdef);
         _planner->setup();
-
 
         print();
 
@@ -509,7 +517,10 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 
 void OmplPlanner::print(std::ostream &out)
 {
-    _space_info->printSettings(out);
+    if (!_options["planner"])
+        _space_info->printSettings(out);
+    else
+        _cspace_info->printSettings(out);
     _pdef->print(out);
     _planner->printProperties(out);
 }
@@ -642,6 +653,12 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
     {
         auto decomp = std::make_shared<MyGridDecomposition>(32,_bounds);
         return std::make_shared<ompl::control::SyclopRRT>(_cspace_info, decomp);
+    }
+    
+    ADD_PLANNER_AND_IF("SyclopEST")
+    {
+        auto decomp = std::make_shared<MyGridDecomposition>(32,_bounds);
+        return std::make_shared<ompl::control::SyclopEST>(_cspace_info, decomp);
     }
 
     std::cout << "Valid planners are \n";

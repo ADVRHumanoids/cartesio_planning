@@ -51,6 +51,6 @@
   
     
     <node pkg="rviz" type="rviz" name="rviz" 
-        args="-d $(find cartesio_planning)/configs/rviz/example_teleop.rviz" output="screen"/>
+        args="-d $(find cartesio_planning)/configs/rviz/SE2_model.rviz" output="screen"/>
     
 </launch>
