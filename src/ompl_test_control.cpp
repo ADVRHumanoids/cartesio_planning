@@ -317,7 +317,7 @@
          
         // Create a .mat file for post-analysis data
         // Create an instance to the logger variable
-        auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/ompl_control");
+        auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_control");
         logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
         
         // Transform the PathPtr in a PathGeometricPtr
