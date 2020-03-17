@@ -98,7 +98,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     std::cout << "Create a control space" << std::endl;
 
     
-//     set bounds to control space
+    // set bounds to control space
     _cbounds.setLow(low);
     _cbounds.setHigh(high);
     _cspace->setBounds(_cbounds);
