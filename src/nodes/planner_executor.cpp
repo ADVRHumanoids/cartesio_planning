@@ -310,7 +310,8 @@ void PlannerExecutor::init_goal_generator()
         }
         else
         {
-            _goal_generator->setErrorTolerance(_manifold->getTolerance());
+            if(_manifold)
+                _goal_generator->setErrorTolerance(_manifold->getTolerance());
         }
 
         _service_goal_sampler = _nh.advertiseService("goal_sampler_service",
