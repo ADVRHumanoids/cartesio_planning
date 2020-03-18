@@ -50,14 +50,14 @@ public:
     // constructors for planning with controls
     OmplPlanner(const Eigen::VectorXd& bounds_min,
                 const Eigen::VectorXd& bounds_max,
-                double low,
-                double high,
+                double control_min,
+                double control_max,
                 YAML::Node options);
     
     OmplPlanner(const Eigen::VectorXd& bounds_min,
                 const Eigen::VectorXd& bounds_max,
-                double low,
-                double high,
+                double control_min,
+                double control_max  ,
                 ompl::base::ConstraintPtr constraint,
                 YAML::Node options);
 
@@ -104,8 +104,8 @@ private:
 
     ompl::base::ConstraintPtr _constraint;
 
-    ompl::base::RealVectorBounds _bounds;
-    ompl::base::RealVectorBounds _cbounds;
+    ompl::base::RealVectorBounds _sbounds; //state bounds
+    std::shared_ptr<ompl::base::RealVectorBounds> _cbounds; //control bounds
     std::shared_ptr<ompl::base::RealVectorStateSpace> _ambient_space;
     std::shared_ptr<ompl::base::SpaceInformation> _space_info;
     std::shared_ptr<ompl::control::SpaceInformation> _cspace_info;

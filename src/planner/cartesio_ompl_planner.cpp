@@ -46,8 +46,7 @@ using namespace XBot::Cartesian::Planning;
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
                          YAML::Node options):
-    _cbounds(2),
-    _bounds(bounds_min.size()),
+    _sbounds(bounds_min.size()),
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
     _options(options)
@@ -73,15 +72,16 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
-                         double low,
-                         double high,
+                         double control_min,
+                         double control_max,
                          YAML::Node options):
-    _bounds(bounds_min.size()),
-    _cbounds(2),
+    _sbounds(bounds_min.size()),
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
     _options(options)
 {
+    _cbounds = std::make_shared<ompl::base::RealVectorBounds>(2);
+
     _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::REALVECTOR, _size);
 
     // create euclidean state space
@@ -99,9 +99,9 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
     
     // set bounds to control space
-    _cbounds.setLow(low);
-    _cbounds.setHigh(high);
-    _cspace->setBounds(_cbounds);
+    _cbounds->setLow(control_min);
+    _cbounds->setHigh(control_max);
+    _cspace->setBounds(*_cbounds);
 
     // create space information
     _cspace_info = std::make_shared<ompl::control::SpaceInformation>(_space, _cspace);
@@ -117,8 +117,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
                          ompl::base::ConstraintPtr constraint,
                          YAML::Node options):
-    _bounds(bounds_min.size()),
-    _cbounds(2),
+    _sbounds(bounds_min.size()),
     _constraint(constraint),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
     _size(bounds_min.size()),
@@ -143,16 +142,17 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
-                         double low,
-                         double high,
+                         double control_min,
+                         double control_max,
                          ompl::base::ConstraintPtr constraint,
                          YAML::Node options):
-    _bounds(bounds_min.size()),
-    _cbounds(2),
+    _sbounds(bounds_min.size()),
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
     _options(options)
 {
+    _cbounds = std::make_shared<ompl::base::RealVectorBounds>(2);
+
     _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::REALVECTOR, _size);
 
     // create euclidean state space
@@ -168,9 +168,9 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, 2);
     
     // set bounds to control space
-    _cbounds.setLow(low);
-    _cbounds.setHigh(high);
-    _cspace->setBounds(_cbounds);
+    _cbounds->setLow(control_min);
+    _cbounds->setHigh(control_max);
+    _cspace->setBounds(*_cbounds);
 
     // create space information
     _cspace_info = std::make_shared<ompl::control::SpaceInformation>(_space, _cspace);
@@ -196,10 +196,10 @@ void OmplPlanner::set_bounds(const Eigen::VectorXd& bounds_min,
         throw std::invalid_argument("Invalid bound value: max < min");
     }
 
-    Eigen::VectorXd::Map(_bounds.low.data(), _size) = bounds_min;
-    Eigen::VectorXd::Map(_bounds.high.data(), _size) = bounds_max;
+    Eigen::VectorXd::Map(_sbounds.low.data(), _size) = bounds_min;
+    Eigen::VectorXd::Map(_sbounds.high.data(), _size) = bounds_max;
 
-    _ambient_space->setBounds(_bounds);
+    _ambient_space->setBounds(_sbounds);
 
 }
 
@@ -390,8 +390,8 @@ ompl::control::SpaceInformationPtr OmplPlanner::getCSpaceInfo() const
 
 void OmplPlanner::getBounds(Eigen::VectorXd & qmin, Eigen::VectorXd & qmax) const
 {
-    qmin = qmin.Map(_bounds.low.data(), _bounds.low.size());
-    qmax = qmax.Map(_bounds.high.data(), _bounds.high.size());
+    qmin = qmin.Map(_sbounds.low.data(), _sbounds.low.size());
+    qmax = qmax.Map(_sbounds.high.data(), _sbounds.high.size());
 }
 
 StateWrapper OmplPlanner::getStateWrapper() const
@@ -651,13 +651,13 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
     
     ADD_PLANNER_AND_IF("SyclopRRT")
     {
-        auto decomp = std::make_shared<MyGridDecomposition>(32,_bounds);
+        auto decomp = std::make_shared<MyGridDecomposition>(32,_sbounds);
         return std::make_shared<ompl::control::SyclopRRT>(_cspace_info, decomp);
     }
     
     ADD_PLANNER_AND_IF("SyclopEST")
     {
-        auto decomp = std::make_shared<MyGridDecomposition>(32,_bounds);
+        auto decomp = std::make_shared<MyGridDecomposition>(32,_sbounds);
         return std::make_shared<ompl::control::SyclopEST>(_cspace_info, decomp);
     }
 
