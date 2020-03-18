@@ -189,62 +189,53 @@
      void project(const ob::State* s, std::vector<double>& coord) const override
      {
          coord.resize(2);
-         coord[0] = s->as<ob::SE2StateSpace::StateType>()->getX();
-         coord[1] = s->as<ob::SE2StateSpace::StateType>()->getY();
+         coord[0] = s->as<ob::RealVectorStateSpace::StateType>()->values[0];
+         coord[1] = s->as<ob::RealVectorStateSpace::StateType>()->values[1];
      }
  
      void sampleFullState(const ob::StateSamplerPtr& sampler, const std::vector<double>& coord, ob::State* s) const override
      {
          sampler->sampleUniform(s);
-         s->as<ob::SE2StateSpace::StateType>()->setXY(coord[0], coord[1]);
+         s->as<ob::RealVectorStateSpace::StateType>()->values[0] = coord[0];
+         s->as<ob::RealVectorStateSpace::StateType>()->values[1] = coord[1];
      }
  };
  
  bool isStateValid(const oc::SpaceInformation *si, const ob::State *state)
  {
-     //    ob::ScopedState<ob::SE2StateSpace>
-     // cast the abstract state type to the type we expect
-     const auto *se2state = state->as<ob::SE2StateSpace::StateType>();
  
      // extract the first component of the state and cast it to what we expect
-     const auto *pos = se2state->as<ob::RealVectorStateSpace::StateType>(0);
- 
-     // extract the second component of the state and cast it to what we expect
-     const auto *rot = se2state->as<ob::SO2StateSpace::StateType>(1);
- 
-     // check validity of state defined by pos & rot
- 
+     const auto pos = state->as<ob::RealVectorStateSpace::StateType>()->values;
  
      // return a value that is always true but uses the two variables we define, so we avoid compiler warnings
-     return si->satisfiesBounds(state) && (!(pos->values[0] > 1 && pos->values[0] < 2 && pos->values[1] < 2 && pos->values[1] > -2));
+     return si->satisfiesBounds(state) && (!(pos[0] > 1 && pos[0] < 2 && pos[1] < 2 && pos[1] > -2));
  }
  
  void propagate(const ob::State *start, const oc::Control *control, const double duration, ob::State *result)
  {
-     const auto *se2state = start->as<ob::SE2StateSpace::StateType>();
-     const double* pos = se2state->as<ob::RealVectorStateSpace::StateType>(0)->values;
-     const double rot = se2state->as<ob::SO2StateSpace::StateType>(1)->value;
-     const double* ctrl = control->as<oc::RealVectorControlSpace::ControlType>()->values;
+     auto pos = start->as<ompl::base::RealVectorStateSpace::StateType>()->values;
+     auto ctrl = control->as<oc::RealVectorControlSpace::ControlType>()->values;
  
-     result->as<ob::SE2StateSpace::StateType>()->setXY(
-         pos[0] + ctrl[0] * duration * cos(rot),
-         pos[1] + ctrl[0] * duration * sin(rot));
-     result->as<ob::SE2StateSpace::StateType>()->setYaw(
-         rot    + ctrl[1] * duration);
+     auto r_result = result->as<ob::RealVectorStateSpace::StateType>()->values;
+     r_result[0] = pos[0] + ctrl[0] * duration * cos(pos[2]);
+     r_result[1] = pos[1] + ctrl[0] * duration * sin(pos[2]);
+     r_result[2] = pos[2] + ctrl[1] * duration;
  }
  
  void plan()
  {
  
      // construct the state space we are planning in
-     auto space(std::make_shared<ob::SE2StateSpace>());
+     auto space(std::make_shared<ob::RealVectorStateSpace>(3));
  
      // set the bounds for the R^2 part of SE(2)
-     ob::RealVectorBounds bounds(2);
+     ob::RealVectorBounds bounds(3);
      bounds.setLow(0, -0.5);
      bounds.setLow(1, -3.0);
+     bounds.setLow(2, -3.14);
      bounds.setHigh(0, 5.5);
      bounds.setHigh(1, 3.0);
+     bounds.setHigh(2, 3.14);
  
      space->setBounds(bounds);
  
@@ -253,14 +244,14 @@
  
      // set the bounds for the control space
      ob::RealVectorBounds cbounds(2);
-     cbounds.setLow(-0.3);
-     cbounds.setHigh(0.3);
+     cbounds.setLow(-1.0);
+     cbounds.setHigh(1.0);
  
      cspace->setBounds(cbounds);
  
      // construct an instance of  space information from this control space
      auto si(std::make_shared<oc::SpaceInformation>(space, cspace));
- 
+
      // set state validity checking for this space
      si->setStateValidityChecker(
          [&si](const ob::State *state) { return isStateValid(si.get(), state); });
@@ -269,16 +260,17 @@
      si->setStatePropagator(propagate);
  
      // create a start state
-     ob::ScopedState<ob::SE2StateSpace> start(space);
-     start->setX(0.0);
-     start->setY(0.0);
-     start->setYaw(0.0);
+     ob::ScopedState<ob::RealVectorStateSpace> start(space);
+     start->values[0] = 0.0;
+     start->values[1] = 0.0;
+     start->values[2] = 0.0;
  
      // create a goal state
-     ob::ScopedState<ob::SE2StateSpace> goal(space);
-     goal->setX(5.0);
-     goal->setY(1.5);
- 
+     ob::ScopedState<ob::RealVectorStateSpace> goal(space);
+     goal->values[0] = 5.0;
+     goal->values[1] = 1.5;
+     goal->values[2] = 0.0;
+     
      // create a problem instance
      auto pdef(std::make_shared<ob::ProblemDefinition>(si));
  
@@ -292,6 +284,7 @@
      auto decomp(std::make_shared<MyDecomposition>(32, bounds));
      auto planner(std::make_shared<oc::SyclopEST>(si, decomp));
      //auto planner(std::make_shared<oc::SyclopRRT>(si, decomp));
+     
  
      // set the problem we are trying to solve for the planner
      planner->setProblemDefinition(pdef);
@@ -317,35 +310,35 @@
          
         // Create a .mat file for post-analysis data
         // Create an instance to the logger variable
-        auto logger = XBot::MatLogger2::MakeLogger("/tmp/ompl_control");
-        logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
-        
-        // Transform the PathPtr in a PathGeometricPtr
-        auto path_geom = path->as<ompl::geometric::PathGeometric>();
-        
-        // Convert in Eigen::VectorXd
-        std::vector<Eigen::Vector3d> path_vect(path_geom->getStateCount());
-        for(int j = 0; j < path_geom->getStateCount(); j++)
-        {
-            path_vect[j](0) = path_geom->getState(j)->as<ompl::base::SE2StateSpace::StateType>()->getX();
-            path_vect[j](1) = path_geom->getState(j)->as<ompl::base::SE2StateSpace::StateType>()->getY();
-            path_vect[j](2) = path_geom->getState(j)->as<ompl::base::SE2StateSpace::StateType>()->getYaw();
-            
-            logger->add("computed_path", path_vect[j]);
-        }
-                
-        // Add PlannerData elements
-        ompl::control::PlannerData data(si);
-        planner->getPlannerData(data);
-        std::vector<Eigen::Vector3d> vertices(data.numVertices());
-        for (int i = 0; i < data.numVertices(); i++)
-        {
-            vertices[i](0) = data.getVertex(i).getState()->as<ompl::base::SE2StateSpace::StateType>()->getX();
-            vertices[i](1) = data.getVertex(i).getState()->as<ompl::base::SE2StateSpace::StateType>()->getY();
-            vertices[i](2) = data.getVertex(i).getState()->as<ompl::base::SE2StateSpace::StateType>()->getYaw();
-            
-            logger->add("vertices", vertices[i]);
-        }       
+//         auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/ompl_control");
+//         logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+//         
+//         // Transform the PathPtr in a PathGeometricPtr
+//         auto path_geom = path->as<ompl::geometric::PathGeometric>();
+//         
+//         // Convert in Eigen::VectorXd
+//         std::vector<Eigen::Vector3d> path_vect(path_geom->getStateCount());
+//         for(int j = 0; j < path_geom->getStateCount(); j++)
+//         {
+//             path_vect[j](0) = path_geom->getState(j)->as<ompl::base::SE2StateSpace::StateType>()->getX();
+//             path_vect[j](1) = path_geom->getState(j)->as<ompl::base::SE2StateSpace::StateType>()->getY();
+//             path_vect[j](2) = path_geom->getState(j)->as<ompl::base::SE2StateSpace::StateType>()->getYaw();
+//             
+//             logger->add("computed_path", path_vect[j]);
+//         }
+//                 
+//         // Add PlannerData elements
+//         ompl::control::PlannerData data(si);
+//         planner->getPlannerData(data);
+//         std::vector<Eigen::Vector3d> vertices(data.numVertices());
+//         for (int i = 0; i < data.numVertices(); i++)
+//         {
+//             vertices[i](0) = data.getVertex(i).getState()->as<ompl::base::SE2StateSpace::StateType>()->getX();
+//             vertices[i](1) = data.getVertex(i).getState()->as<ompl::base::SE2StateSpace::StateType>()->getY();
+//             vertices[i](2) = data.getVertex(i).getState()->as<ompl::base::SE2StateSpace::StateType>()->getYaw();
+//             
+//             logger->add("vertices", vertices[i]);
+//         }       
          
          std::cout << "Found solution:" << std::endl;
  
@@ -356,80 +349,10 @@
          std::cout << "No solution found" << std::endl;
  }
  
- 
- void planWithSimpleSetup()
+ int main()
  {
-     // construct the state space we are planning in
-     auto space(std::make_shared<ob::SE2StateSpace>());
- 
-     // set the bounds for the R^2 part of SE(2)
-     ob::RealVectorBounds bounds(2);
-     bounds.setLow(-1);
-     bounds.setHigh(1);
- 
-     space->setBounds(bounds);
- 
-     // create a control space
-     auto cspace(std::make_shared<oc::RealVectorControlSpace>(space, 2));
- 
-     // set the bounds for the control space
-     ob::RealVectorBounds cbounds(2);
-     cbounds.setLow(-0.3);
-     cbounds.setHigh(0.3);
- 
-     cspace->setBounds(cbounds);
- 
-     // define a simple setup class
-     oc::SimpleSetup ss(cspace);
- 
-     // set the state propagation routine
-     ss.setStatePropagator(propagate);
- 
-     // set state validity checking for this space
-     ss.setStateValidityChecker(
-         [&ss](const ob::State *state) { return isStateValid(ss.getSpaceInformation().get(), state); });
- 
-     // create a start state
-     ob::ScopedState<ob::SE2StateSpace> start(space);
-     start->setX(-0.5);
-     start->setY(0.0);
-     start->setYaw(0.0);
- 
-     // create a  goal state; use the hard way to set the elements
-     ob::ScopedState<ob::SE2StateSpace> goal(space);
-     (*goal)[0]->as<ob::RealVectorStateSpace::StateType>()->values[0] = 0.0;
-     (*goal)[0]->as<ob::RealVectorStateSpace::StateType>()->values[1] = 0.5;
-     (*goal)[1]->as<ob::SO2StateSpace::StateType>()->value = 0.0;
- 
- 
-     // set the start and goal states
-     ss.setStartAndGoalStates(start, goal, 0.05);
- 
-     // ss.setPlanner(std::make_shared<oc::PDST>(ss.getSpaceInformation()));
-     // ss.getSpaceInformation()->setMinMaxControlDuration(1,100);
-     // attempt to solve the problem within one second of planning time
-     ob::PlannerStatus solved = ss.solve(10.0);
- 
-     if (solved)
-     {
-         std::cout << "Found solution:" << std::endl;
-         // print the path to screen
- 
-         ss.getSolutionPath().printAsMatrix(std::cout);
-     }
-     else
-         std::cout << "No solution found" << std::endl;
- }
- 
- int main(int /*argc*/, char ** /*argv*/)
- {
-     std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
  
      plan();
-     //
-     // std::cout << std::endl << std::endl;
-     //
-//      planWithSimpleSetup();
- 
+
      return 0;
  }

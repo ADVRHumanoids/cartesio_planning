@@ -143,7 +143,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(BEFORE SYSTEM
+include_directories(#BEFORE SYSTEM
     src/
     include
     ${OMPL_INCLUDE_DIRS}
