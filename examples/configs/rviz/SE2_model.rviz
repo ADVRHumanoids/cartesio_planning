@@ -169,13 +169,13 @@ Visualization Manager:
       Value: true
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
-      Enabled: false
+      Enabled: true
       Name: InteractiveMarkers
       Show Axes: false
       Show Descriptions: true
       Show Visual Aids: false
       Update Topic: /simple_marker_floor/update
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /planner/start/robot_markers
@@ -235,10 +235,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.799796224
+      Pitch: 0.619796276
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.50674391
+      Yaw: 4.41174412
     Saved: ~
 Window Geometry:
   Displays:
