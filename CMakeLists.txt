@@ -167,7 +167,9 @@ add_library(cartesio_planning SHARED
     src/validity_checker/collisions/planning_scene_wrapper.cpp
     src/validity_checker/validity_checker_factory.cpp
     src/validity_checker/validity_predicate_aggregate.cpp
-    src/nodes/goal_generation.cpp)
+    src/nodes/goal_generation.cpp
+    src/propagators/RK1.cpp
+)
 
 target_link_libraries(cartesio_planning
     PUBLIC
