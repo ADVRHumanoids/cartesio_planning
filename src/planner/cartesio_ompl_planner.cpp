@@ -28,6 +28,8 @@
 #include <ompl/geometric/planners/kpiece/BKPIECE1.h>
 #include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
 
+#include <ompl/control/planners/rrt/RRT.h>
+
 
 #include "cartesio_ompl_planner.h"
 #include "utils/parse_yaml_utils.h"
@@ -492,7 +494,10 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
 
     ADD_PLANNER_AND_IF("RRT")
     {
-        return std::make_shared<ompl::geometric::RRT>(_space_info);
+        if(_cspace_info)
+            return std::make_shared<ompl::control::RRT>(_cspace_info);
+        else
+            return std::make_shared<ompl::geometric::RRT>(_space_info);
     }
 
     ADD_PLANNER_AND_IF("RRTConnect")
