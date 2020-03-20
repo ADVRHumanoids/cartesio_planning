@@ -32,6 +32,8 @@
 #include "cartesio_ompl_planner.h"
 #include "utils/parse_yaml_utils.h"
 
+#include "propagators/RK1.h"
+
 using namespace XBot::Cartesian::Planning;
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
@@ -95,6 +97,10 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
     // setup problem definition
     setup_problem_definition(_cspace_info);
+
+    ///TODO: this should be added by config using proper factory
+    std::shared_ptr<Propagators::RK1> rk1 = std::make_shared<Propagators::RK1>(_cspace_info.get(), *_sw);
+    _cspace_info->setStatePropagator(rk1);
 
 }
 
