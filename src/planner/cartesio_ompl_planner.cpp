@@ -89,7 +89,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _space_info = std::make_shared<ompl::base::SpaceInformation>(_space);
     ///
 
-
+    _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, control_min.size());
     _cbounds = std::make_shared<ompl::base::RealVectorBounds>(control_min.size());
     set_control_bounds(control_min, control_max);
 
