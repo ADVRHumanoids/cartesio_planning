@@ -1,11 +1,9 @@
 state_validity_check:
-    - collisions
+    - self_collision
 
-
-collisions:
+self_collision:
     type: "CollisionCheck"
     include_environment: true
-
 
 RRTstar:
     GoalBias: 0.1
@@ -14,5 +12,3 @@ RRTstar:
 
 state_space:
     type: "Atlas"
-
-control_space:

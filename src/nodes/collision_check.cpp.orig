@@ -1,0 +1,201 @@
+#include <ros/ros.h>
+#include <sensor_msgs/JointState.h>
+#include <Eigen/Dense>
+#include <robot_state_publisher/robot_state_publisher.h>
+#include <XBotInterface/ModelInterface.h>
+#include <RobotInterfaceROS/ConfigFromParam.h>
+#include <tf/transform_broadcaster.h>
+#include <tf_conversions/tf_eigen.h>
+#include <tf/transform_listener.h>
+#include "constraints/self_collision_checker.h"
+#include <visualization_msgs/MarkerArray.h>
+
+Eigen::VectorXd q;
+XBot::ModelInterface::Ptr model;
+XBot::Cartesian::Planning::SelfCollisionChecker::Ptr scc;
+
+
+Eigen::Affine3d toAffine3d(const urdf::Pose& p)
+{
+    Eigen::Affine3d T;
+
+    T.translation()[0] = p.position.x;
+    T.translation()[1] = p.position.y;
+    T.translation()[2] = p.position.z;
+
+    T.linear() = Eigen::Matrix3d(Eigen::Quaterniond(p.rotation.w, p.rotation.x, p.rotation.y, p.rotation.z));
+    return T;
+}
+
+void jointCallBack(const sensor_msgs::JointState::ConstPtr& msg)
+{
+    sensor_msgs::JointState jmsg = *msg;
+    q = Eigen::Map<Eigen::VectorXd>(jmsg.position.data(), jmsg.position.size());
+
+    model->setJointPosition(q);
+    model->update();
+    scc->updateCollisionObjects();
+}
+
+typedef std::map<XBot::Cartesian::Planning::SelfCollisionChecker::collision_pair, bool> collision_pairs_map;
+
+collision_pairs_map createFullCollisionMatrix(const XBot::ModelInterface& model)
+{
+    std::vector<urdf::LinkSharedPtr> links;
+    model.getUrdf().getLinks(links);
+
+    collision_pairs_map collision_pairs;
+
+    urdf::LinkSharedPtr l;
+    l->name;
+
+    XBot::Cartesian::Planning::SelfCollisionChecker::collision_pair collision_pair;
+    for(auto link1 : links)
+    {
+        if(link1->collision)
+        {
+            for(auto link2 : links)
+            {
+                if(link2->collision)
+                {
+                    collision_pair.first = link1->name;
+                    collision_pair.second = link2->name;
+                    const bool is_in = collision_pairs.find(collision_pair) != collision_pairs.end();
+                    if(!is_in)
+                            collision_pairs[collision_pair] = false;
+                }
+            }
+        }
+    }
+    return collision_pairs;
+}
+
+void checkCollisions(collision_pairs_map& collision_pairs, XBot::Cartesian::Planning::SelfCollisionChecker::Ptr scc)
+{
+    for(collision_pairs_map::iterator it = collision_pairs.begin(); it != collision_pairs.end(); it++)
+    {
+        std::cout<<"check "<<it->first.first<<" vs "<<it->first.second<<std::endl;
+        if(scc->inCollision(it->first))
+            it->second = true;
+    }
+}
+
+
+
+
+visualization_msgs::MarkerArray createRobotMarkerArray(const XBot::ModelInterface& model,
+                                                       collision_pairs_map& collision_pairs)
+{
+    visualization_msgs::MarkerArray markers;
+
+    std::string bl; model.getFloatingBaseLink(bl);
+
+    ros::Time t = ros::Time::now();
+
+    std::vector<urdf::LinkSharedPtr> links;
+    model.getUrdf().getLinks(links);
+
+    int id = 0;
+    for(auto link : links)
+    {
+        if(link->collision)
+        {
+            if(link->collision->geometry->type == urdf::Geometry::MESH)
+            {
+
+                visualization_msgs::Marker marker;
+
+                marker.header.frame_id = "ci/"+bl;
+                marker.header.stamp = t;
+                marker.ns = "collision_robot";
+                marker.id = id;
+
+                marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+                marker.action = visualization_msgs::Marker::ADD;
+
+                Eigen::Affine3d pose; model.getPose(link->name, bl, pose);
+
+                pose = pose*toAffine3d(link->collision->origin);
+
+                marker.pose.position.x = pose.translation()[0];
+                marker.pose.position.y = pose.translation()[1];
+                marker.pose.position.z = pose.translation()[2];
+                Eigen::Quaterniond q(pose.linear());
+                marker.pose.orientation.x = q.x();
+                marker.pose.orientation.y = q.y();
+                marker.pose.orientation.z = q.z();
+                marker.pose.orientation.w = q.w();
+
+                boost::shared_ptr<urdf::Mesh> mesh =
+                        boost::static_pointer_cast<urdf::Mesh>(link->collision->geometry);
+
+                marker.mesh_resource = mesh->filename;
+                marker.scale.x = mesh->scale.x;
+                marker.scale.y = mesh->scale.y;
+                marker.scale.z = mesh->scale.z;
+
+                bool in_collision = false;
+                for(collision_pairs_map::iterator it = collision_pairs.begin(); it != collision_pairs.end(); it++)
+                {
+                    if(link->name == it->first.first || link->name == it->first.second)
+                    {
+                        in_collision = true;
+                        break;
+                    }
+                }
+                if(in_collision)
+                {
+                    marker.color.a = 1.0;
+                    marker.color.r = 0.0;
+                    marker.color.g = 1.0;
+                    marker.color.b = 0.0;
+                }
+                else
+                {
+                    marker.color.a = 1.0;
+                    marker.color.r = 1.0;
+                    marker.color.g = 0.0;
+                    marker.color.b = 0.0;
+                }
+
+
+                markers.markers.push_back(marker);
+
+                id++;
+            }
+        }
+    }
+    return markers;
+}
+
+int main(int argc, char **argv)
+{
+    ros::init(argc, argv, "collision_check");
+
+    ros::NodeHandle n("cartesian");
+
+    auto cfg = XBot::ConfigOptionsFromParamServer();
+    model = XBot::ModelInterface::getModel(cfg);
+
+    q.setZero(model->getJointNum());
+
+    scc = std::make_shared<XBot::Cartesian::Planning::SelfCollisionChecker>(*model);
+
+    ros::Subscriber joint_trj_sub = n.subscribe("solution", 10, jointCallBack);
+
+    ros::Publisher vis_pub = n.advertise<visualization_msgs::MarkerArray>( "collision_robot", 0 );
+
+
+    collision_pairs_map cpm = createFullCollisionMatrix(*model);
+
+    ros::Rate rate(100);
+    while(ros::ok())
+    {
+       checkCollisions(cpm, scc);
+
+        vis_pub.publish(createRobotMarkerArray(*model, cpm));
+
+        ros::spinOnce();
+        rate.sleep();
+    }
+}

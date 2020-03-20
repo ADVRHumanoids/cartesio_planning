@@ -16,6 +16,9 @@
 #include <ompl/base/samplers/UniformValidStateSampler.h>
 #include <ompl/base/samplers/ObstacleBasedValidStateSampler.h>
 
+#include <ompl/control/spaces/RealVectorControlSpace.h>
+#include <ompl/control/SpaceInformation.h>
+
 #include <Eigen/Dense>
 #include <yaml-cpp/yaml.h>
 
@@ -41,6 +44,20 @@ public:
                 const Eigen::VectorXd& bounds_max,
                 ompl::base::ConstraintPtr constraint,
                 YAML::Node options);
+
+    // constructors for planning with controls
+    OmplPlanner(const Eigen::VectorXd& bounds_min,
+                const Eigen::VectorXd& bounds_max,
+                const Eigen::VectorXd& control_min,
+                const Eigen::VectorXd& control_max,
+                YAML::Node options);
+
+//    OmplPlanner(const Eigen::VectorXd& bounds_min,
+//                const Eigen::VectorXd& bounds_max,
+//                const Eigen::VectorXd& control_min,
+//                const Eigen::VectorXd& control_max,
+//                ompl::base::ConstraintPtr constraint,
+//                YAML::Node options);
 
     void setStateValidityPredicate(StateValidityPredicate svc);
 
@@ -70,7 +87,10 @@ private:
     void set_bounds(const Eigen::VectorXd& bounds_min,
                    const Eigen::VectorXd& bounds_max);
 
-    void setup_problem_definition();
+    void set_control_bounds(const Eigen::VectorXd& control_min,
+                            const Eigen::VectorXd& control_max);
+
+    void setup_problem_definition(std::shared_ptr<ompl::base::SpaceInformation> space_info);
 
     ompl::base::PlannerPtr make_planner(const std::string& planner_type);
     ompl::base::PlannerPtr make_RRTstar();
@@ -82,7 +102,8 @@ private:
 
     ompl::base::ConstraintPtr _constraint;
 
-    ompl::base::RealVectorBounds _bounds;
+    ompl::base::RealVectorBounds _sbounds; //state bounds
+
     std::shared_ptr<ompl::base::RealVectorStateSpace> _ambient_space;
     std::shared_ptr<ompl::base::SpaceInformation> _space_info;
 
@@ -91,6 +112,11 @@ private:
     ompl::base::PlannerStatus _solved;
 
     std::shared_ptr<ompl::base::StateSpace> _space;
+
+    std::shared_ptr<ompl::base::RealVectorBounds> _cbounds; //control bounds
+    std::shared_ptr<ompl::control::RealVectorControlSpace> _cspace;
+    std::shared_ptr<ompl::control::SpaceInformation> _cspace_info;
+
     std::function<void(void)> _on_reset_space;
     std::function<void(const ompl::base::State* start,
                        const ompl::base::State* goal)> _on_set_start_goal;

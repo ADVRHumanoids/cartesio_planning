@@ -23,7 +23,11 @@
 
 #include "nodes/goal_generation.h"
 
+<<<<<<< HEAD
 #include "planner/cartesian_trajectory_interpolation.h"
+=======
+#include "planner/trajectory_interpolation.h"
+>>>>>>> 0339557... trajectory interpolation is now in planner_service. Added argument to CartesioPlanner service
 
 namespace XBot { namespace Cartesian {
 
@@ -70,6 +74,7 @@ public:
             };
      */
     int callPlanner(const double time, const std::string& planner_type, const double interpolation_time, std::vector<Eigen::VectorXd>& trajectory);
+<<<<<<< HEAD
     /**
      * @param base_distal_links couple of base_link and distal_link to compute Cartesian trajectory
      * @param cartesian_trajectories vector of Cartesian trajactories (each element correspond to couple base_link, distal_link)
@@ -78,6 +83,8 @@ public:
                     const std::vector<std::pair<std::string, std::string> > base_distal_links,
                     std::vector<Eigen::VectorXd>& trajectory,
                     std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories);
+=======
+>>>>>>> 0339557... trajectory interpolation is now in planner_service. Added argument to CartesioPlanner service
 
 private:
 
@@ -136,9 +143,11 @@ private:
     bool _use_goal_generator;
     ros::ServiceServer _service_goal_sampler;
 
+<<<<<<< HEAD
     CartesianTrajectoryInterpolation::Ptr _interpolator;
-
-    bool _plan_controls;
+=======
+    TrajectoryInterpolation::Ptr _interpolator;
+>>>>>>> 0339557... trajectory interpolation is now in planner_service. Added argument to CartesioPlanner service
 };
 
 } }

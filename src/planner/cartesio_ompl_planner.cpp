@@ -28,6 +28,7 @@
 #include <ompl/geometric/planners/kpiece/BKPIECE1.h>
 #include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
 
+
 #include "cartesio_ompl_planner.h"
 #include "utils/parse_yaml_utils.h"
 
@@ -36,7 +37,7 @@ using namespace XBot::Cartesian::Planning;
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
                          YAML::Node options):
-    _bounds(bounds_min.size()),
+    _sbounds(bounds_min.size()),
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
     _options(options)
@@ -56,15 +57,53 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _space_info = std::make_shared<ompl::base::SpaceInformation>(_space);
 
     // setup problem definition
-    setup_problem_definition();
+    setup_problem_definition(_space_info);
 
 }
+
+OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
+            const Eigen::VectorXd& bounds_max,
+                         const Eigen::VectorXd& control_min,
+                         const Eigen::VectorXd& control_max,
+            YAML::Node options):
+    _sbounds(bounds_min.size()),
+    _size(bounds_min.size()),
+    _solved(ompl::base::PlannerStatus::UNKNOWN),
+    _options(options)
+{
+    ///
+    _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::REALVECTOR, _size);
+
+    // create euclidean state space
+    _ambient_space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
+
+    // unconstrained case -> state space = ambient state space
+    _space = _ambient_space;
+
+    // set bounds to state space
+    set_bounds(bounds_min, bounds_max);
+
+    // create space information
+    _space_info = std::make_shared<ompl::base::SpaceInformation>(_space);
+    ///
+
+
+    _cbounds = std::make_shared<ompl::base::RealVectorBounds>(control_min.size());
+    set_control_bounds(control_min, control_max);
+
+    _cspace_info = std::make_shared<ompl::control::SpaceInformation>(_space, _cspace);
+
+    // setup problem definition
+    setup_problem_definition(_cspace_info);
+
+}
+
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
                          ompl::base::ConstraintPtr constraint,
                          YAML::Node options):
-    _bounds(bounds_min.size()),
+    _sbounds(bounds_min.size()),
     _constraint(constraint),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
     _size(bounds_min.size()),
@@ -85,7 +124,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _space_info = std::make_shared<ompl::base::ConstrainedSpaceInformation>(_space);
 
     // setup problem definition
-    setup_problem_definition();
+    setup_problem_definition(_space_info);
 }
 
 void OmplPlanner::set_bounds(const Eigen::VectorXd& bounds_min,
@@ -104,14 +143,36 @@ void OmplPlanner::set_bounds(const Eigen::VectorXd& bounds_min,
         throw std::invalid_argument("Invalid bound value: max < min");
     }
 
-    Eigen::VectorXd::Map(_bounds.low.data(), _size) = bounds_min;
-    Eigen::VectorXd::Map(_bounds.high.data(), _size) = bounds_max;
+    Eigen::VectorXd::Map(_sbounds.low.data(), _size) = bounds_min;
+    Eigen::VectorXd::Map(_sbounds.high.data(), _size) = bounds_max;
 
-    _ambient_space->setBounds(_bounds);
+    _ambient_space->setBounds(_sbounds);
 
 }
 
-void OmplPlanner::setup_problem_definition()
+void OmplPlanner::set_control_bounds(const Eigen::VectorXd& control_min,
+                                     const Eigen::VectorXd& control_max)
+{
+    if((control_max.array() < control_min.array()).any())
+    {
+        throw std::invalid_argument("Invalid control bound value: max < min");
+    }
+
+    if(control_min.size() != control_max.size())
+    {
+        throw std::invalid_argument("Invalid control bound size: control_min.size() != control_max.size()");
+    }
+
+    for(unsigned int i = 0; i < control_min.size(); ++i)
+    {
+        _cbounds->setLow(i, control_min[i]);
+        _cbounds->setHigh(i, control_max[i]);
+    }
+
+    _cspace->setBounds(*_cbounds);
+}
+
+void OmplPlanner::setup_problem_definition(std::shared_ptr<ompl::base::SpaceInformation> space_info)
 {
     auto vss_alloc = [](const ompl::base::SpaceInformation * si)
     {
@@ -120,13 +181,9 @@ void OmplPlanner::setup_problem_definition()
         return vss;
     };
 
-    _space_info->setValidStateSamplerAllocator(vss_alloc);
-
-    // create problem definition
-    _pdef = std::make_shared<ompl::base::ProblemDefinition>(_space_info);
-
-    // set optimization objective (todo: provide choice to user)
-    _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(_space_info));
+    space_info->setValidStateSamplerAllocator(vss_alloc);
+    _pdef = std::make_shared<ompl::base::ProblemDefinition>(space_info);
+    _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(space_info));
 }
 
 
@@ -251,8 +308,8 @@ ompl::base::SpaceInformationPtr OmplPlanner::getSpaceInfo() const
 
 void OmplPlanner::getBounds(Eigen::VectorXd & qmin, Eigen::VectorXd & qmax) const
 {
-    qmin = qmin.Map(_bounds.low.data(), _bounds.low.size());
-    qmax = qmax.Map(_bounds.high.data(), _bounds.high.size());
+    qmin = qmin.Map(_sbounds.low.data(), _sbounds.low.size());
+    qmax = qmax.Map(_sbounds.high.data(), _sbounds.high.size());
 }
 
 StateWrapper OmplPlanner::getStateWrapper() const
@@ -294,7 +351,10 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
     _sw->setState(ompl_goal.get(), goal);
 
     // this resets problem definition
-    setup_problem_definition();
+    if(_cspace_info)
+        setup_problem_definition(_cspace_info);
+    else
+        setup_problem_definition(_space_info);
 
     // set start and goal
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal);

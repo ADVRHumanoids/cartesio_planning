@@ -134,23 +134,13 @@ void PlannerExecutor::init_load_planner()
     Eigen::VectorXd qmin, qmax;
     _model->getJointLimits(qmin, qmax);
 
-    Eigen::VectorXd qdotlims; //[rad/sec]
-    _model->getVelocityLimits(qdotlims);
-
-    if(_planner_config["control_space"])
-    {
-        _plan_controls = true;
-        std::cout<<"Planner works in control space!"<<std::endl;
-    }
-    else
-    {
-        _plan_controls = false;
-        std::cout<<"Planner works in state space!"<<std::endl;
-    }
-
     if(_model->isFloatingBase())
     {
+<<<<<<< HEAD
+        qmax.head<6>() << 1, 1, 1, M_PI, M_PI, M_PI;
+=======
         qmax.head<6>() << 1.0, 1.0, 1.0, 2*M_PI, 2*M_PI, 2*M_PI;
+>>>>>>> 60ec0de... fixed error tolerance for ik goal_generator
         qmin.head<6>() << -qmax.head<6>();
 
         YAML_PARSE_OPTION(_planner_config["state_space"],
@@ -177,55 +167,22 @@ void PlannerExecutor::init_load_planner()
                     floating_base_pos_max[2];
         }
 
-        if(_plan_controls)
-        {
-            qdotlims.head<6>() << 1., 1., 1., 2*M_PI, 2*M_PI, 2*M_PI;
-
-            YAML_PARSE_OPTION(_planner_config["control_space"],
-                    floating_base_velocity_limits,
-                    std::vector<double>,
-                    {});
-
-            if(floating_base_velocity_limits.size() > 0)
-            {
-                for(unsigned int i = 0; i < floating_base_velocity_limits.size(); ++i)
-                    qdotlims[i] = floating_base_velocity_limits[i];
-
-            }
-
-        }
-
     }
-
-
 
     if(ompl_constraint)
     {
         std::cout << "Constructing a constrained ompl planner" << std::endl;
-
-        if(_plan_controls)
-        {
-
-        }
-        else
-        {
-            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, ompl_constraint, _planner_config);
-        }
-
-
+        _planner = std::make_shared<Planning::OmplPlanner>(qmin,
+                                                           qmax,
+                                                           ompl_constraint,
+                                                           _planner_config);
     }
     else
     {
         std::cout << "Constructing an unconstrained ompl planner" << std::endl;
-
-        if(_plan_controls)
-        {
-            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, _planner_config);
-        }
-        else
-        {
-            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, _planner_config);
-        }
+        _planner = std::make_shared<Planning::OmplPlanner>(qmin,
+                                                           qmax,
+                                                           _planner_config);
     }
 
 
@@ -357,8 +314,7 @@ void PlannerExecutor::init_goal_generator()
         }
         else
         {
-            if(_manifold)
-                _goal_generator->setErrorTolerance(_manifold->getTolerance());
+            _goal_generator->setErrorTolerance(_manifold->getTolerance());
         }
 
         _service_goal_sampler = _nh.advertiseService("goal_sampler_service",
@@ -503,6 +459,7 @@ void PlannerExecutor::setStartState(const XBot::JointNameMap& q)
     }
 }
 
+
 void PlannerExecutor::on_start_state_recv(const sensor_msgs::JointStateConstPtr & msg)
 {
     // tbd: input checking
@@ -569,7 +526,7 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     if(req.planner_type == "")
     {
         req.planner_type = "RRTstar";
-    } 
+    }
 
     std::cout << "Requested planner " << req.planner_type << std::endl;
 
