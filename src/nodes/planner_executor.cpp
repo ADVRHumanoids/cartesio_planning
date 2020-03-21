@@ -573,18 +573,30 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
 
     std::cout << "Requested planner " << req.planner_type << std::endl;
 
+    if(req.goal_threshold <= 0.)
+    {
+        res.status.msg.data = "goal_threshold arg should be > 0";
+        res.status.val = ompl::base::PlannerStatus::ABORT;
+        return true;
+    }
+
+    std::cout<< "goal_threshold: "<<req.goal_threshold<<std::endl;
+
+
+
+
 
 
     std::vector<Eigen::VectorXd> trajectory;
     std::vector<std::vector<Eigen::Affine3d> > cartesian_trajectories;
     if(_distal_links.empty())
-        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, trajectory);
+        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, req.goal_threshold, trajectory);
     else
     {
         std::vector<std::pair<std::string, std::string> > base_distal_links;
         for(unsigned int i = 0; i < _distal_links.size(); ++i)
             base_distal_links.push_back(std::pair<std::string, std::string>(_base_links[i], _distal_links[i]));
-        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, base_distal_links,
+        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, req.goal_threshold, base_distal_links,
                                      trajectory, cartesian_trajectories);
     }
     res.status.msg.data = _planner->getPlannerStatus().asString();
@@ -636,11 +648,12 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     return true;
 }
 int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, const double interpolation_time,
+                                 const double goal_thrs,
                 const std::vector<std::pair<std::string, std::string> > base_distal_links,
                 std::vector<Eigen::VectorXd>& trajectory,
                 std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories)
 {
-    int ret = callPlanner(time, planner_type, interpolation_time, trajectory);
+    int ret = callPlanner(time, planner_type, goal_thrs, interpolation_time, trajectory);
 
     if(_interpolator->isValid())
     {
@@ -661,7 +674,7 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
     return ret;
 }
 
-int PlannerExecutor::callPlanner(const double time, const std::string& planner_type,
+int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, const double goal_thrs,
                                  const double interpolation_time, std::vector<Eigen::VectorXd>& trajectory)
 {
     if(time <= 0.)
@@ -692,7 +705,7 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
     std::cout<<"...done!"<<std::endl;
 
 
-    _planner->setStartAndGoalStates(qstart, qgoal);
+    _planner->setStartAndGoalStates(qstart, qgoal, goal_thrs);
 
     _planner->solve(time, planner_type);
 

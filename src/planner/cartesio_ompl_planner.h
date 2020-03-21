@@ -62,10 +62,12 @@ public:
     void setStateValidityPredicate(StateValidityPredicate svc);
 
     void setStartAndGoalStates(const Eigen::VectorXd& start,
-                               const Eigen::VectorXd& goal);
+                               const Eigen::VectorXd& goal,
+                               const double threshold = std::numeric_limits<double>::epsilon());
 
     void setStartAndGoalStates(const Eigen::VectorXd& start,
-                               std::shared_ptr<ompl::base::GoalSampleableRegion> goal);
+                               std::shared_ptr<ompl::base::GoalSampleableRegion> goal,
+                               const double threshold = std::numeric_limits<double>::epsilon());
 
     void print(std::ostream &out = std::cout);
 
@@ -126,6 +128,7 @@ private:
     std::shared_ptr<StateWrapper> _sw;
 
     YAML::Node _options;
+
 
 };
 

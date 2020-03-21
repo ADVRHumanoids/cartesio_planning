@@ -16,3 +16,4 @@ state_space:
     type: "Atlas"
 
 control_space:
+    duration: 0.01

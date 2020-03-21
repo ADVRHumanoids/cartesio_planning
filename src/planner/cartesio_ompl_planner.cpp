@@ -104,6 +104,10 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     std::shared_ptr<Propagators::RK1> rk1 = std::make_shared<Propagators::RK1>(_cspace_info.get(), *_sw);
     _cspace_info->setStatePropagator(rk1);
 
+    YAML_PARSE_OPTION(options["control_space"], duration, double, 0.1);
+    _cspace_info->setPropagationStepSize(duration);
+    _cspace_info->printSettings();
+
 }
 
 
@@ -337,12 +341,16 @@ void OmplPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         return svp(x);
     };
 
-    _space_info->setStateValidityChecker(ompl_svc);
+    if(_cspace_info)
+        _cspace_info->setStateValidityChecker(ompl_svc);
+    else
+        _space_info->setStateValidityChecker(ompl_svc);
 }
 
 
 void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
-                                        const Eigen::VectorXd& goal)
+                                        const Eigen::VectorXd& goal,
+                                        const double threshold)
 {
     if(start.size() != _size || goal.size() != _size)
     {
@@ -365,7 +373,7 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
         setup_problem_definition(_space_info);
 
     // set start and goal
-    _pdef->setStartAndGoalStates(ompl_start, ompl_goal);
+    _pdef->setStartAndGoalStates(ompl_start, ompl_goal, threshold);
 
     // trigger callback
     if(_on_set_start_goal)
@@ -377,7 +385,8 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
 
 
 void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
-                                        std::shared_ptr<ompl::base::GoalSampleableRegion> goal)
+                                        std::shared_ptr<ompl::base::GoalSampleableRegion> goal,
+                                        const double threshold)
 {
     if(start.size() != _size)
     {
@@ -393,6 +402,7 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
     // set start and goal
     _pdef->clearStartStates();
     _pdef->addStartState(ompl_start);
+    goal->setThreshold(threshold);
     _pdef->setGoal(goal);
 
     auto atlas_ss = std::dynamic_pointer_cast<ompl::base::AtlasStateSpace>(_space);
