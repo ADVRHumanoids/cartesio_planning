@@ -109,6 +109,38 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
 }
 
+namespace ompl{ namespace control{
+class ConstrainedSpaceInformation : public SpaceInformation
+{
+public:
+    /** \brief Constructor. Sets the instance of the state space to plan with. */
+    ConstrainedSpaceInformation(const base::StateSpacePtr &stateSpace, ControlSpacePtr controlSpace):
+        SpaceInformation(stateSpace, controlSpace)
+    {
+        stateSpace_->as<ompl::base::ConstrainedStateSpace>()->setSpaceInformation(this);
+        setValidStateSamplerAllocator([](const ompl::base::SpaceInformation *si) -> std::shared_ptr<ompl::base::ValidStateSampler> {
+            return std::make_shared<ompl::base::ConstrainedValidStateSampler>(si);
+        });
+    }
+
+    unsigned int getMotionStates(const ompl::base::State *s1, const ompl::base::State *s2, std::vector<ompl::base::State *> &states,
+                                 unsigned int /*count*/, bool endpoints, bool /*alloc*/) const override
+    {
+        bool success = stateSpace_->as<ompl::base::ConstrainedStateSpace>()->discreteGeodesic(s1, s2, true, &states);
+
+        if (endpoints)
+        {
+            if (!success && states.empty())
+                states.push_back(cloneState(s1));
+
+            if (success)
+                states.push_back(cloneState(s2));
+        }
+
+        return states.size();
+    }
+};}}
+
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
             const Eigen::VectorXd& bounds_max,
             const Eigen::VectorXd& control_min,
@@ -134,27 +166,26 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     set_bounds(bounds_min, bounds_max);
 
     // create space information
-    _space_info = std::make_shared<ompl::base::SpaceInformation>(_space);
+    _space_info = std::make_shared<ompl::base::ConstrainedSpaceInformation>(_space);
     ///
 
     _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, control_min.size());
     _cbounds = std::make_shared<ompl::base::RealVectorBounds>(control_min.size());
     set_control_bounds(control_min, control_max);
 
-    _cspace_info = std::make_shared<ompl::control::SpaceInformation>(_space, _cspace);
+    _cspace_info = std::make_shared<ompl::control::ConstrainedSpaceInformation>(_space, _cspace);
+
 
     // setup problem definition
     setup_problem_definition(_cspace_info);
 
     ///TODO: this should be added by config using proper factory
-    std::shared_ptr<Propagators::RK1> rk1 = std::make_shared<Propagators::RK1>(_cspace_info.get(), *_sw);
+    std::shared_ptr<Propagators::RK1> rk1 = std::make_shared<Propagators::RK1>(_cspace_info.get(), *_sw, _constraint);
     _cspace_info->setStatePropagator(rk1);
 
     YAML_PARSE_OPTION(options["control_space"], duration, double, 0.1);
     _cspace_info->setPropagationStepSize(duration);
 }
-
-
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
