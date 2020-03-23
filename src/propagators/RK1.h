@@ -7,9 +7,10 @@ namespace XBot { namespace Cartesian { namespace Planning { namespace Propagator
 
 class RK1 : public ompl::control::StatePropagator{
 public:
-    RK1(ompl::control::SpaceInformation* si, StateWrapper& sw):
+    RK1(ompl::control::SpaceInformation* si, StateWrapper& sw, const ompl::base::ConstraintPtr manifold = NULL):
         ompl::control::StatePropagator(si),
-        _sw(sw)
+        _sw(sw),
+        _manifold(manifold)
     {
         _control_size = si->getStateDimension();
     }
@@ -25,12 +26,17 @@ public:
 
         X = X + duration*U;
 
+        if(_manifold)
+            _manifold->project(X);
+
+
         _sw.setState(result, X);
     }
 
 private:
     StateWrapper& _sw;
     int _control_size;
+    ompl::base::ConstraintPtr _manifold;
 
 };
 
