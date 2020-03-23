@@ -140,12 +140,12 @@ void PlannerExecutor::init_load_planner()
     if(_planner_config["control_space"])
     {
         _plan_controls = true;
-        std::cout<<"Planner works in control space!"<<std::endl;
+        ROS_INFO("Planner works in control space!");
     }
     else
     {
         _plan_controls = false;
-        std::cout<<"Planner works in state space!"<<std::endl;
+        ROS_INFO("Planner works in state space!");
     }
 
     if(_model->isFloatingBase())
@@ -201,22 +201,20 @@ void PlannerExecutor::init_load_planner()
 
     if(ompl_constraint)
     {
-        std::cout << "Constructing a constrained ompl planner" << std::endl;
+        ROS_INFO("Constructing a constrained ompl planner");
 
         if(_plan_controls)
         {
-
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, ompl_constraint, _planner_config);
         }
         else
         {
             _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, ompl_constraint, _planner_config);
         }
-
-
     }
     else
     {
-        std::cout << "Constructing an unconstrained ompl planner" << std::endl;
+        ROS_INFO("Constructing an unconstrained ompl planner");
 
         if(_plan_controls)
         {
@@ -681,25 +679,25 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
         return ompl::base::PlannerStatus::ABORT;
 
     // check start and goal state correctness
-    std::cout << "Checking start state validity.." << std::endl;
+    ROS_INFO("Checking start state validity..");
     if(!check_state_valid(_start_model))
     {
         throw std::runtime_error("Invalid start state");
     }
 
-    std::cout << "Checking goal state validity.." << std::endl;
+    ROS_INFO("Checking goal state validity..");
     if(!check_state_valid(_goal_model))
     {
         throw std::runtime_error("Invalid goal state");
     }
 
-    std::cout<<"start and goal states are valid"<<std::endl;
+    ROS_INFO("start and goal states are valid");
 
     Eigen::VectorXd qstart, qgoal;
     _start_model->getJointPosition(qstart);
     _goal_model->getJointPosition(qgoal);
 
-    std::cout<<"Enforcing bounds..."<<std::endl;
+    ROS_INFO("Enforcing bounds...");
     enforce_bounds(qstart);
     enforce_bounds(qgoal);
     std::cout<<"...done!"<<std::endl;
