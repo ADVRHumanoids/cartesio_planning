@@ -109,6 +109,52 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
 }
 
+OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
+            const Eigen::VectorXd& bounds_max,
+            const Eigen::VectorXd& control_min,
+            const Eigen::VectorXd& control_max,
+            ompl::base::ConstraintPtr constraint,
+            YAML::Node options):
+    _sbounds(bounds_min.size()),
+    _constraint(constraint),
+    _solved(ompl::base::PlannerStatus::UNKNOWN),
+    _size(bounds_min.size()),
+    _options(options)
+{
+    ///
+    _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::CONSTRAINED, _size);
+
+    // create euclidean state space
+    _ambient_space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
+
+    // unconstrained case -> state space = ambient state space
+    _space = make_constrained_space();
+
+    // set bounds to state space
+    set_bounds(bounds_min, bounds_max);
+
+    // create space information
+    _space_info = std::make_shared<ompl::base::SpaceInformation>(_space);
+    ///
+
+    _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, control_min.size());
+    _cbounds = std::make_shared<ompl::base::RealVectorBounds>(control_min.size());
+    set_control_bounds(control_min, control_max);
+
+    _cspace_info = std::make_shared<ompl::control::SpaceInformation>(_space, _cspace);
+
+    // setup problem definition
+    setup_problem_definition(_cspace_info);
+
+    ///TODO: this should be added by config using proper factory
+    std::shared_ptr<Propagators::RK1> rk1 = std::make_shared<Propagators::RK1>(_cspace_info.get(), *_sw);
+    _cspace_info->setStatePropagator(rk1);
+
+    YAML_PARSE_OPTION(options["control_space"], duration, double, 0.1);
+    _cspace_info->setPropagationStepSize(duration);
+}
+
+
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
@@ -317,10 +363,27 @@ ompl::base::SpaceInformationPtr OmplPlanner::getSpaceInfo() const
     return _space_info;
 }
 
+ompl::control::SpaceInformationPtr OmplPlanner::getControlSpaceInfo() const
+{
+    if(_cspace_info)
+        return _cspace_info;
+    return NULL;
+}
+
 void OmplPlanner::getBounds(Eigen::VectorXd & qmin, Eigen::VectorXd & qmax) const
 {
     qmin = qmin.Map(_sbounds.low.data(), _sbounds.low.size());
     qmax = qmax.Map(_sbounds.high.data(), _sbounds.high.size());
+}
+
+void OmplPlanner::getControlBounds(Eigen::VectorXd& control_min, Eigen::VectorXd& control_max)  const
+{
+    if(!_cspace_info)
+    {
+        throw std::runtime_error("Planner is working in STATE SPACE, control bounds are not defined!");
+    }
+    control_min = control_min.Map(_cbounds->low.data(), _cbounds->low.size());
+    control_max = control_max.Map(_cbounds->high.data(), _cbounds->high.size());
 }
 
 StateWrapper OmplPlanner::getStateWrapper() const
