@@ -106,7 +106,6 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 
     YAML_PARSE_OPTION(options["control_space"], duration, double, 0.1);
     _cspace_info->setPropagationStepSize(duration);
-    _cspace_info->printSettings();
 
 }
 
@@ -453,7 +452,10 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 
 void OmplPlanner::print(std::ostream &out)
 {
-    _space_info->printSettings(out);
+    if(_cspace_info)
+        _cspace_info->printSettings(out);
+    else
+        _space_info->printSettings(out);
     _pdef->print(out);
     _planner->printProperties(out);
 }
