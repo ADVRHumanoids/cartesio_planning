@@ -18,6 +18,9 @@
 
 #include <ompl/control/spaces/RealVectorControlSpace.h>
 #include <ompl/control/planners/syclop/SyclopRRT.h>
+#include <ompl/control/planners/sst/SST.h>
+#include <ompl/control/PlannerData.h>
+#include <ompl/base/PlannerData.h>
 
 #include "nodes/my_grid_decomposition.h"
 

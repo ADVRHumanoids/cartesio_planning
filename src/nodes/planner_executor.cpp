@@ -690,16 +690,15 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
     if(_planner->getPlannerStatus())
     {
         raw_trajectory = _planner->getSolutionPath();
-//         auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/vertices/raw_traj");
-//         logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
-//         for (int i = 0; i < raw_trajectory.size(); i++)
-//             logger->add("x_traj", raw_trajectory[i](0));
-//         for (int i = 0; i < raw_trajectory.size(); i++)
-//             logger->add("y_traj", raw_trajectory[i](1));
-//         for (int i = 0; i < raw_trajectory.size(); i++)
-//             logger->add("z_traj", raw_trajectory[i](2));
-        
-//         std::cout << raw_trajectory << std::endl;
+        std::cout << "Size of raw_trajectory: " << raw_trajectory.size() << std::endl;
+        auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/raw_traj");
+        logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+        for (int i = 0; i < raw_trajectory.size(); i++)
+            logger->add("x_traj", raw_trajectory[i](0));
+        for (int i = 0; i < raw_trajectory.size(); i++)
+            logger->add("y_traj", raw_trajectory[i](1));
+        for (int i = 0; i < raw_trajectory.size(); i++)
+            logger->add("z_traj", raw_trajectory[i](2));
     }   
 
 

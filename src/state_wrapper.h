@@ -12,6 +12,7 @@
 #include <ompl/base/ConstrainedSpaceInformation.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/base/Constraint.h>
+#include <ompl/base/spaces/SE2StateSpace.h>
 
 #include <Eigen/Dense>
 
@@ -23,7 +24,7 @@ class StateWrapper
 
 public:
 
-    enum class StateSpaceType { REALVECTOR, CONSTRAINED };
+    enum class StateSpaceType { REALVECTOR, SE2SPACE, CONSTRAINED };
 
     StateWrapper(StateSpaceType state_space_type,
                  int size);

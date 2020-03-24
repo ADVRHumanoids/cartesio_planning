@@ -33,6 +33,7 @@
 #include <ompl/base/PlannerData.h>
 #include <ompl/control/planners/syclop/SyclopRRT.h>
 #include <ompl/control/planners/syclop/SyclopEST.h>
+#include <ompl/control/planners/rrt/RRT.h>
 
 #include <ompl/base/objectives/StateCostIntegralObjective.h>
 
@@ -40,6 +41,8 @@
 #include "utils/parse_yaml_utils.h"
 
 #include <matlogger2/matlogger2.h>
+#include <matlogger2/mat_data.h>
+#include <matlogger2/utils/mat_appender.h>
 
 using namespace XBot::Cartesian::Planning;
 
@@ -442,7 +445,7 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
         _pdef = std::make_shared<ompl::base::ProblemDefinition>(_cspace_info);
  
     // set start and goal
-    _pdef->setStartAndGoalStates(ompl_start, ompl_goal);
+    _pdef->setStartAndGoalStates(ompl_start, ompl_goal, 0.1);
     
     // trigger callback
     if(_on_set_start_goal)
@@ -502,13 +505,27 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
         if(_solved)
         {
             auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+            auto logger1 = XBot::MatLogger2::MakeLogger("/home/luca/my_log/vertices/vertices");
+            logger1->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+            
+            ompl::base::PlannerData data(_pdef->getSpaceInformation());
+            _planner->getPlannerData(data);
+            std::vector<Eigen::VectorXd> vertexState(data.numVertices());
+            auto cell = XBot::matlogger2::MatData::make_cell(data.numVertices());           
+            for (int i = 0; i < data.numVertices(); i++)
+            {
+                _sw->getState(data.getVertex(i).getState(), vertexState[i]);
+                logger1->add("vertices", vertexState[i]);
+            }
+
+
+            geom_path->print(std::cout);
 
 //             geom_path->interpolate();
 
             if(!geom_path->check())
                 return false;
         }
-        
         return _solved;
     }
     return false;
@@ -659,6 +676,16 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
     {
         auto decomp = std::make_shared<MyGridDecomposition>(32,_sbounds);
         return std::make_shared<ompl::control::SyclopEST>(_cspace_info, decomp);
+    }
+    
+    ADD_PLANNER_AND_IF("RRTControl")
+    {
+        return std::make_shared<ompl::control::RRT>(_cspace_info);
+    }
+    
+    ADD_PLANNER_AND_IF("SST")
+    {
+        return std::make_shared<ompl::control::SST>(_cspace_info);
     }
 
     std::cout << "Valid planners are \n";

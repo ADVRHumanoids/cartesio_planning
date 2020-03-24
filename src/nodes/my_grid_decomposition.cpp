@@ -8,10 +8,9 @@ MyGridDecomposition::MyGridDecomposition(const int length, const ompl::base::Rea
 void MyGridDecomposition::project(const ompl::base::State* state,
                                   std::vector<double>& coord) const
 {
-    coord.resize(3);
+    coord.resize(2);
     coord[0] = state->as<ompl::base::RealVectorStateSpace::StateType>()->values[0];
     coord[1] = state->as<ompl::base::RealVectorStateSpace::StateType>()->values[1];
-    coord[2] = state->as<ompl::base::RealVectorStateSpace::StateType>()->values[2];
 }
 
 void MyGridDecomposition::sampleFullState(const ompl::base::StateSamplerPtr& sampler,
@@ -21,5 +20,4 @@ void MyGridDecomposition::sampleFullState(const ompl::base::StateSamplerPtr& sam
     sampler->sampleUniform(state);
     state->as<ompl::base::RealVectorStateSpace::StateType>()->values[0] = coord[0];
     state->as<ompl::base::RealVectorStateSpace::StateType>()->values[1] = coord[1];
-    state->as<ompl::base::RealVectorStateSpace::StateType>()->values[2] = coord[2];
 }
