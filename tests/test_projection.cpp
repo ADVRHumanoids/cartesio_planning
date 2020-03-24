@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <matlogger2/matlogger2.h>
-#include <cartesian_interface/utils/LoadObject.hpp>
 
 #include "ik/position_ik_solver.h"
 
@@ -30,13 +29,24 @@ protected:
         _model->update();
 
         // custom manifold definition (hardcoded)
-        auto l_sole_constr = XBot::Cartesian::MakeCartesian("l_sole");
-        auto r_sole_constr = XBot::Cartesian::MakeCartesian("r_sole");
-        ProblemDescription ik_prob({l_sole_constr, r_sole_constr});
+        std::string ik_yaml =
+                "stack: [LFoot, RFoot] \n"
+                "LFoot:                \n"
+                "  type: Cartesian     \n"
+                "  distal_link: l_sole \n"
+                "RFoot:                \n"
+                "  type: Cartesian     \n"
+                "  distal_link: r_sole \n";
+
+        double ci_period = 0.01;
+        auto ci_ctx = std::make_shared<Context>(
+                    std::make_shared<Parameters>(ci_period),
+                    _model);
+
+        ProblemDescription ik_prob(YAML::Load(ik_yaml), ci_ctx);
 
         // ci
-        _ci = Utils::LoadObject<CartesianInterfaceImpl>("libCartesianOpenSot.so", "create_instance",
-                                                        _model, ik_prob);
+        _ci = CartesianInterfaceImpl::MakeInstance("OpenSot", ik_prob, ci_ctx);
 
         // solver
         _solver = std::make_shared<Planning::PositionCartesianSolver>(_ci, ik_prob);

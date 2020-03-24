@@ -37,18 +37,15 @@ int main(int argc, char ** argv)
 
     // obtain ci object from param server
     auto ik_yaml = LoadProblemDescription(LoadFrom::PARAM);
-    auto ik_prob = ProblemDescription(ik_yaml, model);
+    double ci_period = 0.01;
+    auto ci_ctx = std::make_shared<Context>(
+                std::make_shared<Parameters>(ci_period),
+                model);
+    auto ik_prob = ProblemDescription(ik_yaml, ci_ctx);
+
 
     std::string impl_name = "OpenSot";
-    std::string path_to_shared_lib = XBot::Utils::FindLib("libCartesian" + impl_name + ".so", "LD_LIBRARY_PATH");
-    if (path_to_shared_lib == "")
-    {
-        throw std::runtime_error("libCartesian" + impl_name + ".so must be listed inside LD_LIBRARY_PATH");
-    }
-
-    auto ci = SoLib::getFactoryWithArgs<CartesianInterfaceImpl>(path_to_shared_lib,
-                                                                impl_name + "Impl",
-                                                                model, ik_prob);
+    auto ci = CartesianInterfaceImpl::MakeInstance(impl_name, ik_prob, ci_ctx);
 
     if(!ci)
     {
@@ -71,7 +68,7 @@ int main(int argc, char ** argv)
 
 
 
-    ros::Rate rate(100);
+    ros::Rate rate(1./ci_ctx->params()->getControlPeriod());
     while(ros::ok())
     {
         goal_gen.update();

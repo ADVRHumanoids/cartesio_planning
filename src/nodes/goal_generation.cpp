@@ -11,7 +11,7 @@ GoalGenerator::GoalGenerator(XBot::Cartesian::CartesianInterfaceImpl::Ptr ci,
     XBot::Cartesian::RosServerClass::Options opt;
     opt.tf_prefix = "planner/goal_sampler";
     opt.ros_namespace = "planner/goal_sampler";
-    _ros_server = std::make_shared<XBot::Cartesian::RosServerClass>(_ci, _ci->getModel(), opt);
+    _ros_server = std::make_shared<XBot::Cartesian::RosServerClass>(_ci, opt);
 
     _goal_sampler->setValidityCheker(
                 std::bind(&XBot::Cartesian::Planning::ValidityPredicateAggregate::checkAll, &_vc_context.vc_aggregate, nullptr));

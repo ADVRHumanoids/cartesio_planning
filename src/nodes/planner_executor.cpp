@@ -7,7 +7,6 @@
 
 #include <RobotInterfaceROS/ConfigFromParam.h>
 
-#include <cartesian_interface/utils/LoadObject.hpp>
 #include <cartesian_interface/utils/LoadConfig.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
 
@@ -156,7 +155,7 @@ void PlannerExecutor::init_load_planner()
         YAML_PARSE_OPTION(_planner_config["state_space"],
                 floating_base_pos_min,
                 std::vector<double>,
-                {});
+        {});
 
         if(floating_base_pos_min.size() > 0)
         {
@@ -168,7 +167,7 @@ void PlannerExecutor::init_load_planner()
         YAML_PARSE_OPTION(_planner_config["state_space"],
                 floating_base_pos_max,
                 std::vector<double>,
-                {});
+        {});
 
         if(floating_base_pos_max.size() > 0)
         {
@@ -184,7 +183,7 @@ void PlannerExecutor::init_load_planner()
             YAML_PARSE_OPTION(_planner_config["control_space"],
                     floating_base_velocity_limits,
                     std::vector<double>,
-                    {});
+            {});
 
             if(floating_base_velocity_limits.size() > 0)
             {
@@ -263,11 +262,11 @@ void PlannerExecutor::init_subscribe_start_goal()
 
     if(!_use_goal_generator)
         _goal_sub = _nh.subscribe("goal/joint_states", 1,
-                              &PlannerExecutor::on_goal_state_recv, this);
+                                  &PlannerExecutor::on_goal_state_recv, this);
 
     _start_viz = std::make_shared<Planning::RobotViz>(_model,
-                                                     "start/robot_markers",
-                                                     _nh);
+                                                      "start/robot_markers",
+                                                      _nh);
     _start_viz->setPrefix("planner/start/");
 
     _goal_viz = std::make_shared<Planning::RobotViz>(_model,
@@ -331,15 +330,17 @@ void PlannerExecutor::init_goal_generator()
             throw std::runtime_error("planner/problem_description_goal not provided!");
         }
 
-        auto ik_yaml_constraint = YAML::Load(problem_description_string);
+        auto ik_yaml_goal = YAML::Load(problem_description_string);
 
+        double ci_period = 1.0;
+        auto ci_ctx = std::make_shared<Context>(
+                    std::make_shared<Parameters>(ci_period),
+                    _model);
 
-        auto ik_prob = ProblemDescription(ik_yaml_constraint, _model);
+        auto ik_prob = ProblemDescription(ik_yaml_goal, ci_ctx);
 
-        CartesianInterfaceImpl::Ptr ci = Utils::LoadObject<CartesianInterfaceImpl>("libCartesianOpenSot.so",
-                                                                                   "create_instance",
-                                                                                   _model,
-                                                                                   ik_prob);
+        auto ci = CartesianInterfaceImpl::MakeInstance("OpenSot",
+                                                       ik_prob, ci_ctx);
 
 
         _goal_generator = std::make_shared<GoalGenerator>(ci, _vc_context);
@@ -408,12 +409,16 @@ Planning::CartesianConstraint::Ptr PlannerExecutor::make_manifold(std::string pr
 
     auto ik_yaml_constraint = YAML::Load(problem_description_string);
 
-    auto ik_prob_constraint = ProblemDescription(ik_yaml_constraint, _model);
+    double ci_period = 1.0;
+    auto ci_ctx = std::make_shared<Context>(
+                std::make_shared<Parameters>(ci_period),
+                _model);
 
-    CartesianInterfaceImpl::Ptr constraint_ci = Utils::LoadObject<CartesianInterfaceImpl>("libCartesianOpenSot.so",
-                                                                                          "create_instance",
-                                                                                          _model,
-                                                                                          ik_prob_constraint);
+    auto ik_prob_constraint = ProblemDescription(ik_yaml_constraint, ci_ctx);
+
+    auto constraint_ci = CartesianInterfaceImpl::MakeInstance("OpenSot",
+                                                              ik_prob_constraint,
+                                                              ci_ctx);
 
 
     auto ik_solver = std::make_shared<Planning::PositionCartesianSolver>(constraint_ci,
@@ -460,8 +465,8 @@ bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
             if(q[i] < qmin[i] || q[i] > qmax[i])
             {
                 std::cout << _model->getEnabledJointNames().at(i) <<
-                         ": " << qmin[i] << " <= " << q[i] <<
-                         " <= " << qmax[i] << "\n";
+                             ": " << qmin[i] << " <= " << q[i] <<
+                             " <= " << qmax[i] << "\n";
             }
         }
         std::cout.flush();
@@ -569,7 +574,7 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     if(req.planner_type == "")
     {
         req.planner_type = "RRTstar";
-    } 
+    }
 
     std::cout << "Requested planner " << req.planner_type << std::endl;
 
@@ -636,9 +641,9 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     return true;
 }
 int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, const double interpolation_time,
-                const std::vector<std::pair<std::string, std::string> > base_distal_links,
-                std::vector<Eigen::VectorXd>& trajectory,
-                std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories)
+                                 const std::vector<std::pair<std::string, std::string> > base_distal_links,
+                                 std::vector<Eigen::VectorXd>& trajectory,
+                                 std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories)
 {
     int ret = callPlanner(time, planner_type, interpolation_time, trajectory);
 
