@@ -52,20 +52,22 @@ public:
                 const Eigen::VectorXd& control_max,
                 YAML::Node options);
 
-//    OmplPlanner(const Eigen::VectorXd& bounds_min,
-//                const Eigen::VectorXd& bounds_max,
-//                const Eigen::VectorXd& control_min,
-//                const Eigen::VectorXd& control_max,
-//                ompl::base::ConstraintPtr constraint,
-//                YAML::Node options);
+    OmplPlanner(const Eigen::VectorXd& bounds_min,
+                const Eigen::VectorXd& bounds_max,
+                const Eigen::VectorXd& control_min,
+                const Eigen::VectorXd& control_max,
+                ompl::base::ConstraintPtr constraint,
+                YAML::Node options);
 
     void setStateValidityPredicate(StateValidityPredicate svc);
 
     void setStartAndGoalStates(const Eigen::VectorXd& start,
-                               const Eigen::VectorXd& goal);
+                               const Eigen::VectorXd& goal,
+                               const double threshold = std::numeric_limits<double>::epsilon());
 
     void setStartAndGoalStates(const Eigen::VectorXd& start,
-                               std::shared_ptr<ompl::base::GoalSampleableRegion> goal);
+                               std::shared_ptr<ompl::base::GoalSampleableRegion> goal,
+                               const double threshold = std::numeric_limits<double>::epsilon());
 
     void print(std::ostream &out = std::cout);
 
@@ -76,8 +78,11 @@ public:
     std::vector<Eigen::VectorXd> getSolutionPath() const;
 
     ompl::base::SpaceInformationPtr getSpaceInfo() const;
+    ompl::control::SpaceInformationPtr getControlSpaceInfo() const;
 
     void getBounds(Eigen::VectorXd& qmin, Eigen::VectorXd& qmax) const;
+
+    void getControlBounds(Eigen::VectorXd& control_min, Eigen::VectorXd& control_max)  const;
 
     StateWrapper getStateWrapper() const;
 
@@ -126,6 +131,7 @@ private:
     std::shared_ptr<StateWrapper> _sw;
 
     YAML::Node _options;
+
 
 };
 

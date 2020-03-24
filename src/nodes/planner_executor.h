@@ -69,12 +69,13 @@ public:
                 TYPE_COUNT
             };
      */
-    int callPlanner(const double time, const std::string& planner_type, const double interpolation_time, std::vector<Eigen::VectorXd>& trajectory);
+    int callPlanner(const double time, const std::string& planner_type, const double interpolation_time, const double goal_thrs,
+                    std::vector<Eigen::VectorXd>& trajectory);
     /**
      * @param base_distal_links couple of base_link and distal_link to compute Cartesian trajectory
      * @param cartesian_trajectories vector of Cartesian trajactories (each element correspond to couple base_link, distal_link)
      */
-    int callPlanner(const double time, const std::string& planner_type, const double interpolation_time,
+    int callPlanner(const double time, const std::string& planner_type, const double interpolation_time, const double goal_thrs,
                     const std::vector<std::pair<std::string, std::string> > base_distal_links,
                     std::vector<Eigen::VectorXd>& trajectory,
                     std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories);
@@ -139,6 +140,8 @@ private:
     CartesianTrajectoryInterpolation::Ptr _interpolator;
 
     bool _plan_controls;
+
+
 };
 
 } }

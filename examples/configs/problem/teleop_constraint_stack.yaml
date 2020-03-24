@@ -1,0 +1,19 @@
+solver_options:
+    regularization: 1e-4
+    back_end: "qpoases"
+    control_dt: 0.01
+
+stack:
+    - ["EE"]
+    
+    
+constraints: ["JointLimits"]
+
+EE:
+    type: "Cartesian"
+    distal_link: "TCP"
+    base_link: "base_link"
+    indices: [1,2]
+  #  use_body_jacobian: true
+    
+

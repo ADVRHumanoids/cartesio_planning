@@ -139,12 +139,12 @@ void PlannerExecutor::init_load_planner()
     if(_planner_config["control_space"])
     {
         _plan_controls = true;
-        std::cout<<"Planner works in control space!"<<std::endl;
+        ROS_INFO("Planner works in control space!");
     }
     else
     {
         _plan_controls = false;
-        std::cout<<"Planner works in state space!"<<std::endl;
+        ROS_INFO("Planner works in state space!");
     }
 
     if(_model->isFloatingBase())
@@ -155,7 +155,7 @@ void PlannerExecutor::init_load_planner()
         YAML_PARSE_OPTION(_planner_config["state_space"],
                 floating_base_pos_min,
                 std::vector<double>,
-        {});
+                {});
 
         if(floating_base_pos_min.size() > 0)
         {
@@ -167,7 +167,7 @@ void PlannerExecutor::init_load_planner()
         YAML_PARSE_OPTION(_planner_config["state_space"],
                 floating_base_pos_max,
                 std::vector<double>,
-        {});
+                {});
 
         if(floating_base_pos_max.size() > 0)
         {
@@ -183,7 +183,7 @@ void PlannerExecutor::init_load_planner()
             YAML_PARSE_OPTION(_planner_config["control_space"],
                     floating_base_velocity_limits,
                     std::vector<double>,
-            {});
+                    {});
 
             if(floating_base_velocity_limits.size() > 0)
             {
@@ -200,11 +200,11 @@ void PlannerExecutor::init_load_planner()
 
     if(ompl_constraint)
     {
-        std::cout << "Constructing a constrained ompl planner" << std::endl;
+        ROS_INFO("Constructing a constrained ompl planner");
 
         if(_plan_controls)
         {
-
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, ompl_constraint, _planner_config);
         }
         else
         {
@@ -215,7 +215,7 @@ void PlannerExecutor::init_load_planner()
     }
     else
     {
-        std::cout << "Constructing an unconstrained ompl planner" << std::endl;
+        ROS_INFO("Constructing an unconstrained ompl planner");
 
         if(_plan_controls)
         {
@@ -578,18 +578,30 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
 
     std::cout << "Requested planner " << req.planner_type << std::endl;
 
+    if(req.goal_threshold <= 0.)
+    {
+        res.status.msg.data = "goal_threshold arg should be > 0";
+        res.status.val = ompl::base::PlannerStatus::ABORT;
+        return true;
+    }
+
+    std::cout<< "goal_threshold: "<<req.goal_threshold<<std::endl;
+
+
+
+
 
 
     std::vector<Eigen::VectorXd> trajectory;
     std::vector<std::vector<Eigen::Affine3d> > cartesian_trajectories;
     if(_distal_links.empty())
-        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, trajectory);
+        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, req.goal_threshold, trajectory);
     else
     {
         std::vector<std::pair<std::string, std::string> > base_distal_links;
         for(unsigned int i = 0; i < _distal_links.size(); ++i)
             base_distal_links.push_back(std::pair<std::string, std::string>(_base_links[i], _distal_links[i]));
-        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, base_distal_links,
+        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, req.goal_threshold, base_distal_links,
                                      trajectory, cartesian_trajectories);
     }
     res.status.msg.data = _planner->getPlannerStatus().asString();
@@ -641,11 +653,12 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     return true;
 }
 int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, const double interpolation_time,
-                                 const std::vector<std::pair<std::string, std::string> > base_distal_links,
-                                 std::vector<Eigen::VectorXd>& trajectory,
-                                 std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories)
+                                 const double goal_thrs,
+                const std::vector<std::pair<std::string, std::string> > base_distal_links,
+                std::vector<Eigen::VectorXd>& trajectory,
+                std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories)
 {
-    int ret = callPlanner(time, planner_type, interpolation_time, trajectory);
+    int ret = callPlanner(time, planner_type, goal_thrs, interpolation_time, trajectory);
 
     if(_interpolator->isValid())
     {
@@ -666,38 +679,38 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
     return ret;
 }
 
-int PlannerExecutor::callPlanner(const double time, const std::string& planner_type,
+int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, const double goal_thrs,
                                  const double interpolation_time, std::vector<Eigen::VectorXd>& trajectory)
 {
     if(time <= 0.)
         return ompl::base::PlannerStatus::ABORT;
 
     // check start and goal state correctness
-    std::cout << "Checking start state validity.." << std::endl;
+    ROS_INFO("Checking start state validity..");
     if(!check_state_valid(_start_model))
     {
         throw std::runtime_error("Invalid start state");
     }
 
-    std::cout << "Checking goal state validity.." << std::endl;
+    ROS_INFO("Checking goal state validity..");
     if(!check_state_valid(_goal_model))
     {
         throw std::runtime_error("Invalid goal state");
     }
 
-    std::cout<<"start and goal states are valid"<<std::endl;
+    ROS_INFO("start and goal states are valid");
 
     Eigen::VectorXd qstart, qgoal;
     _start_model->getJointPosition(qstart);
     _goal_model->getJointPosition(qgoal);
 
-    std::cout<<"Enforcing bounds..."<<std::endl;
+    ROS_INFO("Enforcing bounds...");
     enforce_bounds(qstart);
     enforce_bounds(qgoal);
     std::cout<<"...done!"<<std::endl;
 
 
-    _planner->setStartAndGoalStates(qstart, qgoal);
+    _planner->setStartAndGoalStates(qstart, qgoal, goal_thrs);
 
     _planner->solve(time, planner_type);
 

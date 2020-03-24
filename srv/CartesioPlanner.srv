@@ -19,6 +19,8 @@ int32 time
 
 float32 interpolation_time
 
+float32 goal_threshold
+
 ---
 
 cartesio_planning/CartesioPlannerStatus status

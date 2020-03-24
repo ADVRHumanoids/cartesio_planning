@@ -1,6 +1,8 @@
+manifold:
+    param_name: "problem_description_constraint"
+
 state_validity_check:
     - collisions
-
 
 collisions:
     type: "CollisionCheck"
@@ -16,3 +18,4 @@ state_space:
     type: "Atlas"
 
 control_space:
+    duration: 0.01

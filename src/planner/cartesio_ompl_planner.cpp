@@ -28,6 +28,8 @@
 #include <ompl/geometric/planners/kpiece/BKPIECE1.h>
 #include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
 
+#include <ompl/control/planners/rrt/RRT.h>
+
 
 #include "cartesio_ompl_planner.h"
 #include "utils/parse_yaml_utils.h"
@@ -89,7 +91,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _space_info = std::make_shared<ompl::base::SpaceInformation>(_space);
     ///
 
-
+    _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, control_min.size());
     _cbounds = std::make_shared<ompl::base::RealVectorBounds>(control_min.size());
     set_control_bounds(control_min, control_max);
 
@@ -102,8 +104,88 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     std::shared_ptr<Propagators::RK1> rk1 = std::make_shared<Propagators::RK1>(_cspace_info.get(), *_sw);
     _cspace_info->setStatePropagator(rk1);
 
+    YAML_PARSE_OPTION(options["control_space"], duration, double, 0.1);
+    _cspace_info->setPropagationStepSize(duration);
+
 }
 
+namespace ompl{ namespace control{
+class ConstrainedSpaceInformation : public SpaceInformation
+{
+public:
+    /** \brief Constructor. Sets the instance of the state space to plan with. */
+    ConstrainedSpaceInformation(const base::StateSpacePtr &stateSpace, ControlSpacePtr controlSpace):
+        SpaceInformation(stateSpace, controlSpace)
+    {
+        stateSpace_->as<ompl::base::ConstrainedStateSpace>()->setSpaceInformation(this);
+        setValidStateSamplerAllocator([](const ompl::base::SpaceInformation *si) -> std::shared_ptr<ompl::base::ValidStateSampler> {
+            return std::make_shared<ompl::base::ConstrainedValidStateSampler>(si);
+        });
+    }
+
+    unsigned int getMotionStates(const ompl::base::State *s1, const ompl::base::State *s2, std::vector<ompl::base::State *> &states,
+                                 unsigned int /*count*/, bool endpoints, bool /*alloc*/) const override
+    {
+        bool success = stateSpace_->as<ompl::base::ConstrainedStateSpace>()->discreteGeodesic(s1, s2, true, &states);
+
+        if (endpoints)
+        {
+            if (!success && states.empty())
+                states.push_back(cloneState(s1));
+
+            if (success)
+                states.push_back(cloneState(s2));
+        }
+
+        return states.size();
+    }
+};}}
+
+OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
+            const Eigen::VectorXd& bounds_max,
+            const Eigen::VectorXd& control_min,
+            const Eigen::VectorXd& control_max,
+            ompl::base::ConstraintPtr constraint,
+            YAML::Node options):
+    _sbounds(bounds_min.size()),
+    _constraint(constraint),
+    _solved(ompl::base::PlannerStatus::UNKNOWN),
+    _size(bounds_min.size()),
+    _options(options)
+{
+    ///
+    _sw = std::make_shared<StateWrapper>(StateWrapper::StateSpaceType::CONSTRAINED, _size);
+
+    // create euclidean state space
+    _ambient_space = std::make_shared<ompl::base::RealVectorStateSpace>(_size);
+
+    // unconstrained case -> state space = ambient state space
+    _space = make_constrained_space();
+
+    // set bounds to state space
+    set_bounds(bounds_min, bounds_max);
+
+    // create space information
+    _space_info = std::make_shared<ompl::base::ConstrainedSpaceInformation>(_space);
+    ///
+
+    _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, control_min.size());
+    _cbounds = std::make_shared<ompl::base::RealVectorBounds>(control_min.size());
+    set_control_bounds(control_min, control_max);
+
+    _cspace_info = std::make_shared<ompl::control::ConstrainedSpaceInformation>(_space, _cspace);
+
+
+    // setup problem definition
+    setup_problem_definition(_cspace_info);
+
+    ///TODO: this should be added by config using proper factory
+    std::shared_ptr<Propagators::RK1> rk1 = std::make_shared<Propagators::RK1>(_cspace_info.get(), *_sw, _constraint);
+    _cspace_info->setStatePropagator(rk1);
+
+    YAML_PARSE_OPTION(options["control_space"], duration, double, 0.1);
+    _cspace_info->setPropagationStepSize(duration);
+}
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
@@ -312,10 +394,27 @@ ompl::base::SpaceInformationPtr OmplPlanner::getSpaceInfo() const
     return _space_info;
 }
 
+ompl::control::SpaceInformationPtr OmplPlanner::getControlSpaceInfo() const
+{
+    if(_cspace_info)
+        return _cspace_info;
+    return NULL;
+}
+
 void OmplPlanner::getBounds(Eigen::VectorXd & qmin, Eigen::VectorXd & qmax) const
 {
     qmin = qmin.Map(_sbounds.low.data(), _sbounds.low.size());
     qmax = qmax.Map(_sbounds.high.data(), _sbounds.high.size());
+}
+
+void OmplPlanner::getControlBounds(Eigen::VectorXd& control_min, Eigen::VectorXd& control_max)  const
+{
+    if(!_cspace_info)
+    {
+        throw std::runtime_error("Planner is working in STATE SPACE, control bounds are not defined!");
+    }
+    control_min = control_min.Map(_cbounds->low.data(), _cbounds->low.size());
+    control_max = control_max.Map(_cbounds->high.data(), _cbounds->high.size());
 }
 
 StateWrapper OmplPlanner::getStateWrapper() const
@@ -335,12 +434,16 @@ void OmplPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         return svp(x);
     };
 
-    _space_info->setStateValidityChecker(ompl_svc);
+    if(_cspace_info)
+        _cspace_info->setStateValidityChecker(ompl_svc);
+    else
+        _space_info->setStateValidityChecker(ompl_svc);
 }
 
 
 void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
-                                        const Eigen::VectorXd& goal)
+                                        const Eigen::VectorXd& goal,
+                                        const double threshold)
 {
     if(start.size() != _size || goal.size() != _size)
     {
@@ -363,7 +466,7 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
         setup_problem_definition(_space_info);
 
     // set start and goal
-    _pdef->setStartAndGoalStates(ompl_start, ompl_goal);
+    _pdef->setStartAndGoalStates(ompl_start, ompl_goal, threshold);
 
     // trigger callback
     if(_on_set_start_goal)
@@ -375,7 +478,8 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
 
 
 void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
-                                        std::shared_ptr<ompl::base::GoalSampleableRegion> goal)
+                                        std::shared_ptr<ompl::base::GoalSampleableRegion> goal,
+                                        const double threshold)
 {
     if(start.size() != _size)
     {
@@ -391,6 +495,7 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
     // set start and goal
     _pdef->clearStartStates();
     _pdef->addStartState(ompl_start);
+    goal->setThreshold(threshold);
     _pdef->setGoal(goal);
 
     auto atlas_ss = std::dynamic_pointer_cast<ompl::base::AtlasStateSpace>(_space);
@@ -441,7 +546,10 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 
 void OmplPlanner::print(std::ostream &out)
 {
-    _space_info->printSettings(out);
+    if(_cspace_info)
+        _cspace_info->printSettings(out);
+    else
+        _space_info->printSettings(out);
     _pdef->print(out);
     _planner->printProperties(out);
 }
@@ -492,7 +600,10 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
 
     ADD_PLANNER_AND_IF("RRT")
     {
-        return std::make_shared<ompl::geometric::RRT>(_space_info);
+        if(_cspace_info)
+            return std::make_shared<ompl::control::RRT>(_cspace_info);
+        else
+            return std::make_shared<ompl::geometric::RRT>(_space_info);
     }
 
     ADD_PLANNER_AND_IF("RRTConnect")
