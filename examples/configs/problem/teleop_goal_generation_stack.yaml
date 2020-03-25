@@ -1,7 +1,6 @@
 solver_options:
     regularization: 1e-4
     back_end: "qpoases"
-    control_dt: 0.50 
 
 stack:
     #- ["ArmPosition", "ArmOrientation"]
@@ -10,6 +9,12 @@ stack:
 
     
 constraints: ["JointLimits"]
+
+JointLimits:
+    type: "JointLimits"
+
+VelocityLimits:
+    type: "VelocityLimits"
 
 ArmEE:
     type: "Cartesian"

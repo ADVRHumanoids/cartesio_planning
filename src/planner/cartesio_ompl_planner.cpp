@@ -66,10 +66,10 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
 }
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
-            const Eigen::VectorXd& bounds_max,
+                         const Eigen::VectorXd& bounds_max,
                          const Eigen::VectorXd& control_min,
                          const Eigen::VectorXd& control_max,
-            YAML::Node options):
+                         YAML::Node options):
     _sbounds(bounds_min.size()),
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
@@ -142,11 +142,11 @@ public:
 };}}
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
-            const Eigen::VectorXd& bounds_max,
-            const Eigen::VectorXd& control_min,
-            const Eigen::VectorXd& control_max,
-            ompl::base::ConstraintPtr constraint,
-            YAML::Node options):
+                         const Eigen::VectorXd& bounds_max,
+                         const Eigen::VectorXd& control_min,
+                         const Eigen::VectorXd& control_max,
+                         ompl::base::ConstraintPtr constraint,
+                         YAML::Node options):
     _sbounds(bounds_min.size()),
     _constraint(constraint),
     _solved(ompl::base::PlannerStatus::UNKNOWN),

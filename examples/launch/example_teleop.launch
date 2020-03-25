@@ -75,7 +75,7 @@
         <param name="scale_z" type="double" value=".1"/>
         <param name="frame_id" value="world"/>
         <param name="name_id" value="floor"/>
-        <param name="show_control_axis" type="bool" value="True"/>
+        <param name="show_control_axis" type="bool" value="true"/>
         <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
   </node>
 

@@ -9,6 +9,13 @@ stack:
     
 constraints: ["JointLimits", "VelocityLimits"]
 
+JointLimits:
+    type: "JointLimits"
+
+VelocityLimits:
+    type: "VelocityLimits"
+
+
 ArmEE:
     type: "Cartesian"
     distal_link: "TCP"

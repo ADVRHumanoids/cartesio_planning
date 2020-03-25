@@ -377,6 +377,8 @@ install(DIRECTORY launch/
 
 add_subdirectory(examples/)
 
+add_subdirectory(bindings/python/)
+
 # compilation flags
 option(COMPILE_TESTS "Compile internal tests" FALSE)
 if(COMPILE_TESTS)

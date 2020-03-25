@@ -1,5 +1,6 @@
 #include "planning_scene_wrapper.h"
 
+
 namespace
 {
 
@@ -62,7 +63,8 @@ private:
 namespace XBot { namespace Cartesian { namespace Planning {
 
 PlanningSceneWrapper::PlanningSceneWrapper(ModelInterface::ConstPtr model):
-    _model(model)
+    _model(model),
+    _async_spinner(1, &_queue)
 {
     // create robot model loader
     robot_model_loader::RobotModelLoader::Options rml_opt(_model->getUrdfString(),
@@ -97,6 +99,19 @@ void PlanningSceneWrapper::stopMonitor()
     _monitor->stopSceneMonitor();
     _monitor->stopWorldGeometryMonitor();
     _monitor->stopPublishingPlanningScene();
+}
+
+void PlanningSceneWrapper::startGetPlanningSceneServer()
+{
+    ros::NodeHandle nh("~");
+    nh.setCallbackQueue(&_queue);
+
+    _get_ps_srv = nh.advertiseService("get_planning_scene",
+                                      &PlanningSceneWrapper::getPlanningScene,
+                                      this);
+
+    _async_spinner.start();
+
 }
 
 void PlanningSceneWrapper::update()
@@ -204,7 +219,6 @@ bool PlanningSceneWrapper::checkSelfCollisions() const
 
     _monitor->getPlanningScene()->checkSelfCollision(collision_request, collision_result);
 
-
     return collision_result.collision;
 }
 
@@ -224,7 +238,7 @@ void PlanningSceneWrapper::applyPlanningScene(const moveit_msgs::PlanningScene &
     _monitor->newPlanningSceneMessage(scene);
 }
 
-void PlanningSceneWrapper::getPlanningScene(moveit_msgs::GetPlanningScene::Request & req,
+bool PlanningSceneWrapper::getPlanningScene(moveit_msgs::GetPlanningScene::Request & req,
                                             moveit_msgs::GetPlanningScene::Response & res)
 {
     if (req.components.components & moveit_msgs::PlanningSceneComponents::TRANSFORMS)

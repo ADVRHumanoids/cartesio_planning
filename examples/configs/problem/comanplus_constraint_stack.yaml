@@ -1,13 +1,15 @@
 solver_options:
     regularization: 1e-2
     back_end: "qpoases"
-    control_dt: 0.50
 
 stack:
     - ["LeftFoot", "RightFoot"]
     #- ["Waist"]
 
 constraints: ["JointLimits"]
+
+JointLimits:
+    type: "JointLimits"
 
 LeftFoot:
     type: "Cartesian"

@@ -1,6 +1,9 @@
 #ifndef COLLISION_DETECTION_H
 #define COLLISION_DETECTION_H
 
+#include <ros/callback_queue.h>
+#include <ros/spinner.h>
+
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit_msgs/PlanningScene.h>
 #include <moveit_msgs/GetPlanningScene.h>
@@ -41,6 +44,11 @@ public:
     void stopMonitor();
 
     /**
+     * @brief startGetPlanningSceneServer
+     */
+    void startGetPlanningSceneServer();
+
+    /**
      * @brief update method updates the internal collision detector model state
      * from the provided pointer to ModelInterface
      */
@@ -61,7 +69,7 @@ public:
 
     void applyPlanningScene(const moveit_msgs::PlanningScene& scene);
 
-    void getPlanningScene(moveit_msgs::GetPlanningScene::Request& req,
+    bool getPlanningScene(moveit_msgs::GetPlanningScene::Request& req,
                           moveit_msgs::GetPlanningScene::Response& res);
 
 
@@ -74,6 +82,10 @@ private:
     ModelInterface::ConstPtr _model;
 
     planning_scene_monitor::PlanningSceneMonitorPtr _monitor;
+
+    ros::CallbackQueue _queue;
+    ros::AsyncSpinner _async_spinner;
+    ros::ServiceServer _get_ps_srv;
 
 };
 

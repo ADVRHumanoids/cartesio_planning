@@ -1,7 +1,6 @@
 solver_options:
     regularization: 1e-2
     back_end: "qpoases"
-    control_dt: 0.50 
 
 stack:
     - ["LeftFoot", "RightFoot", "LeftHand", "RightHand"]
@@ -9,6 +8,12 @@ stack:
 #    - ["Postural"]
     
 constraints: ["JointLimits"] #, "VelocityLimits"]
+
+JointLimits:
+    type: "JointLimits"
+
+VelocityLimits:
+    type: "VelocityLimits"
 
 LeftFoot:
     type: "Cartesian"
