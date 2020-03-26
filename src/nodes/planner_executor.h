@@ -33,6 +33,8 @@ class PlannerExecutor
 public:
 
     PlannerExecutor();
+    PlannerExecutor(const PlannerExecutor&) = delete;
+    PlannerExecutor& operator=(const PlannerExecutor&) = delete;
 
     void run();
 

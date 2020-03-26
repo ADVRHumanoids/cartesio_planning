@@ -14,7 +14,17 @@ using namespace XBot::Cartesian::Planning;
 
 auto ompl_planner_construct = [](Eigen::VectorXd qmin, Eigen::VectorXd qmax, std::string yaml_str)
 {
-    return OmplPlanner(qmin, qmax, YAML::Load(yaml_str));
+    return new OmplPlanner(qmin, qmax, YAML::Load(yaml_str));
+};
+
+
+auto ompl_planner_construct_constr = [](
+        ompl::base::ConstraintPtr constr,
+        Eigen::VectorXd qmin,
+        Eigen::VectorXd qmax,
+        std::string yaml_str)
+{
+    return new OmplPlanner(qmin, qmax, constr, YAML::Load(yaml_str));
 };
 
 auto ompl_planner_print = [](OmplPlanner& self)
@@ -28,8 +38,8 @@ auto goal_sample_construct = [](CartesianInterfaceImpl::Ptr ci)
 };
 
 auto goal_sample_setref = [](GoalSamplerBase& self,
-                            const std::string& frame,
-                            const Eigen::Affine3d& Tref)
+const std::string& frame,
+const Eigen::Affine3d& Tref)
 {
     self.getIkSolver()->setDesiredPose(frame, Tref);
 };
@@ -40,7 +50,7 @@ struct TimedOut : public std::runtime_error
 };
 
 auto goal_sample = [](GoalSamplerBase& self,
-                      double timeout_sec)
+double timeout_sec)
 {
     Eigen::VectorXd q;
     if(self.sampleGoal(q, timeout_sec))
@@ -57,7 +67,15 @@ PYBIND11_MODULE(planning, m)
     py::register_exception<TimedOut>(m, "TimedOut");
 
     py::class_<OmplPlanner>(m, "OmplPlanner")
-            .def(py::init(ompl_planner_construct), py::arg("qmin"), py::arg("qmax"), py::arg("yaml")="")
+            .def(py::init(ompl_planner_construct),
+                 py::arg("qmin"),
+                 py::arg("qmax"),
+                 py::arg("yaml")="")
+            .def(py::init(ompl_planner_construct_constr),
+                 py::arg("constr"),
+                 py::arg("qmin"),
+                 py::arg("qmax"),
+                 py::arg("yaml")="")
             .def("__repr__", ompl_planner_print)
             .def("setStateValidityPredicate", &OmplPlanner::setStateValidityPredicate)
             .def("setStartAndGoalStates",

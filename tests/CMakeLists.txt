@@ -37,6 +37,11 @@ target_link_libraries(test_projection ${TestLibs})
 add_dependencies(test_projection GTest-ext cartesio_planning)
 add_test(NAME test_projection COMMAND test_projection)
 
+add_executable(test_manifold test_manifold.cpp)
+target_link_libraries(test_manifold ${TestLibs})
+add_dependencies(test_manifold GTest-ext cartesio_planning)
+add_test(NAME test_manifold COMMAND test_manifold)
+
 add_executable(test_trajectory test_trajectory.cpp)
 target_link_libraries(test_trajectory ${TestLibs} ${ReflexxesTypeII_LIBRARIES} matlogger2::matlogger2 trajectory_interpolation)
 add_dependencies(test_trajectory GTest-ext)

@@ -36,6 +36,10 @@ public:
     typedef std::function<bool(const Eigen::VectorXd&)> StateValidityPredicate;
     typedef std::shared_ptr<OmplPlanner> Ptr;
 
+    OmplPlanner(const OmplPlanner&) = delete;
+    OmplPlanner& operator=(const OmplPlanner&) = delete;
+
+
     OmplPlanner(const Eigen::VectorXd& bounds_min,
                 const Eigen::VectorXd& bounds_max,
                 YAML::Node options);

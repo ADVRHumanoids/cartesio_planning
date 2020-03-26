@@ -22,6 +22,11 @@ if(${pybind11_FOUND})
     install(TARGETS visual_tools
         DESTINATION ${CATKIN_PACKAGE_PYTHON_DESTINATION})
 
+    pybind11_add_module(constraints constraints.cpp)
+    target_link_libraries(constraints PRIVATE cartesio_planning)
+    install(TARGETS constraints
+        DESTINATION ${CATKIN_PACKAGE_PYTHON_DESTINATION})
+
 else()
     message(STATUS "-----------------------------------pybind not found")
 endif()
