@@ -421,8 +421,7 @@ Planning::CartesianConstraint::Ptr PlannerExecutor::make_manifold(std::string pr
                                                               ci_ctx);
 
 
-    auto ik_solver = std::make_shared<Planning::PositionCartesianSolver>(constraint_ci,
-                                                                         ik_prob_constraint);
+    auto ik_solver = std::make_shared<Planning::PositionCartesianSolver>(constraint_ci);
 
     return std::make_shared<Planning::CartesianConstraint>(ik_solver);
 }

@@ -5,7 +5,7 @@ GoalGenerator::GoalGenerator(XBot::Cartesian::CartesianInterfaceImpl::Ptr ci,
     _ci(ci),
     _vc_context(vc_context)
 {
-    _ik = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(_ci, _ci->getIkProblem());
+    _ik = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(_ci);
     _goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSamplerBase>(_ik);
 
     XBot::Cartesian::RosServerClass::Options opt;

@@ -7,7 +7,6 @@
 
 #include <RobotInterfaceROS/ConfigFromParam.h>
 
-#include <cartesian_interface/utils/LoadObject.hpp>
 #include <cartesian_interface/utils/LoadConfig.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
 
@@ -134,19 +133,29 @@ void PlannerExecutor::init_load_planner()
     Eigen::VectorXd qmin, qmax;
     _model->getJointLimits(qmin, qmax);
 
+    Eigen::VectorXd qdotlims; //[rad/sec]
+    _model->getVelocityLimits(qdotlims);
+
+    if(_planner_config["control_space"])
+    {
+        _plan_controls = true;
+        ROS_INFO("Planner works in control space!");
+    }
+    else
+    {
+        _plan_controls = false;
+        ROS_INFO("Planner works in state space!");
+    }
+
     if(_model->isFloatingBase())
     {
-<<<<<<< HEAD
-        qmax.head<6>() << 1, 1, 1, M_PI, M_PI, M_PI;
-=======
         qmax.head<6>() << 1.0, 1.0, 1.0, 2*M_PI, 2*M_PI, 2*M_PI;
->>>>>>> 60ec0de... fixed error tolerance for ik goal_generator
         qmin.head<6>() << -qmax.head<6>();
 
         YAML_PARSE_OPTION(_planner_config["state_space"],
                 floating_base_pos_min,
                 std::vector<double>,
-                {});
+        {});
 
         if(floating_base_pos_min.size() > 0)
         {
@@ -158,7 +167,7 @@ void PlannerExecutor::init_load_planner()
         YAML_PARSE_OPTION(_planner_config["state_space"],
                 floating_base_pos_max,
                 std::vector<double>,
-                {});
+        {});
 
         if(floating_base_pos_max.size() > 0)
         {
@@ -167,22 +176,53 @@ void PlannerExecutor::init_load_planner()
                     floating_base_pos_max[2];
         }
 
+        if(_plan_controls)
+        {
+            qdotlims.head<6>() << 1., 1., 1., 2*M_PI, 2*M_PI, 2*M_PI;
+
+            YAML_PARSE_OPTION(_planner_config["control_space"],
+                    floating_base_velocity_limits,
+                    std::vector<double>,
+            {});
+
+            if(floating_base_velocity_limits.size() > 0)
+            {
+                for(unsigned int i = 0; i < floating_base_velocity_limits.size(); ++i)
+                    qdotlims[i] = floating_base_velocity_limits[i];
+
+            }
+
+        }
+
     }
+
+
 
     if(ompl_constraint)
     {
-        std::cout << "Constructing a constrained ompl planner" << std::endl;
-        _planner = std::make_shared<Planning::OmplPlanner>(qmin,
-                                                           qmax,
-                                                           ompl_constraint,
-                                                           _planner_config);
+        ROS_INFO("Constructing a constrained ompl planner");
+
+        if(_plan_controls)
+        {
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, ompl_constraint, _planner_config);
+        }
+        else
+        {
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, ompl_constraint, _planner_config);
+        }
     }
     else
     {
-        std::cout << "Constructing an unconstrained ompl planner" << std::endl;
-        _planner = std::make_shared<Planning::OmplPlanner>(qmin,
-                                                           qmax,
-                                                           _planner_config);
+        ROS_INFO("Constructing an unconstrained ompl planner");
+
+        if(_plan_controls)
+        {
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, _planner_config);
+        }
+        else
+        {
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, _planner_config);
+        }
     }
 
 
@@ -220,11 +260,11 @@ void PlannerExecutor::init_subscribe_start_goal()
 
     if(!_use_goal_generator)
         _goal_sub = _nh.subscribe("goal/joint_states", 1,
-                              &PlannerExecutor::on_goal_state_recv, this);
+                                  &PlannerExecutor::on_goal_state_recv, this);
 
     _start_viz = std::make_shared<Planning::RobotViz>(_model,
-                                                     "start/robot_markers",
-                                                     _nh);
+                                                      "start/robot_markers",
+                                                      _nh);
     _start_viz->setPrefix("planner/start/");
 
     _goal_viz = std::make_shared<Planning::RobotViz>(_model,
@@ -288,15 +328,17 @@ void PlannerExecutor::init_goal_generator()
             throw std::runtime_error("planner/problem_description_goal not provided!");
         }
 
-        auto ik_yaml_constraint = YAML::Load(problem_description_string);
+        auto ik_yaml_goal = YAML::Load(problem_description_string);
 
+        double ci_period = 1.0;
+        auto ci_ctx = std::make_shared<Context>(
+                    std::make_shared<Parameters>(ci_period),
+                    _model);
 
-        auto ik_prob = ProblemDescription(ik_yaml_constraint, _model);
+        auto ik_prob = ProblemDescription(ik_yaml_goal, ci_ctx);
 
-        CartesianInterfaceImpl::Ptr ci = Utils::LoadObject<CartesianInterfaceImpl>("libCartesianOpenSot.so",
-                                                                                   "create_instance",
-                                                                                   _model,
-                                                                                   ik_prob);
+        auto ci = CartesianInterfaceImpl::MakeInstance("OpenSot",
+                                                       ik_prob, ci_ctx);
 
 
         _goal_generator = std::make_shared<GoalGenerator>(ci, _vc_context);
@@ -314,7 +356,8 @@ void PlannerExecutor::init_goal_generator()
         }
         else
         {
-            _goal_generator->setErrorTolerance(_manifold->getTolerance());
+            if(_manifold)
+                _goal_generator->setErrorTolerance(_manifold->getTolerance());
         }
 
         _service_goal_sampler = _nh.advertiseService("goal_sampler_service",
@@ -364,12 +407,16 @@ Planning::CartesianConstraint::Ptr PlannerExecutor::make_manifold(std::string pr
 
     auto ik_yaml_constraint = YAML::Load(problem_description_string);
 
-    auto ik_prob_constraint = ProblemDescription(ik_yaml_constraint, _model);
+    double ci_period = 1.0;
+    auto ci_ctx = std::make_shared<Context>(
+                std::make_shared<Parameters>(ci_period),
+                _model);
 
-    CartesianInterfaceImpl::Ptr constraint_ci = Utils::LoadObject<CartesianInterfaceImpl>("libCartesianOpenSot.so",
-                                                                                          "create_instance",
-                                                                                          _model,
-                                                                                          ik_prob_constraint);
+    auto ik_prob_constraint = ProblemDescription(ik_yaml_constraint, ci_ctx);
+
+    auto constraint_ci = CartesianInterfaceImpl::MakeInstance("OpenSot",
+                                                              ik_prob_constraint,
+                                                              ci_ctx);
 
 
     auto ik_solver = std::make_shared<Planning::PositionCartesianSolver>(constraint_ci,
@@ -416,8 +463,8 @@ bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
             if(q[i] < qmin[i] || q[i] > qmax[i])
             {
                 std::cout << _model->getEnabledJointNames().at(i) <<
-                         ": " << qmin[i] << " <= " << q[i] <<
-                         " <= " << qmax[i] << "\n";
+                             ": " << qmin[i] << " <= " << q[i] <<
+                             " <= " << qmax[i] << "\n";
             }
         }
         std::cout.flush();
@@ -458,7 +505,6 @@ void PlannerExecutor::setStartState(const XBot::JointNameMap& q)
         _manifold->reset(); // note: manifold is set according to start state
     }
 }
-
 
 void PlannerExecutor::on_start_state_recv(const sensor_msgs::JointStateConstPtr & msg)
 {
@@ -530,18 +576,30 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
 
     std::cout << "Requested planner " << req.planner_type << std::endl;
 
+    if(req.goal_threshold <= 0.)
+    {
+        res.status.msg.data = "goal_threshold arg should be > 0";
+        res.status.val = ompl::base::PlannerStatus::ABORT;
+        return true;
+    }
+
+    std::cout<< "goal_threshold: "<<req.goal_threshold<<std::endl;
+
+
+
+
 
 
     std::vector<Eigen::VectorXd> trajectory;
     std::vector<std::vector<Eigen::Affine3d> > cartesian_trajectories;
     if(_distal_links.empty())
-        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, trajectory);
+        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, req.goal_threshold, trajectory);
     else
     {
         std::vector<std::pair<std::string, std::string> > base_distal_links;
         for(unsigned int i = 0; i < _distal_links.size(); ++i)
             base_distal_links.push_back(std::pair<std::string, std::string>(_base_links[i], _distal_links[i]));
-        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, base_distal_links,
+        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, req.goal_threshold, base_distal_links,
                                      trajectory, cartesian_trajectories);
     }
     res.status.msg.data = _planner->getPlannerStatus().asString();
@@ -593,11 +651,18 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     return true;
 }
 int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, const double interpolation_time,
+<<<<<<< HEAD
+                                 const std::vector<std::pair<std::string, std::string> > base_distal_links,
+                                 std::vector<Eigen::VectorXd>& trajectory,
+                                 std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories)
+=======
+                                 const double goal_thrs,
                 const std::vector<std::pair<std::string, std::string> > base_distal_links,
                 std::vector<Eigen::VectorXd>& trajectory,
                 std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories)
+>>>>>>> 26b5ad1b2633b3d03081a5bcbf4198a9cdbacad1
 {
-    int ret = callPlanner(time, planner_type, interpolation_time, trajectory);
+    int ret = callPlanner(time, planner_type, goal_thrs, interpolation_time, trajectory);
 
     if(_interpolator->isValid())
     {
@@ -618,38 +683,38 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
     return ret;
 }
 
-int PlannerExecutor::callPlanner(const double time, const std::string& planner_type,
+int PlannerExecutor::callPlanner(const double time, const std::string& planner_type, const double goal_thrs,
                                  const double interpolation_time, std::vector<Eigen::VectorXd>& trajectory)
 {
     if(time <= 0.)
         return ompl::base::PlannerStatus::ABORT;
 
     // check start and goal state correctness
-    std::cout << "Checking start state validity.." << std::endl;
+    ROS_INFO("Checking start state validity..");
     if(!check_state_valid(_start_model))
     {
         throw std::runtime_error("Invalid start state");
     }
 
-    std::cout << "Checking goal state validity.." << std::endl;
+    ROS_INFO("Checking goal state validity..");
     if(!check_state_valid(_goal_model))
     {
         throw std::runtime_error("Invalid goal state");
     }
 
-    std::cout<<"start and goal states are valid"<<std::endl;
+    ROS_INFO("start and goal states are valid");
 
     Eigen::VectorXd qstart, qgoal;
     _start_model->getJointPosition(qstart);
     _goal_model->getJointPosition(qgoal);
 
-    std::cout<<"Enforcing bounds..."<<std::endl;
+    ROS_INFO("Enforcing bounds...");
     enforce_bounds(qstart);
     enforce_bounds(qgoal);
     std::cout<<"...done!"<<std::endl;
 
 
-    _planner->setStartAndGoalStates(qstart, qgoal);
+    _planner->setStartAndGoalStates(qstart, qgoal, goal_thrs);
 
     _planner->solve(time, planner_type);
 

@@ -6,8 +6,7 @@ using namespace XBot::Cartesian::Planning;
 const double PositionCartesianSolver::DEFAULT_ERR_TOL = 1e-4;
 const int PositionCartesianSolver::DEFAULT_MAX_ITER = 1000;//60;
 
-PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci,
-                                                 ProblemDescription ik_problem):
+PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci):
     _n_task(0),
     _ci(ci),
     _model(ci->getModel()),
@@ -15,7 +14,7 @@ PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci,
     _err_tol(DEFAULT_ERR_TOL),
     _iter_callback([](){})
 {
-    for(auto t : ik_problem.getTask(0))
+    for(auto t : ci->getIkProblem().getTask(0))
     {
         if(auto cart = std::dynamic_pointer_cast<Cartesian::CartesianTask>(t))
         {

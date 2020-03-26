@@ -103,6 +103,11 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q, const unsigned int time_out
     return true;
 }
 
+PositionCartesianSolver::Ptr GoalSamplerBase::getIkSolver()
+{
+    return _ik_solver;
+}
+
 Eigen::VectorXd GoalSamplerBase::generateRandomSeed() const
 {
     // obtain model

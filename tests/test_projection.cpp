@@ -49,7 +49,7 @@ protected:
         _ci = CartesianInterfaceImpl::MakeInstance("OpenSot", ik_prob, ci_ctx);
 
         // solver
-        _solver = std::make_shared<Planning::PositionCartesianSolver>(_ci, ik_prob);
+        _solver = std::make_shared<Planning::PositionCartesianSolver>(_ci);
 
     }
 
