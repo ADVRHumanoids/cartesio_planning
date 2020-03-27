@@ -32,14 +32,14 @@ auto ompl_planner_print = [](OmplPlanner& self)
     self.print();
 };
 
-auto goal_sample_construct = [](CartesianInterfaceImpl::Ptr ci)
+auto goal_sampler_construct = [](CartesianInterfaceImpl::Ptr ci)
 {
     return GoalSamplerBase(std::make_shared<PositionCartesianSolver>(ci));
 };
 
-auto goal_sample_setref = [](GoalSamplerBase& self,
-const std::string& frame,
-const Eigen::Affine3d& Tref)
+auto goal_sampler_setref = [](GoalSamplerBase& self,
+                            const std::string& frame,
+                            const Eigen::Affine3d& Tref)
 {
     self.getIkSolver()->setDesiredPose(frame, Tref);
 };
@@ -50,7 +50,7 @@ struct TimedOut : public std::runtime_error
 };
 
 auto goal_sample = [](GoalSamplerBase& self,
-double timeout_sec)
+                    double timeout_sec)
 {
     Eigen::VectorXd q;
     if(self.sampleGoal(q, timeout_sec))
@@ -59,6 +59,11 @@ double timeout_sec)
     }
 
     throw TimedOut("Goal sampler timed out");
+};
+
+auto goal_sampler_set_maxiter(GoalSamplerBase& self, int maxiter)
+{
+    self.getIkSolver()->setMaxIterations(maxiter);
 };
 
 PYBIND11_MODULE(planning, m)
@@ -86,9 +91,10 @@ PYBIND11_MODULE(planning, m)
             .def("solve", &OmplPlanner::solve);
 
     py::class_<GoalSamplerBase>(m, "GoalSampler")
-            .def(py::init(goal_sample_construct))
+            .def(py::init(goal_sampler_construct))
             .def("sampleGoal", goal_sample)
             .def("setValidityChecker", &GoalSamplerBase::setValidityCheker)
-            .def("setDesiredPose", goal_sample_setref);
+            .def("setMaxIterations", goal_sampler_set_maxiter)
+            .def("setDesiredPose", goal_sampler_setref);
 }
 
