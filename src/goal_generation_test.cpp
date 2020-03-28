@@ -37,7 +37,7 @@ int main(int argc, char ** argv)
 
     // obtain ci object from param server
     auto ik_yaml = LoadProblemDescription(LoadFrom::PARAM);
-    double ci_period = 0.01;
+    double ci_period = 1;
     auto ci_ctx = std::make_shared<Context>(
                 std::make_shared<Parameters>(ci_period),
                 model);
@@ -68,10 +68,12 @@ int main(int argc, char ** argv)
 
 
 
-    ros::Rate rate(1./ci_ctx->params()->getControlPeriod());
+    ros::Rate rate(100);
     while(ros::ok())
     {
+        Eigen::VectorXd q;
         goal_gen.update();
+        goal_gen.sample(q, 1.0);
 
         ros::spinOnce();
         rate.sleep();
