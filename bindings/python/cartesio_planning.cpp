@@ -66,6 +66,24 @@ auto goal_sampler_set_maxiter(GoalSamplerBase& self, int maxiter)
     self.getIkSolver()->setMaxIterations(maxiter);
 };
 
+auto ik_err = [](PositionCartesianSolver& self)
+{
+    Eigen::VectorXd f;
+
+    self.getError(f);
+
+    return f;
+};
+
+auto ik_jacob = [](PositionCartesianSolver& self)
+{
+    Eigen::MatrixXd J;
+
+    self.getJacobian(J);
+
+    return J;
+};
+
 PYBIND11_MODULE(planning, m)
 {
 
@@ -96,5 +114,15 @@ PYBIND11_MODULE(planning, m)
             .def("setValidityChecker", &GoalSamplerBase::setValidityCheker)
             .def("setMaxIterations", goal_sampler_set_maxiter)
             .def("setDesiredPose", goal_sampler_setref);
+
+    py::class_<PositionCartesianSolver>(m, "PositionCartesianSolver")
+            .def(py::init<CartesianInterfaceImpl::Ptr>())
+            .def("getError", ik_err)
+            .def("getJacobian", ik_jacob)
+            .def("setMaxIterations", &PositionCartesianSolver::setMaxIterations)
+            .def("solve", &PositionCartesianSolver::solve)
+            .def("setDesiredPose", &PositionCartesianSolver::setDesiredPose)
+            .def("reset", &PositionCartesianSolver::reset);
+
 }
 
