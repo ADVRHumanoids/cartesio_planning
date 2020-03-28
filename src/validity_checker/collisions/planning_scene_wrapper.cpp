@@ -81,7 +81,7 @@ PlanningSceneWrapper::PlanningSceneWrapper(ModelInterface::ConstPtr model):
 void PlanningSceneWrapper::startMonitor()
 {
     // publish planning scene at 30 Hz (topic is ~/monitored_planning_scene)
-    _monitor->setPlanningScenePublishingFrequency(2.); // tbd: hardcoded
+    _monitor->setPlanningScenePublishingFrequency(20.); // tbd: hardcoded
 
     // this subscribes to /planning_scene
     _monitor->startSceneMonitor();
