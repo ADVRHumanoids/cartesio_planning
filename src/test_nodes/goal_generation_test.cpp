@@ -14,7 +14,6 @@ using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
 
 
-
 int main(int argc, char ** argv)
 {
     ros::init(argc, argv, "position_ik_test");
