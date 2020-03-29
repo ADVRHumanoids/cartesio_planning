@@ -69,7 +69,8 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
                          const Eigen::VectorXd& control_min,
                          const Eigen::VectorXd& control_max,
-                         YAML::Node options):
+                         YAML::Node options,
+                         ompl::control::StatePropagatorPtr propagator):
     _sbounds(bounds_min.size()),
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
@@ -91,9 +92,10 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _space_info = std::make_shared<ompl::base::SpaceInformation>(_space);
     ///
 
-    _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, control_min.size());
+//     _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, control_min.size()); // continuous real vector control space
+    _cspace = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 0, 3);
     _cbounds = std::make_shared<ompl::base::RealVectorBounds>(control_min.size());
-    set_control_bounds(control_min, control_max);
+//     set_control_bounds(control_min, control_max);
 
     _cspace_info = std::make_shared<ompl::control::SpaceInformation>(_space, _cspace);
 
@@ -101,8 +103,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     setup_problem_definition(_cspace_info);
 
     ///TODO: this should be added by config using proper factory
-    std::shared_ptr<Propagators::RK1> rk1 = std::make_shared<Propagators::RK1>(_cspace_info.get(), *_sw);
-    _cspace_info->setStatePropagator(rk1);
+    _cspace_info->setStatePropagator(propagator);
 
     YAML_PARSE_OPTION(options["control_space"], duration, double, 0.1);
     _cspace_info->setPropagationStepSize(duration);
@@ -146,7 +147,8 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& control_min,
                          const Eigen::VectorXd& control_max,
                          ompl::base::ConstraintPtr constraint,
-                         YAML::Node options):
+                         YAML::Node options,
+                         ompl::control::StatePropagatorPtr propagator):
     _sbounds(bounds_min.size()),
     _constraint(constraint),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
@@ -169,9 +171,10 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     _space_info = std::make_shared<ompl::base::ConstrainedSpaceInformation>(_space);
     ///
 
-    _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, control_min.size());
+//     _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, control_min.size());
+    _cspace = std:: make_shared<ompl::control::DiscreteControlSpace>(_space, 0, 3);
     _cbounds = std::make_shared<ompl::base::RealVectorBounds>(control_min.size());
-    set_control_bounds(control_min, control_max);
+//     set_control_bounds(control_min, control_max);
 
     _cspace_info = std::make_shared<ompl::control::ConstrainedSpaceInformation>(_space, _cspace);
 
@@ -180,8 +183,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     setup_problem_definition(_cspace_info);
 
     ///TODO: this should be added by config using proper factory
-    std::shared_ptr<Propagators::RK1> rk1 = std::make_shared<Propagators::RK1>(_cspace_info.get(), *_sw, _constraint);
-    _cspace_info->setStatePropagator(rk1);
+    _cspace_info->setStatePropagator(propagator);
 
     YAML_PARSE_OPTION(options["control_space"], duration, double, 0.1);
     _cspace_info->setPropagationStepSize(duration);
@@ -257,7 +259,7 @@ void OmplPlanner::set_control_bounds(const Eigen::VectorXd& control_min,
         _cbounds->setHigh(i, control_max[i]);
     }
 
-    _cspace->setBounds(*_cbounds);
+//     _cspace->setBounds(*_cbounds);
 }
 
 void OmplPlanner::setup_problem_definition(std::shared_ptr<ompl::base::SpaceInformation> space_info)

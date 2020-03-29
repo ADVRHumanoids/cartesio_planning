@@ -17,6 +17,7 @@
 #include <ompl/base/samplers/ObstacleBasedValidStateSampler.h>
 
 #include <ompl/control/spaces/RealVectorControlSpace.h>
+#include <ompl/control/spaces/DiscreteControlSpace.h>
 #include <ompl/control/SpaceInformation.h>
 
 #include <Eigen/Dense>
@@ -54,14 +55,16 @@ public:
                 const Eigen::VectorXd& bounds_max,
                 const Eigen::VectorXd& control_min,
                 const Eigen::VectorXd& control_max,
-                YAML::Node options);
+                YAML::Node options,
+                ompl::control::StatePropagatorPtr propagator);
 
     OmplPlanner(const Eigen::VectorXd& bounds_min,
                 const Eigen::VectorXd& bounds_max,
                 const Eigen::VectorXd& control_min,
                 const Eigen::VectorXd& control_max,
                 ompl::base::ConstraintPtr constraint,
-                YAML::Node options);
+                YAML::Node options,
+                ompl::control::StatePropagatorPtr propagator);
 
     void setStateValidityPredicate(StateValidityPredicate svc);
 
@@ -123,7 +126,8 @@ private:
     std::shared_ptr<ompl::base::StateSpace> _space;
 
     std::shared_ptr<ompl::base::RealVectorBounds> _cbounds; //control bounds
-    std::shared_ptr<ompl::control::RealVectorControlSpace> _cspace;
+//     std::shared_ptr<ompl::control::RealVectorControlSpace> _cspace; // continuous real vector control space
+    std::shared_ptr<ompl::control::DiscreteControlSpace> _cspace; // discrete control space
     std::shared_ptr<ompl::control::SpaceInformation> _cspace_info;
 
     std::function<void(void)> _on_reset_space;

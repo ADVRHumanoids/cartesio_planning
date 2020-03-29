@@ -2,12 +2,13 @@
 #include <ompl/base/State.h>
 #include <ompl/control/Control.h>
 #include <ompl/control/StatePropagator.h>
+#include <ompl/control/SpaceInformation.h>
 
 namespace XBot { namespace Cartesian { namespace Planning { namespace Propagators{
 
 class RK1 : public ompl::control::StatePropagator{
 public:
-    RK1(ompl::control::SpaceInformation* si, StateWrapper& sw, const ompl::base::ConstraintPtr manifold = NULL):
+    RK1(ompl::control::SpaceInformationPtr si, StateWrapper sw, const ompl::base::ConstraintPtr manifold = NULL):
         ompl::control::StatePropagator(si),
         _sw(sw),
         _manifold(manifold)

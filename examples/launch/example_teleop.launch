@@ -13,6 +13,10 @@
     <!-- problem description for manifold -->
     <param name="planner/problem_description_constraint"
         textfile="$(find cartesio_planning)/configs/problem/teleop_constraint_stack.yaml"/>
+    
+    <!-- problem descriptio for discrete controls -->
+    <param name="planner/problem_description_discrete_controls"
+           textfile="$(find cartesio_planning)/configs/problem/teleop_IK_discrete_controls.yaml"/>
 
     <!-- start planner -->  
     <node pkg="cartesio_planning" type="planning_server" name="planning_server" output="screen">

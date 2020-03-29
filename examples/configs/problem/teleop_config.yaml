@@ -19,3 +19,4 @@ state_space:
 
 control_space:
     duration: 0.01
+    propagatorType: discrete

@@ -21,7 +21,12 @@
 
 #include "cartesio_planning/CartesioPlanner.h"
 
+#include "propagators/discretePropagator.h"
+#include "propagators/RK1.h"
+
 #include "nodes/goal_generation.h"
+
+#include "state_wrapper.h"
 
 #include "planner/cartesian_trajectory_interpolation.h"
 
@@ -81,6 +86,9 @@ public:
                     const std::vector<std::pair<std::string, std::string> > base_distal_links,
                     std::vector<Eigen::VectorXd>& trajectory,
                     std::vector<std::vector<Eigen::Affine3d> >& cartesian_trajectories);
+    
+
+    
 
 private:
 
@@ -109,6 +117,8 @@ private:
                                       moveit_msgs::ApplyPlanningScene::Response& res);
     bool goal_sampler_service(cartesio_planning::CartesioGoal::Request& req,
                               cartesio_planning::CartesioGoal::Response& res);
+
+    ompl::control::StatePropagatorPtr make_propagator(std::string propagatorType);
 
 
     Planning::CartesianConstraint::Ptr make_manifold(std::string problem_description_string);
@@ -142,6 +152,8 @@ private:
     CartesianTrajectoryInterpolation::Ptr _interpolator;
 
     bool _plan_controls;
+        
+    ompl::control::StatePropagatorPtr _propagator;
 
 
 };

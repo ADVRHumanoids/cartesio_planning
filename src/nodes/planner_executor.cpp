@@ -204,7 +204,9 @@ void PlannerExecutor::init_load_planner()
 
         if(_plan_controls)
         {
-            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, ompl_constraint, _planner_config);
+            YAML_PARSE_OPTION(_planner_config["control_space"], propagatorType, std::string, "RK1");
+            _propagator = make_propagator(propagatorType);
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, ompl_constraint, _planner_config, _propagator);
         }
         else
         {
@@ -219,7 +221,9 @@ void PlannerExecutor::init_load_planner()
 
         if(_plan_controls)
         {
-            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, _planner_config);
+            YAML_PARSE_OPTION(_planner_config["control_space"], propagatorType, std::string, "RK1");
+            _propagator = make_propagator(propagatorType);
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, _planner_config, _propagator);
         }
         else
         {
@@ -791,4 +795,19 @@ void PlannerExecutor::enforce_bounds(Eigen::VectorXd & q) const
     _planner->getBounds(qmin, qmax);
 
     q = q.cwiseMin(qmax).cwiseMax(qmin);
+}
+
+ompl::control::StatePropagatorPtr PlannerExecutor::make_propagator(std::string propagatorType)
+{
+    if (propagatorType == "discrete")
+        return std::make_shared<XBot::Cartesian::Planning::Propagators::discretePropagator>(_planner->getControlSpaceInfo(), _planner->getStateWrapper(), _model, _nh);
+    
+    else if (propagatorType == "RK1")
+        return std::make_shared<XBot::Cartesian::Planning::Propagators::RK1>(_planner->getControlSpaceInfo(), _planner->getStateWrapper());
+    
+    else
+    {
+        ROS_ERROR ("Wrong input, choose between \"RK1\" or \"discrete\"!");
+        throw std::runtime_error ("Wrong input, choose between \"RK1\" or \"discrete\"!");
+    }   
 }
