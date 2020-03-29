@@ -22,9 +22,14 @@ void StateWrapper::setState(ompl::base::State * state,
     {
         state->as<ompl::base::ConstrainedStateSpace::StateType>()->copy(value);
     }
-    else //state space is not constrained
+    else if (_state_space_type == StateSpaceType::REALVECTOR) //state space is a real vector
     {
         Eigen::VectorXd::Map(state->as<ompl::base::RealVectorStateSpace::StateType>()->values, _size) = value;
+    }
+    else //SE2 state space
+    {
+        state->as<ompl::base::SE2StateSpace::StateType>()->setXY(value[0], value[1]);
+        state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(value[2]);
     }
 
 }
@@ -37,8 +42,14 @@ void StateWrapper::getState(const ompl::base::State * state,
     {
         value = *state->as<ompl::base::ConstrainedStateSpace::StateType>();
     }
-    else
+    else if (_state_space_type == StateSpaceType::REALVECTOR)
     {
         value = Eigen::VectorXd::Map(state->as<ompl::base::RealVectorStateSpace::StateType>()->values, _size);
+    }
+    else
+    {
+        value[0] = state->as<ompl::base::SE2StateSpace::StateType>()->getX();
+        value[1] = state->as<ompl::base::SE2StateSpace::StateType>()->getY();
+        value[2] = state->as<ompl::base::SE2StateSpace::StateType>()->getYaw();
     }
 }
