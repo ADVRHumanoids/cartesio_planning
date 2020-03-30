@@ -21,6 +21,7 @@ PlannerExecutor::PlannerExecutor():
     init_load_config();
     init_load_model();
     init_load_planner();
+    init_load_propagator();
     init_load_validity_checker();
     init_goal_generator();
     init_subscribe_start_goal();
@@ -93,6 +94,7 @@ void PlannerExecutor::init_load_config()
     // load planner config file (yaml)
     std::string planner_config_string;
     _nhpr.getParam("planner_config", planner_config_string);
+    std::cout << "Loaded config file: \n" << planner_config_string << std::endl;
 
     _planner_config = YAML::Load(planner_config_string);
 }
@@ -124,7 +126,7 @@ void PlannerExecutor::init_load_planner()
         }
 
         _manifold = make_manifold(problem_description_string);
-
+        
         ompl_constraint = _manifold;
 
     }
@@ -204,9 +206,7 @@ void PlannerExecutor::init_load_planner()
 
         if(_plan_controls)
         {
-            YAML_PARSE_OPTION(_planner_config["control_space"], propagatorType, std::string, "RK1");
-            _propagator = make_propagator(propagatorType);
-            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, ompl_constraint, _planner_config, _propagator);
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, ompl_constraint, _planner_config);
         }
         else
         {
@@ -221,9 +221,7 @@ void PlannerExecutor::init_load_planner()
 
         if(_plan_controls)
         {
-            YAML_PARSE_OPTION(_planner_config["control_space"], propagatorType, std::string, "RK1");
-            _propagator = make_propagator(propagatorType);
-            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, _planner_config, _propagator);
+            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, _planner_config);
         }
         else
         {
@@ -233,6 +231,21 @@ void PlannerExecutor::init_load_planner()
 
 
 }
+
+void PlannerExecutor::init_load_propagator()
+{
+    if (_plan_controls)
+    {
+        YAML_PARSE_OPTION(_planner_config["control_space"], propagatorType, std::string, "RK1");
+        YAML_PARSE_OPTION(_planner_config["control_space"], duration, double, 0.1);
+        _propagator = make_propagator(propagatorType);
+        
+        _planner->getControlSpaceInfo()->setStatePropagator(_propagator);
+        
+        _planner->getControlSpaceInfo()->setPropagationStepSize(duration);
+    }
+}
+
 
 void PlannerExecutor::init_load_validity_checker()
 {
@@ -800,10 +813,10 @@ void PlannerExecutor::enforce_bounds(Eigen::VectorXd & q) const
 ompl::control::StatePropagatorPtr PlannerExecutor::make_propagator(std::string propagatorType)
 {
     if (propagatorType == "discrete")
-        return std::make_shared<XBot::Cartesian::Planning::Propagators::discretePropagator>(_planner->getControlSpaceInfo(), _planner->getStateWrapper(), _model, _nh);
+        return std::make_shared<XBot::Cartesian::Planning::Propagators::discretePropagator>(_planner->getControlSpaceInfo(), _model, _nh);
     
     else if (propagatorType == "RK1")
-        return std::make_shared<XBot::Cartesian::Planning::Propagators::RK1>(_planner->getControlSpaceInfo(), _planner->getStateWrapper());
+        return std::make_shared<XBot::Cartesian::Planning::Propagators::RK1>(_planner->getControlSpaceInfo());
     
     else
     {

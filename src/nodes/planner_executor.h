@@ -97,6 +97,7 @@ private:
     void init_load_model();
     void init_load_config();
     void init_load_planner();
+    void init_load_propagator();
     void init_load_validity_checker();
     void init_subscribe_start_goal();
     void init_trj_publisiher();
