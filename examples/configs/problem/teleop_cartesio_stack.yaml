@@ -21,7 +21,7 @@ ArmEE:
     distal_link: "TCP"
     base_link: "base_link"
     lambda: 0.1
-    indices: [0,1,2,4]
+    #indices: [0,1,2,4]
 
 ArmPosition:
     type: "Cartesian"
@@ -39,12 +39,12 @@ ArmOrientation:
 #    use_body_jacobian: true
     
 
-ArmEE:
-    type: "Cartesian"
-    distal_link: "teleop_link5"
-    base_link: "base_link"
-    lambda: 0.1
-    indices: [0,1,2,3,4]
+#ArmEE:
+    #type: "Cartesian"
+    #distal_link: "teleop_link5"
+    #base_link: "base_link"
+    #lambda: 0.1
+    #indices: [0,1,2,3,4]
 
 Postural:
     type: "Postural"

@@ -1,5 +1,5 @@
-manifold:
-    param_name: "problem_description_constraint"
+#manifold:
+    #param_name: "problem_description_constraint"
 
 state_validity_check:
     - collisions

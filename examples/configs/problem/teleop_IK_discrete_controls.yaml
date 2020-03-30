@@ -18,7 +18,7 @@ VelocityLimits:
 
 ArmEE:
     type: "Cartesian"
-    distal_link: "TCP"
+    distal_link: "teleop_link5"
     base_link: "base_link"
     lambda: 0.1
     indices: [0,1,2]
@@ -38,14 +38,6 @@ ArmOrientation:
     indices: [4]
 #    use_body_jacobian: true
     
-
-ArmEE:
-    type: "Cartesian"
-    distal_link: "teleop_link5"
-    base_link: "base_link"
-    lambda: 0.1
-    indices: [0,1,2,3,4]
-
 Postural:
     type: "Postural"
     lambda: 0.01
