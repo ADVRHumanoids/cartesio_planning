@@ -4,7 +4,7 @@ solver_options:
 
 stack:
     #- ["ArmPosition", "ArmOrientation"]
-    - ["ArmEE"]
+    - ["ArmPosition"]
     #- ["Postural"]
 
     
@@ -13,15 +13,6 @@ constraints: ["JointLimits"]
 JointLimits:
     type: "JointLimits"
 
-VelocityLimits:
-    type: "VelocityLimits"
-
-ArmEE:
-    type: "Cartesian"
-    distal_link: "teleop_link5"
-    base_link: "base_link"
-    lambda: 0.1
-    indices: [0,1,2]
 
 ArmPosition:
     type: "Cartesian"
@@ -30,15 +21,4 @@ ArmPosition:
     lambda: 0.1
     indices: [0,1,2]
 
-ArmOrientation:
-    type: "Cartesian"
-    distal_link: "TCP"
-    base_link: "base_link"
-    lambda: 0.1
-    indices: [4]
-#    use_body_jacobian: true
-    
-Postural:
-    type: "Postural"
-    lambda: 0.01
-    
+

@@ -813,10 +813,10 @@ void PlannerExecutor::enforce_bounds(Eigen::VectorXd & q) const
 ompl::control::StatePropagatorPtr PlannerExecutor::make_propagator(std::string propagatorType)
 {
     if (propagatorType == "discrete")
-        return std::make_shared<XBot::Cartesian::Planning::Propagators::discretePropagator>(_planner->getControlSpaceInfo(), _model, _nh);
+        return std::make_shared<XBot::Cartesian::Planning::Propagators::discretePropagator>(_planner->getControlSpaceInfo(), _planner->getStateWrapper(), _model, _nh);
     
     else if (propagatorType == "RK1")
-        return std::make_shared<XBot::Cartesian::Planning::Propagators::RK1>(_planner->getControlSpaceInfo());
+        return std::make_shared<XBot::Cartesian::Planning::Propagators::RK1>(_planner->getControlSpaceInfo(), _planner->getStateWrapper());
     
     else
     {
