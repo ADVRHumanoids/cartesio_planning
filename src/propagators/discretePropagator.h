@@ -19,21 +19,22 @@ namespace XBot { namespace Cartesian { namespace Planning { namespace Propagator
 class discretePropagator : public ompl::control::StatePropagator{
 public:
     discretePropagator (ompl::control::SpaceInformationPtr si,
-                        StateWrapper sw, 
+                        std::shared_ptr<StateWrapper> sw,
                         XBot::ModelInterface::Ptr model, 
                         ros::NodeHandle& nh,
                         const ompl::base::ConstraintPtr manifold = NULL):
         ompl::control::StatePropagator(si),
-        _sw(sw),
         _manifold(manifold),
+        _sw(sw),
         _model(model),
-        _nh(nh) {}
+        _nh(nh) 
+        {}
     
     void getEEPose(const ompl::base::State* start, Eigen::Affine3d& T) const
     {
         // Wrap the start state
         Eigen::VectorXd q;
-        _sw.getState(start, q);
+        _sw->getState(start, q);
         
         // Update the model
         _model->setJointPosition(q);
@@ -108,16 +109,24 @@ public:
                 pose[0] = pose[0];
                 pose[1] = pose[1] - 0.05;
                 pose[2] = pose[2];
+            case (4):
+                pose[0] = pose[0] + 0.05;
+                pose[1] = pose[1];
+                pose[2] = pose[2];
+            case (5):
+                pose[0] = pose[0] - 0.05;
+                pose[1] = pose[1];
+                pose[2] = pose[2];
         }
                 
         T.translation() = pose;
         Eigen::VectorXd q = getJointPosition(T);
         
-        _sw.setState(result, q);
+        _sw->setState(result, q);
     };  
     
 private:
-    StateWrapper& _sw;
+    std::shared_ptr<StateWrapper> _sw;
     ompl::base::ConstraintPtr _manifold;
     XBot::ModelInterface::Ptr _model;
     ros::NodeHandle _nh;
