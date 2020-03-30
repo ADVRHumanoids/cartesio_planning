@@ -28,7 +28,27 @@ public:
         _sw(sw),
         _model(model),
         _nh(nh) 
-        {}
+        {
+            std::string problem_description_discrete_string;
+            if(!_nh.getParam("problem_description_discrete_controls", problem_description_discrete_string))
+            {
+                ROS_ERROR("planner/problem_description_discrete_controls!");
+                throw std::runtime_error("planner/problem_description_discrete_controls!");
+            }
+
+            auto ik_yaml_goal = YAML::Load(problem_description_discrete_string);
+
+            double ci_period = 1.0;
+            auto ci_ctx = std::make_shared<Context>(
+                        std::make_shared<Parameters>(ci_period),
+                        _model);
+
+            auto ik_prob = ProblemDescription(ik_yaml_goal, ci_ctx);
+
+            auto ci = CartesianInterfaceImpl::MakeInstance("OpenSot",
+                                                        ik_prob, ci_ctx); 
+            _solver = std::make_shared<PositionCartesianSolver>(ci);
+        }
     
     void getEEPose(const ompl::base::State* start, Eigen::Affine3d& T) const
     {
@@ -47,38 +67,24 @@ public:
     
     Eigen::VectorXd getJointPosition(Eigen::Affine3d T) const
     {
-        std::string problem_description_discrete_string;
-        if(!_nh.getParam("problem_description_discrete_controls", problem_description_discrete_string))
-        {
-            ROS_ERROR("planner/problem_description_discrete_controls!");
-            throw std::runtime_error("planner/problem_description_discrete_controls!");
-        }
-
-        auto ik_yaml_goal = YAML::Load(problem_description_discrete_string);
-
-        double ci_period = 1.0;
-        auto ci_ctx = std::make_shared<Context>(
-                    std::make_shared<Parameters>(ci_period),
-                    _model);
-
-        auto ik_prob = ProblemDescription(ik_yaml_goal, ci_ctx);
-
-        auto ci = CartesianInterfaceImpl::MakeInstance("OpenSot",
-                                                       ik_prob, ci_ctx);
         
-        PositionCartesianSolver solver(ci);
-        solver.setDesiredPose("tool_exchanger", T);
-        solver.solve();  
+        _solver->setDesiredPose("tool_exchanger", T);
+        _solver->solve();  
         
-        if (solver.solve())
+        if (_solver->solve())
         {
+            std::cout << "Exact solution found" << std::endl;
             Eigen::VectorXd q; 
-            solver.getModel()->getJointPosition(q);
+            _solver->getModel()->getJointPosition(q);
             return q;        
         }
-        else 
-            throw std::runtime_error("Unable to solve IK inside the discrete propagator");
-        
+        else
+        {
+            std::cout << "Approximate solution found" << std::endl;
+            Eigen::VectorXd q;
+            _solver->getModel()->getJointPosition(q);
+            return q;
+        }        
     }
         
     virtual void propagate (const ompl::base::State *start, const ompl::control::Control *control,
@@ -131,6 +137,8 @@ private:
     ompl::base::ConstraintPtr _manifold;
     XBot::ModelInterface::Ptr _model;
     ros::NodeHandle _nh;
+    
+    std::shared_ptr<PositionCartesianSolver> _solver;
 
 };
 
