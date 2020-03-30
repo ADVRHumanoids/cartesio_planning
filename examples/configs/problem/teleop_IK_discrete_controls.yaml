@@ -16,7 +16,7 @@ JointLimits:
 
 ArmPosition:
     type: "Cartesian"
-    distal_link: "TCP"
+    distal_link: "tool_exchanger"
     base_link: "base_link"
     lambda: 0.1
     indices: [0,1,2]

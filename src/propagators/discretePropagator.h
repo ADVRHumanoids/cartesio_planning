@@ -41,19 +41,20 @@ public:
         _model->update();
         
         // Extract end-effector position     
-        _model->getPose("teleop_link5", T);
+        _model->getPose("tool_exchanger", T);
+        std::cout << T.translation() << std::endl;
     }    
     
     Eigen::VectorXd getJointPosition(Eigen::Affine3d T) const
     {
-        std::string problem_description_string;
-        if(!_nh.getParam("problem_description_discrete_controls", problem_description_string))
+        std::string problem_description_discrete_string;
+        if(!_nh.getParam("problem_description_discrete_controls", problem_description_discrete_string))
         {
             ROS_ERROR("planner/problem_description_discrete_controls!");
             throw std::runtime_error("planner/problem_description_discrete_controls!");
         }
 
-        auto ik_yaml_goal = YAML::Load(problem_description_string);
+        auto ik_yaml_goal = YAML::Load(problem_description_discrete_string);
 
         double ci_period = 1.0;
         auto ci_ctx = std::make_shared<Context>(
@@ -66,7 +67,7 @@ public:
                                                        ik_prob, ci_ctx);
         
         PositionCartesianSolver solver(ci);
-        solver.setDesiredPose("teleop_link5", T);
+        solver.setDesiredPose("tool_exchanger", T);
         solver.solve();  
         
         if (solver.solve())
