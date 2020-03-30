@@ -55,16 +55,14 @@ public:
                 const Eigen::VectorXd& bounds_max,
                 const Eigen::VectorXd& control_min,
                 const Eigen::VectorXd& control_max,
-                YAML::Node options,
-                ompl::control::StatePropagatorPtr propagator);
+                YAML::Node options);
 
     OmplPlanner(const Eigen::VectorXd& bounds_min,
                 const Eigen::VectorXd& bounds_max,
                 const Eigen::VectorXd& control_min,
                 const Eigen::VectorXd& control_max,
                 ompl::base::ConstraintPtr constraint,
-                YAML::Node options,
-                ompl::control::StatePropagatorPtr propagator);
+                YAML::Node options);
 
     void setStateValidityPredicate(StateValidityPredicate svc);
 
@@ -91,7 +89,7 @@ public:
 
     void getControlBounds(Eigen::VectorXd& control_min, Eigen::VectorXd& control_max)  const;
 
-    StateWrapper getStateWrapper() const;
+    std::shared_ptr<StateWrapper> getStateWrapper() const;
 
 
 private:

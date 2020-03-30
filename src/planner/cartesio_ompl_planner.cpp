@@ -69,8 +69,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& bounds_max,
                          const Eigen::VectorXd& control_min,
                          const Eigen::VectorXd& control_max,
-                         YAML::Node options,
-                         ompl::control::StatePropagatorPtr propagator):
+                         YAML::Node options):
     _sbounds(bounds_min.size()),
     _size(bounds_min.size()),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
@@ -93,8 +92,8 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     ///
 
 //     _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, control_min.size()); // continuous real vector control space
-    _cspace = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 0, 3);
-    _cbounds = std::make_shared<ompl::base::RealVectorBounds>(control_min.size());
+    _cspace = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 0, 5);
+//     _cbounds = std::make_shared<ompl::base::RealVectorBounds>(control_min.size());
 //     set_control_bounds(control_min, control_max);
 
     _cspace_info = std::make_shared<ompl::control::SpaceInformation>(_space, _cspace);
@@ -103,11 +102,10 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     setup_problem_definition(_cspace_info);
 
     ///TODO: this should be added by config using proper factory
-    _cspace_info->setStatePropagator(propagator);
+//     _cspace_info->setStatePropagator(propagator);
 
-    YAML_PARSE_OPTION(options["control_space"], duration, double, 0.1);
-    _cspace_info->setPropagationStepSize(duration);
-
+//     YAML_PARSE_OPTION(options["control_space"], duration, double, 0.1);
+//     _cspace_info->setPropagationStepSize(duration);
 }
 
 namespace ompl{ namespace control{
@@ -147,8 +145,7 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
                          const Eigen::VectorXd& control_min,
                          const Eigen::VectorXd& control_max,
                          ompl::base::ConstraintPtr constraint,
-                         YAML::Node options,
-                         ompl::control::StatePropagatorPtr propagator):
+                         YAML::Node options):
     _sbounds(bounds_min.size()),
     _constraint(constraint),
     _solved(ompl::base::PlannerStatus::UNKNOWN),
@@ -172,8 +169,8 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     ///
 
 //     _cspace = std::make_shared<ompl::control::RealVectorControlSpace>(_space, control_min.size());
-    _cspace = std:: make_shared<ompl::control::DiscreteControlSpace>(_space, 0, 3);
-    _cbounds = std::make_shared<ompl::base::RealVectorBounds>(control_min.size());
+    _cspace = std:: make_shared<ompl::control::DiscreteControlSpace>(_space, 0, 5);
+//     _cbounds = std::make_shared<ompl::base::RealVectorBounds>(control_min.size());
 //     set_control_bounds(control_min, control_max);
 
     _cspace_info = std::make_shared<ompl::control::ConstrainedSpaceInformation>(_space, _cspace);
@@ -183,10 +180,10 @@ OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
     setup_problem_definition(_cspace_info);
 
     ///TODO: this should be added by config using proper factory
-    _cspace_info->setStatePropagator(propagator);
+//     _cspace_info->setStatePropagator(propagator);
 
-    YAML_PARSE_OPTION(options["control_space"], duration, double, 0.1);
-    _cspace_info->setPropagationStepSize(duration);
+//     YAML_PARSE_OPTION(options["control_space"], duration, double, 0.1);
+//     _cspace_info->setPropagationStepSize(duration);
 }
 
 OmplPlanner::OmplPlanner(const Eigen::VectorXd& bounds_min,
@@ -419,9 +416,9 @@ void OmplPlanner::getControlBounds(Eigen::VectorXd& control_min, Eigen::VectorXd
     control_max = control_max.Map(_cbounds->high.data(), _cbounds->high.size());
 }
 
-StateWrapper OmplPlanner::getStateWrapper() const
+std::shared_ptr<StateWrapper> OmplPlanner::getStateWrapper() const
 {
-    return *_sw;
+    return _sw;
 }
 
 void OmplPlanner::setStateValidityPredicate(StateValidityPredicate svp)
