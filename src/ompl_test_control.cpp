@@ -1,9 +1,13 @@
 #include <matlogger2/matlogger2.h>
 
-
+#include <ompl/base/SpaceInformation.h>
 #include <ompl/control/SpaceInformation.h>
 #include <ompl/base/goals/GoalState.h>
 #include <ompl/base/spaces/SE2StateSpace.h>
+#include <ompl/base/Planner.h>
+#include <ompl/base/StateSpace.h>
+#include <ompl/control/ControlSpace.h>
+#include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/control/spaces/RealVectorControlSpace.h>
 #include <ompl/control/spaces/DiscreteControlSpace.h>
 #include <ompl/control/planners/kpiece/KPIECE1.h>
@@ -14,16 +18,17 @@
 #include <ompl/control/SimpleSetup.h>
 #include <ompl/config.h>
 #include <iostream>
+#include <boost/math/constants/constants.hpp>
 #include "state_wrapper.h"
  
 namespace ob = ompl::base;
 namespace oc = ompl::control;
  
  
- //////////////////////////////////////////////////////////
- // UNCOMMENT THIS FOR PLANNING IN CONTINUOUS CONTROL SPACE
- //////////////////////////////////////////////////////////
- // a decomposition is only needed for SyclopRRT and SyclopEST
+/////////////////////////////////////////////////////////////
+// UNCOMMENT THIS FOR PLANNING IN CONTINUOUS CONTROL SPACE //
+/////////////////////////////////////////////////////////////
+// a decomposition is only needed for SyclopRRT and SyclopEST
 //  class MyDecomposition : public oc::GridDecomposition
 //  {
 //  public:
@@ -204,7 +209,7 @@ namespace oc = ompl::control;
 ///////////////////////////////////////////////////////////
 // UNCOMMENT THIS FOR PLANNING IN DISCRETE CONTROL SPACE //
 ///////////////////////////////////////////////////////////
-
+/*
 void propagate(const ob::State *start, const oc::Control *control, const double duration, ob::State *result)
 {
     auto se2state = start->as<ompl::base::SE2StateSpace::StateType>();
@@ -355,8 +360,169 @@ void plan()
         std::cout << "No solution found" << std::endl;
 
 
+}*/
+
+///////////////////////////////////////////////////////////
+// UNCOMMENT THIS FOR PLANNING WITH 2 SE2 STATE SPACES   //
+///////////////////////////////////////////////////////////
+
+double findRelativeAngle(const double angle1, const double angle2)
+{
+    double res1 = angle1 - angle2;
+    double res2 = boost::math::constants::pi<double>()*2 - (angle1 - angle2);
+    
+    return std::min<double>(res1, res2);
 }
+
+
+bool isStateValid(const oc::SpaceInformation* si, const ompl::base::State* state)
+{
+    auto s = state->as<ompl::base::CompoundStateSpace::StateType>();
+    auto s_f1 = s->as<ompl::base::SE2StateSpace::StateType>(0);  // right foot
+    auto s_f2 = s->as<ompl::base::SE2StateSpace::StateType>(1);  // left foot
+    const double *pos1 = s_f1->as<ompl::base::RealVectorStateSpace::StateType>(0)->values;
+    const double rot1 = s_f1->as<ompl::base::SO2StateSpace::StateType>(1)->value;
+    const double *pos2 = s_f2->as<ompl::base::RealVectorStateSpace::StateType>(0)->values;
+    const double rot2 = s_f2->as<ompl::base::SO2StateSpace::StateType>(1)->value;
+    
+    double distance = sqrt((pos1[0] - pos2[0]) * (pos1[0] - pos2[0]) + (pos1[1] - pos2[1]) * (pos1[1] - pos2[1]));
+    double orientation = findRelativeAngle(rot1, rot2);
+    
+    return (si->satisfiesBounds(state) && distance < 0.7 && 
+            orientation < boost::math::constants::pi<double>()/6 && 
+            !(pos1[0] > 1 && pos1[0] < 2 && pos1[1] < 2 && pos1[1] > -2) && 
+            !(pos2[0] > 1 && pos2[0] < 2 && pos2[1] < 2 && pos2[1] > -2));
+}
+
+void propagate(const oc::SpaceInformation* si, const ob::State* start, const oc::Control* control, const double duration, ob::State* result)
+{
+    // Cast the control to the desired types
+    auto ctrl = control->as<ompl::control::CompoundControlSpace::ControlType>();
+    int foot_sel = ctrl->as<oc::DiscreteControlSpace::ControlType>(0)->value;
+    double* step = ctrl->as<oc::RealVectorControlSpace::ControlType>(1)->values;
+    
+    // Cast the states
+    auto r = result->as<ob::CompoundStateSpace::StateType>();
+    auto r_f1 = r->as<ob::SE2StateSpace::StateType>(0);
+    auto r_f2 = r->as<ob::SE2StateSpace::StateType>(1);
+    si->getStateSpace()->copyState(result, start);
+    
+    // Propagate
+    if (foot_sel == 1)
+    {
+        r_f1->setXY(r_f1->getX() + duration * step[0], r_f1->getY() + duration * step[1]);
+        r_f1->setYaw(r_f1->getYaw() + duration * step[2]);
+    }
+    else
+    {
+        r_f2->setXY(r_f2->getX() + duration * step[0], r_f2->getY() + duration * step[1]);
+        r_f2->setYaw(r_f2->getYaw() + duration * step[2]);
+    }
+}
+
+void plan()
+{
+    // Define state space for first foot
+    auto foot1 = std::make_shared<ompl::base::SE2StateSpace>();
+    ob::RealVectorBounds bounds_foot1(2);
+    bounds_foot1.setLow(-3.0);
+    bounds_foot1.setHigh(3.0);
+    foot1->setBounds(bounds_foot1);
+    
+    // Define state space for second foot
+    auto foot2 = std::make_shared<ompl::base::SE2StateSpace>();
+    ob::RealVectorBounds bounds_foot2(2);
+    bounds_foot2.setLow(-3.0);
+    bounds_foot2.setHigh(3.0);
+    foot2->setBounds(bounds_foot2);
+    
+    // Combine the two state spaces
+    ob::StateSpacePtr space = foot1 + foot2;
+    
+    // Create compound control space
+    auto foot_sel = std::make_shared<ompl::control::DiscreteControlSpace>(space, 1, 2);
+    
+    auto step = std::make_shared<ompl::control::RealVectorControlSpace>(space, 3);
+    ob::RealVectorBounds step_bounds(3);
+    step_bounds.setLow(-1);
+    step_bounds.setHigh(1);
+    step->setBounds(step_bounds);
+    
+    auto cspace = std::make_shared<ompl::control::CompoundControlSpace>(space);
+    cspace->addSubspace(foot_sel);
+    cspace->addSubspace(step);
+    
+    auto si = std::make_shared<oc::SpaceInformation>(space, cspace);
+    si->setStateValidityChecker([&si](const ob::State* state){ return(isStateValid(si.get(), state)); });
+    si->setStatePropagator([&si](const ob::State* state, const oc::Control* control, const double duration, ob::State* result){ return propagate(si.get(), state, control, duration, result); });
+    
+    auto pdef = std::make_shared<ob::ProblemDefinition>(si);
+    
+    ob::ScopedState<> start(space);
+    start[0] = start[3] = 0.0;
+    start[1] = -0.1;
+    start[4] = -start[1];
+    start[2] = start[5] = 0;
+    
+    ob::ScopedState<> goal(space);
+    goal[0] = goal[3] = 2.5;
+    goal[1] = start[1];
+    goal[4] = start[4];
+    goal[2] = goal[5] = 0;
+    
+    pdef->setStartAndGoalStates(start, goal);
+    
+    auto planner = std::make_shared<ompl::control::RRT>(si); // Plan with controls
+//     auto planner = std::make_shared<ompl::geometri::RRTConnect>(si); // Plan with states
+    planner->setProblemDefinition(pdef);
+    
+    planner->setup();
  
+    si->printSettings(std::cout);
+    pdef->print(std::cout);
+    ob::PlannerStatus solved = planner->ob::Planner::solve(15.0);
+    
+    if (solved)
+    {
+        std::cout << "Solution Found" << std::endl;
+        
+        auto path = pdef->getSolutionPath();
+        auto geom_path = path->as<ompl::geometric::PathGeometric>();
+        auto control_path = path->as<oc::PathControl>();
+        
+        XBot::Cartesian::Planning::StateWrapper sw(XBot::Cartesian::Planning::StateWrapper::StateSpaceType::SE2SPACE, 3);
+        
+        auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/2feet");
+        logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+        Eigen::VectorXd r_foot(si->getStateDimension()/2);
+        Eigen::VectorXd l_foot(si->getStateDimension()/2);
+        
+        for (int i = 0; i < geom_path->getStateCount(); i++)
+        {
+            auto state = geom_path->getState(i)->as<ob::CompoundStateSpace::StateType>();
+            auto rf = state->as<ob::SE2StateSpace::StateType>(0);
+            auto lf = state->as<ob::SE2StateSpace::StateType>(1);
+            
+            sw.getState(rf, r_foot);
+            sw.getState(lf, l_foot);
+            logger->add("r_foot", r_foot);
+            logger->add("l_foot", l_foot);
+        }
+        
+        for (int i = 0; i < control_path->getControlCount(); i++)
+        {
+            auto ctrl = control_path->getControl(i)->as<oc::CompoundControlSpace::ControlType>();
+            int foot_sel = ctrl->as<oc::DiscreteControlSpace::ControlType>(0)->value;
+            
+            logger->add("foot_sel", foot_sel);
+        }
+        
+        path->print(std::cout);
+    }
+    else
+        std::cout << "Solution Not Found!" << std::endl;   
+}
+
 int main()
 {
     plan();
