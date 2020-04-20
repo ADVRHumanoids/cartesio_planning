@@ -47,7 +47,7 @@ octomap_msgs::OctomapWithPose generateMessage ( octomap_msgs::Octomap inputMap )
 int main ( int argc, char** argv ) {
     ros::init ( argc, argv, "octomap_collision_node" );
     ros::NodeHandle nh;
-    ros::Publisher octomap_collision_publisher = nh.advertise<octomap_msgs::OctomapWithPose> ( "planner/collision_objects",1000 );
+    ros::Publisher octomap_collision_publisher = nh.advertise<octomap_msgs::OctomapWithPose> ( "planner/octomap_collision_objects",1000 );
 
     // Subsribe the octomap topic
     ros::Subscriber octomap_collision_subscriber = nh.subscribe ( "/octomap_binary", 1000, callback );
