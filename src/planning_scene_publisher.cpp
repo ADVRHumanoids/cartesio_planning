@@ -75,6 +75,30 @@ void collision_object_cb(const moveit_msgs::CollisionObjectConstPtr msg)
     srv.call(msg2);
 }
 
+void octomap_collision_object_cb(const octomap_msgs::OctomapWithPose msg)
+{
+    octomap_msgs::OctomapWithPose attached_object;
+    attached_object = msg;
+
+    // Add an object into the environment
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // Add the object into the environment by adding it to
+    // the set of collision objects in the "world" part of the
+    // planning scene. Note that we are using only the "object"
+    // field of the attached_object message here.
+    moveit_msgs::PlanningScene planning_scene;
+    planning_scene.world.octomap = attached_object;
+    planning_scene.is_diff = true;
+
+
+    srv.waitForExistence();
+
+    moveit_msgs::ApplyPlanningScene msg2;
+    msg2.request.scene = planning_scene;
+
+    srv.call(msg2);
+}
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "planning_scene_ros_api_tutorial");
@@ -83,6 +107,7 @@ int main(int argc, char** argv)
 
 
     ros::Subscriber sub = node_handle.subscribe("planner/collision_objects", 1000, collision_object_cb);
+    ros::Subscriber sub2 = node_handle.subscribe("planner/octomap_collision_objects", 1000, octomap_collision_object_cb);
 
 
     srv = node_handle.serviceClient<moveit_msgs::ApplyPlanningScene>("planner/apply_planning_scene");
