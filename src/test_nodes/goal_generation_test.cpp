@@ -90,8 +90,6 @@ int main(int argc, char ** argv)
         }
 
 
-        //_goal_model->setJointPosition(q);
-        //_goal_model->update();
 
         return true;
     };

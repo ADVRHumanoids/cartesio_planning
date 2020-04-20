@@ -226,7 +226,7 @@ target_link_libraries(self_collision_robot ${OMPL_LIBRARIES}
 
 # goal_generation node
 add_executable(goal_generation_test
-        src/goal_generation_test.cpp
+        src/test_nodes/goal_generation_test.cpp
     )
 
 target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
