@@ -1,0 +1,29 @@
+<launch>
+
+
+    <arg name="prefix" default=""/>
+    <param name="robot_description" 
+        textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
+    <param name="robot_description_semantic" 
+        textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
+    <param name="cartesian/problem_description" 
+        textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
+    
+
+    <node pkg="cartesio_planning" type="stability_test" name="convex_hull_test" required="true" output="screen" launch-prefix="$(arg prefix)">
+        <remap from="joint_states" to="cartesian/solution"/>
+    </node>
+
+
+    <include file="$(find cartesian_interface)/launch/cartesio.launch">
+        <arg name="tf_prefix" value="ci"/>
+        <arg name="solver" default="OpenSot"/>
+        <arg name="is_model_floating_base" value="true"/>
+    </include>
+
+
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_goal_sampler"
+        args="0 0 0 0 0 0 world ci/world 30"/>
+
+
+</launch>
