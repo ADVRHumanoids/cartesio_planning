@@ -1,5 +1,5 @@
-manifold:
-    param_name: "problem_description_constraint"
+#manifold:
+#    param_name: "problem_description_constraint"
 
 state_validity_check:
     - collisions
@@ -17,5 +17,5 @@ RRTstar:
 state_space:
     type: "Atlas"
 
-control_space:
-    duration: 0.01
+#control_space:
+#    duration: 0.01

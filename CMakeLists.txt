@@ -248,6 +248,11 @@ target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning cart
 add_executable(octomap_collision_main src/utils/octomap_collision_main.cpp)
 target_link_libraries(octomap_collision_main cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
+# Point Cloud test
+add_executable(point_cloud_test src/test_nodes/point_cloud_test.cpp)
+target_link_libraries(point_cloud_test cartesio_planning ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -350,6 +355,12 @@ install(TARGETS planning_server
     )
 
 install(TARGETS octomap_collision_main
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+install(TARGETS point_cloud_test
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
