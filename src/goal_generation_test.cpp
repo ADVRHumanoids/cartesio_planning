@@ -14,6 +14,7 @@ using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Utils;
 
 
+
 int main(int argc, char ** argv)
 {
     ros::init(argc, argv, "position_ik_test");
@@ -67,7 +68,40 @@ int main(int argc, char ** argv)
     GoalGenerator goal_gen(ci, vc_context);
 
 
+    boost::function<bool (cartesio_planning::CartesioGoal::Request &,
+                        cartesio_planning::CartesioGoal::Response &)> goal_sample_service =
+            [&goal_gen, &ci](cartesio_planning::CartesioGoal::Request &req,
+                             cartesio_planning::CartesioGoal::Response &res) -> bool
+    {
+        Eigen::VectorXd q;
+        if(!goal_gen.sample(q, req.time)){
+            res.status.val = res.status.TIMEOUT;
+            res.status.msg.data = "TIMEOUT";
+        }
+        else
+        {
+            res.status.val = res.status.EXACT_SOLUTION;
+            res.status.msg.data = "EXACT_SOLUTION";
 
+            res.sampled_goal.name = ci->getModel()->getEnabledJointNames();
+            res.sampled_goal.position.resize(q.size());
+            Eigen::VectorXd::Map(&res.sampled_goal.position[0], q.size()) = q;
+            res.sampled_goal.header.stamp = ros::Time::now();
+        }
+
+
+        //_goal_model->setJointPosition(q);
+        //_goal_model->update();
+
+        return true;
+    };
+
+    ros::ServiceServer service_goal_sampler = nh.advertiseService("goal_sampler_service", goal_sample_service);
+
+
+
+
+    ROS_INFO("Start spinnig goal_sampler_test...\n");
     ros::Rate rate(1./ci_ctx->params()->getControlPeriod());
     while(ros::ok())
     {

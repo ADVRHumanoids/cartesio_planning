@@ -225,14 +225,15 @@ target_link_libraries(self_collision_robot ${OMPL_LIBRARIES}
     matlogger2::matlogger2)
 
 # goal_generation node
-add_executable(goal_generation_node
-    src/goal_generation_test.cpp
+add_executable(goal_generation_test
+        src/goal_generation_test.cpp
     )
 
-target_link_libraries(goal_generation_node ${OMPL_LIBRARIES}
+target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
     yaml-cpp
     dl
     cartesio_planning
+    ${cartesian_interface_LIBRARIES}
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
@@ -341,6 +342,12 @@ install(TARGETS ompl_control_test
     )
 
 install(TARGETS planning_scene_test
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+install(TARGETS goal_generation_test
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
