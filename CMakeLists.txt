@@ -187,10 +187,7 @@ add_library(cartesian_trajectory_interpolation SHARED src/planner/cartesian_traj
 target_link_libraries(cartesian_trajectory_interpolation PRIVATE trajectory_interpolation ${XBotInterface_LIBRARIES})
 
 # Stability test exe
-add_executable(stability_test
-    src/stability_test.cpp
-    )
-
+add_executable(stability_test src/test_nodes/stability_test.cpp)
 target_link_libraries(stability_test cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES})
 
 # ompl_test_control exe
