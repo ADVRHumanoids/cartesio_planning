@@ -248,6 +248,10 @@ target_link_libraries(planning_scene_publisher ${catkin_LIBRARIES})
 add_executable(planning_server src/nodes/planner_executor_main.cpp src/nodes/planner_executor.cpp)
 target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning cartesian_trajectory_interpolation)
 
+# Octomap Collision Main
+add_executable(octomap_collision_main src/utils/octomap_collision_main.cpp)
+target_link_libraries(octomap_collision_main cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -343,6 +347,12 @@ install(TARGETS planning_scene_test
     )
 
 install(TARGETS planning_server
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+install(TARGETS octomap_collision_main
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
