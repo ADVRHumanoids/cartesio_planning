@@ -377,6 +377,8 @@ ompl::base::StateSpacePtr OmplPlanner::make_projected_space()
 
 std::vector<Eigen::VectorXd> OmplPlanner::getSolutionPath() const
 {
+    _pdef->getSolutionPath()->print(std::cout);
+
     auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
     std::vector<Eigen::VectorXd> path(geom_path->getStateCount());
@@ -568,117 +570,125 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
 
     std::vector<std::string> valid_planners;
 
-    ADD_PLANNER_AND_IF("BiTRRT")
+    if(_cspace_info)
     {
-        return std::make_shared<ompl::geometric::BiTRRT>(_space_info);
-    }
-
-    ADD_PLANNER_AND_IF("InformedRRTstar")
-    {
-        return std::make_shared<ompl::geometric::InformedRRTstar>(_space_info);
-    }
-
-    ADD_PLANNER_AND_IF("LazyLBTRRT")
-    {
-        return std::make_shared<ompl::geometric::LazyLBTRRT>(_space_info);
-    }
-
-    ADD_PLANNER_AND_IF("LazyRRT")
-    {
-        return std::make_shared<ompl::geometric::LazyRRT>(_space_info);
-    }
-
-    ADD_PLANNER_AND_IF("LBTRRT")
-    {
-        return std::make_shared<ompl::geometric::LBTRRT>(_space_info);
-    }
-
-    ADD_PLANNER_AND_IF("pRRT")
-    {
-        return std::make_shared<ompl::geometric::pRRT>(_space_info);
-    }
-
-    ADD_PLANNER_AND_IF("RRT")
-    {
-        if(_cspace_info)
+        ADD_PLANNER_AND_IF("RRT")
+        {
             return std::make_shared<ompl::control::RRT>(_cspace_info);
-        else
+        }
+    }
+    else
+    {
+
+        ADD_PLANNER_AND_IF("BiTRRT")
+        {
+            return std::make_shared<ompl::geometric::BiTRRT>(_space_info);
+        }
+
+        ADD_PLANNER_AND_IF("InformedRRTstar")
+        {
+            return std::make_shared<ompl::geometric::InformedRRTstar>(_space_info);
+        }
+
+        ADD_PLANNER_AND_IF("LazyLBTRRT")
+        {
+            return std::make_shared<ompl::geometric::LazyLBTRRT>(_space_info);
+        }
+
+        ADD_PLANNER_AND_IF("LazyRRT")
+        {
+            return std::make_shared<ompl::geometric::LazyRRT>(_space_info);
+        }
+
+        ADD_PLANNER_AND_IF("LBTRRT")
+        {
+            return std::make_shared<ompl::geometric::LBTRRT>(_space_info);
+        }
+
+        ADD_PLANNER_AND_IF("pRRT")
+        {
+            return std::make_shared<ompl::geometric::pRRT>(_space_info);
+        }
+
+        ADD_PLANNER_AND_IF("RRT")
+        {
             return std::make_shared<ompl::geometric::RRT>(_space_info);
-    }
+        }
 
-    ADD_PLANNER_AND_IF("RRTConnect")
-    {
-        return std::make_shared<ompl::geometric::RRTConnect>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("RRTConnect")
+        {
+            return std::make_shared<ompl::geometric::RRTConnect>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("RRTsharp")
-    {
-        return std::make_shared<ompl::geometric::RRTsharp>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("RRTsharp")
+        {
+            return std::make_shared<ompl::geometric::RRTsharp>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("RRTstar")
-    {
-        return make_RRTstar();
-    }
+        ADD_PLANNER_AND_IF("RRTstar")
+        {
+            return make_RRTstar();
+        }
 
-    ADD_PLANNER_AND_IF("RRTXstatic")
-    {
-        return std::make_shared<ompl::geometric::RRTXstatic>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("RRTXstatic")
+        {
+            return std::make_shared<ompl::geometric::RRTXstatic>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("SORRTstar")
-    {
-        return std::make_shared<ompl::geometric::SORRTstar>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("SORRTstar")
+        {
+            return std::make_shared<ompl::geometric::SORRTstar>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("TRRT")
-    {
-        return std::make_shared<ompl::geometric::TRRT>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("TRRT")
+        {
+            return std::make_shared<ompl::geometric::TRRT>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("PRM")
-    {
-        return std::make_shared<ompl::geometric::PRM>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("PRM")
+        {
+            return std::make_shared<ompl::geometric::PRM>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("PRMstar")
-    {
-        return std::make_shared<ompl::geometric::PRMstar>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("PRMstar")
+        {
+            return std::make_shared<ompl::geometric::PRMstar>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("LazyPRMstar")
-    {
-        return std::make_shared<ompl::geometric::LazyPRMstar>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("LazyPRMstar")
+        {
+            return std::make_shared<ompl::geometric::LazyPRMstar>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("LazyPRM")
-    {
-        return std::make_shared<ompl::geometric::LazyPRM>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("LazyPRM")
+        {
+            return std::make_shared<ompl::geometric::LazyPRM>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("SPARS")
-    {
-        return std::make_shared<ompl::geometric::SPARS>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("SPARS")
+        {
+            return std::make_shared<ompl::geometric::SPARS>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("SPARStwo")
-    {
-        return std::make_shared<ompl::geometric::SPARStwo>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("SPARStwo")
+        {
+            return std::make_shared<ompl::geometric::SPARStwo>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("KPIECE1")
-    {
-        return std::make_shared<ompl::geometric::KPIECE1>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("KPIECE1")
+        {
+            return std::make_shared<ompl::geometric::KPIECE1>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("BKPIECE1")
-    {
-        return std::make_shared<ompl::geometric::BKPIECE1>(_space_info);
-    }
+        ADD_PLANNER_AND_IF("BKPIECE1")
+        {
+            return std::make_shared<ompl::geometric::BKPIECE1>(_space_info);
+        }
 
-    ADD_PLANNER_AND_IF("LBKPIECE1")
-    {
-        return std::make_shared<ompl::geometric::LBKPIECE1>(_space_info);
+        ADD_PLANNER_AND_IF("LBKPIECE1")
+        {
+            return std::make_shared<ompl::geometric::LBKPIECE1>(_space_info);
+        }
     }
 
     std::cout << "Valid planners are \n";
