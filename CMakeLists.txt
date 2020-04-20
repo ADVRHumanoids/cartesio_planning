@@ -238,10 +238,8 @@ target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
 
-# Planning scene test and publisher
-add_executable(planning_scene_test src/planning_scene_test.cpp)
-target_link_libraries(planning_scene_test cartesio_planning)
 
+# Planning scene publisher
 add_executable(planning_scene_publisher src/planning_scene_publisher.cpp)
 target_link_libraries(planning_scene_publisher ${catkin_LIBRARIES})
 
@@ -341,11 +339,6 @@ install(TARGETS ompl_control_test
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
-install(TARGETS planning_scene_test
-    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    )
 
 install(TARGETS goal_generation_test
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
