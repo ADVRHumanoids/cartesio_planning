@@ -113,7 +113,7 @@ private:
 
     Planning::CartesianConstraint::Ptr make_manifold(std::string problem_description_string);
     bool check_state_valid(XBot::ModelInterface::ConstPtr model);
-    void publish_tf(ros::Time time);
+    void publish_and_check_start_and_goal_models(ros::Time time);
     void enforce_bounds(Eigen::VectorXd& q) const;
 
     ros::NodeHandle _nh, _nhpr;

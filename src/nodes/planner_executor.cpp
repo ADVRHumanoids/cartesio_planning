@@ -37,7 +37,7 @@ void PlannerExecutor::run()
     if(_use_goal_generator)
         _goal_generator->update();
 
-    publish_tf(time);
+    publish_and_check_start_and_goal_models(time);
 
 }
 
@@ -743,7 +743,7 @@ bool PlannerExecutor::apply_planning_scene_service(moveit_msgs::ApplyPlanningSce
     return true;
 }
 
-void PlannerExecutor::publish_tf(ros::Time time)
+void PlannerExecutor::publish_and_check_start_and_goal_models(ros::Time time)
 {
     /* Publish start markers */
     auto start_color = (Eigen::Vector4d() << 0.0, 0.0, 1.0, 0.5).finished();
