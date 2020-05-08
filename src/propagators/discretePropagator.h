@@ -22,11 +22,13 @@ public:
                         std::shared_ptr<StateWrapper> sw,
                         XBot::ModelInterface::Ptr model, 
                         ros::NodeHandle& nh,
+                        std::shared_ptr<XBot::MatLogger2> logger,
                         const ompl::base::ConstraintPtr manifold = NULL):
         ompl::control::StatePropagator(si),
         _manifold(manifold),
         _sw(sw),
         _model(model),
+        _logger(logger),
         _nh(nh) 
         {
             std::string problem_description_discrete_string;
@@ -62,14 +64,14 @@ public:
         
         // Extract end-effector position     
         _model->getPose("tool_exchanger", T);
-        std::cout << T.translation() << std::endl;
+        Eigen::Vector3d pos = T.translation();
+        std::cout << pos[0] << " " << pos[1] << " " << pos[2] << "]" << std::endl;
     }    
     
     Eigen::VectorXd getJointPosition(Eigen::Affine3d T) const
     {
         
         _solver->setDesiredPose("tool_exchanger", T);
-        _solver->solve();  
         
         if (_solver->solve())
         {
@@ -92,40 +94,58 @@ public:
     {
         Eigen::Affine3d T;
         Eigen::Vector3d pose;
-        int U = control->as<ompl::control::DiscreteControlSpace::ControlType>()->value;        
+        int U = control->as<ompl::control::DiscreteControlSpace::ControlType>()->value;       
+        _logger->add("control", U);
         
+        std::cout << "Propagate starting from: [";
         getEEPose(start, T);
         
+        // compute EE pose
         pose = T.translation();
+        _logger->add("EE_pose", pose);        
         
-        switch (U)
-        {
-            case (0):
-                pose[0] = pose[0];
-                pose[1] = pose[1];
-                pose[2] = pose[2] + 0.05;
-            case (1):
-                pose[0] = pose[0];
-                pose[1] = pose[1];
-                pose[2] = pose[2] - 0.05;
-            case (2):
-                pose[0] = pose[0];
-                pose[1] = pose[1] + 0.05;
-                pose[2] = pose[2];
-            case (3):
-                pose[0] = pose[0];
-                pose[1] = pose[1] - 0.05;
-                pose[2] = pose[2];
-            case (4):
-                pose[0] = pose[0] + 0.05;
-                pose[1] = pose[1];
-                pose[2] = pose[2];
-            case (5):
-                pose[0] = pose[0] - 0.05;
-                pose[1] = pose[1];
-                pose[2] = pose[2];
-        }
-                
+        double gain = 0.01;
+        
+        std::cout << "Control action # " << U << std::endl;
+        
+//         if (sqrt(pose[0]*pose[0] + pose[1]*pose[1] + pose[2]*pose[2]) > 1.0)
+//         {
+//             switch (U)
+//             {
+//                 case (0):
+//                     pose[0] -= gain;
+//                 case (1):
+//                     pose[1] -= gain;
+//                 case (2):
+//                     pose[2] -= gain;
+//                 case (3):
+//                     pose[0] -= gain;
+//                 case (4):
+//                     pose[1] -= gain;
+//                 case (5):
+//                     pose[2] -= gain;
+//             }
+//         }
+//         else 
+//         {
+            switch (U)
+            {
+                case (0):
+                    pose[0] -= gain;
+                case (1):
+                    pose[1] -= gain;
+                case (2):
+                    pose[2] -= gain;
+                case (3):
+                    pose[0] += gain;
+                case (4):
+                    pose[1] += gain;
+                case (5):
+                    pose[2] += gain;
+            }
+//         }
+        
+        std::cout << "Propagation ending to:   [" << pose[0] << " " << pose [1] << " " << pose[2] << "]" << std::endl;
         T.translation() = pose;
         Eigen::VectorXd q = getJointPosition(T);
         
@@ -136,9 +156,11 @@ private:
     std::shared_ptr<StateWrapper> _sw;
     ompl::base::ConstraintPtr _manifold;
     XBot::ModelInterface::Ptr _model;
+    std::shared_ptr<XBot::MatLogger2> _logger;
     ros::NodeHandle _nh;
     
     std::shared_ptr<PositionCartesianSolver> _solver;
+    
 
 };
 

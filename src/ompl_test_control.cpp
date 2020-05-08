@@ -1,13 +1,16 @@
 #include <matlogger2/matlogger2.h>
 
+#include <ompl/config.h>
 #include <ompl/base/SpaceInformation.h>
-#include <ompl/control/SpaceInformation.h>
 #include <ompl/base/goals/GoalState.h>
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/base/Planner.h>
 #include <ompl/base/StateSpace.h>
-#include <ompl/control/ControlSpace.h>
+
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
+
+#include <ompl/control/ControlSpace.h>
+#include <ompl/control/SpaceInformation.h>
 #include <ompl/control/spaces/RealVectorControlSpace.h>
 #include <ompl/control/spaces/DiscreteControlSpace.h>
 #include <ompl/control/planners/kpiece/KPIECE1.h>
@@ -15,11 +18,23 @@
 #include <ompl/control/planners/est/EST.h>
 #include <ompl/control/planners/pdst/PDST.h>
 #include <ompl/control/planners/syclop/GridDecomposition.h>
-#include <ompl/control/SimpleSetup.h>
-#include <ompl/config.h>
+
+#include <Eigen/Geometry>
+
 #include <iostream>
+
 #include <boost/math/constants/constants.hpp>
+
+#include <XBotInterface/ModelInterface.h>
+#include <RobotInterfaceROS/ConfigFromParam.h>
+#include <cartesian_interface/utils/LoadConfig.h>
+#include <cartesian_interface/CartesianInterfaceImpl.h>
+#include <cartesian_interface/utils/RobotStatePublisher.h>
+
+#include <ros/ros.h>
+
 #include "state_wrapper.h"
+#include "ik/position_ik_solver.h"
  
 namespace ob = ompl::base;
 namespace oc = ompl::control;
@@ -366,32 +381,85 @@ void plan()
 // UNCOMMENT THIS FOR PLANNING WITH 2 SE2 STATE SPACES   //
 ///////////////////////////////////////////////////////////
 
+class stepSampler : public ompl::control::ControlSampler {
+public:
+    stepSampler (const ompl::control::ControlSpace* cspace):
+    ompl::control::ControlSampler(cspace) {}   
+    
+    void sample(ompl::control::Control* control) override
+    {
+        control->as<oc::DiscreteControlSpace::ControlType>()->value = rng_.uniformInt(
+                space_->as<oc::DiscreteControlSpace>()->getLowerBound(), space_->as<oc::DiscreteControlSpace>()->getUpperBound());
+    }
+    
+    void sample(ompl::control::Control* control, const ompl::base::State* state) override
+    {
+        sample(control);
+    }
+    
+    void sampleNext(ompl::control::Control *control, const ompl::control::Control *previous) override
+    {
+        do 
+        {
+            sample(control);
+        }
+        while (control->as<oc::DiscreteControlSpace::ControlType>()->value == previous->as<oc::DiscreteControlSpace::ControlType>()->value);
+    } 
+    
+    void sampleNext(ompl::control::Control* control, const ompl::control::Control* previous, const ompl::base::State* state) override
+    {
+        sampleNext(control,previous);
+    }
+};    
+
+ompl::control::ControlSamplerPtr getSampler(const ompl::control::ControlSpace* cspace)
+{
+    return std::make_shared<stepSampler>(cspace);
+}
+
 double findRelativeAngle(const double angle1, const double angle2)
 {
-    double res1 = angle1 - angle2;
-    double res2 = boost::math::constants::pi<double>()*2 - (angle1 - angle2);
+    double res1 = abs(angle1 - angle2);
+    double res2 = abs(boost::math::constants::pi<double>()*2 - (angle1 - angle2));
     
     return std::min<double>(res1, res2);
+}
+
+bool checkForFeetCrossing(const double* l_pos, const double* r_pos, const double l_rot = 0)
+{
+    const double xRel_w = r_pos[0] - l_pos[0];
+    const double yRel_w = r_pos[1] - l_pos[1];
+    const double yRel_lf = -xRel_w * sin(l_rot) + yRel_w * cos(l_rot);
+    
+    return (yRel_lf < -0.15);
 }
 
 
 bool isStateValid(const oc::SpaceInformation* si, const ompl::base::State* state)
 {
     auto s = state->as<ompl::base::CompoundStateSpace::StateType>();
-    auto s_f1 = s->as<ompl::base::SE2StateSpace::StateType>(0);  // right foot
-    auto s_f2 = s->as<ompl::base::SE2StateSpace::StateType>(1);  // left foot
-    const double *pos1 = s_f1->as<ompl::base::RealVectorStateSpace::StateType>(0)->values;
-    const double rot1 = s_f1->as<ompl::base::SO2StateSpace::StateType>(1)->value;
-    const double *pos2 = s_f2->as<ompl::base::RealVectorStateSpace::StateType>(0)->values;
-    const double rot2 = s_f2->as<ompl::base::SO2StateSpace::StateType>(1)->value;
+//     auto s_f1 = s->as<ompl::base::SE2StateSpace::StateType>(0);  // right foot       Plan with foot orientation
+//     auto s_f2 = s->as<ompl::base::SE2StateSpace::StateType>(1);  // left foot
+    auto s_f1 = s->as<ompl::base::RealVectorStateSpace::StateType>(0);  // right foot       Plan only on foot position keeping 0-orientation
+    auto s_f2 = s->as<ompl::base::RealVectorStateSpace::StateType>(1);  // left_foot
+//     const double *pos1 = s_f1->as<ompl::base::RealVectorStateSpace::StateType>(0)->values;
+    const double *pos1 = s_f1->values;
+//     const double rot1 = s_f1->as<ompl::base::SO2StateSpace::StateType>(1)->value;  // Needed when planning with orientation
+//     const double *pos2 = s_f2->as<ompl::base::RealVectorStateSpace::StateType>(0)->values;
+    const double *pos2 = s_f2->values;
+//     const double rot2 = s_f2->as<ompl::base::SO2StateSpace::StateType>(1)->value;  // Needed when planning with orientation
     
-    double distance = sqrt((pos1[0] - pos2[0]) * (pos1[0] - pos2[0]) + (pos1[1] - pos2[1]) * (pos1[1] - pos2[1]));
-    double orientation = findRelativeAngle(rot1, rot2);
+    double distance_x = sqrt((pos1[0] - pos2[0]) * (pos1[0] - pos2[0]));
+    double distance_y = sqrt((pos1[1] - pos2[1]) * (pos1[1] - pos2[1]));
+//     double orientation = findRelativeAngle(rot1, rot2);
     
-    return (si->satisfiesBounds(state) && distance < 0.7 && 
-            orientation < boost::math::constants::pi<double>()/6 && 
+    return (si->satisfiesBounds(state) &&
+            distance_x < 0.5 &&
+            distance_y < 0.35/*&& 
+            orientation < boost::math::constants::pi<double>()/6*/ && 
             !(pos1[0] > 1 && pos1[0] < 2 && pos1[1] < 2 && pos1[1] > -2) && 
-            !(pos2[0] > 1 && pos2[0] < 2 && pos2[1] < 2 && pos2[1] > -2));
+            !(pos2[0] > 1 && pos2[0] < 2 && pos2[1] < 2 && pos2[1] > -2) &&
+            checkForFeetCrossing(pos2, pos1));
 }
 
 void propagate(const oc::SpaceInformation* si, const ob::State* start, const oc::Control* control, const double duration, ob::State* result)
@@ -403,34 +471,232 @@ void propagate(const oc::SpaceInformation* si, const ob::State* start, const oc:
     
     // Cast the states
     auto r = result->as<ob::CompoundStateSpace::StateType>();
-    auto r_f1 = r->as<ob::SE2StateSpace::StateType>(0);
-    auto r_f2 = r->as<ob::SE2StateSpace::StateType>(1);
+//     auto r_f1 = r->as<ob::SE2StateSpace::StateType>(0);  // Plan with foot orientation
+//     auto r_f2 = r->as<ob::SE2StateSpace::StateType>(1);
+    auto r_f1 = r->as<ob::RealVectorStateSpace::StateType>(0)->values;  // Plan only on foot position keeping 0-orientation
+    auto r_f2 = r->as<ob::RealVectorStateSpace::StateType>(1)->values;
     si->getStateSpace()->copyState(result, start);
     
     // Propagate
     if (foot_sel == 1)
     {
-        r_f1->setXY(r_f1->getX() + duration * step[0], r_f1->getY() + duration * step[1]);
-        r_f1->setYaw(r_f1->getYaw() + duration * step[2]);
+//         r_f1->setXY(r_f1->getX() + duration * step[0], r_f1->getY() + duration * step[1]);  // Plan with foot orientation
+//         r_f1->setYaw(r_f1->getYaw() + duration * step[2]);
+        r_f1[0] += duration * step[0];  // Plan only on foot position keeping 0-orientation
+        r_f1[1] += duration * step[1];
     }
     else
     {
-        r_f2->setXY(r_f2->getX() + duration * step[0], r_f2->getY() + duration * step[1]);
-        r_f2->setYaw(r_f2->getYaw() + duration * step[2]);
+//         r_f2->setXY(r_f2->getX() + duration * step[0], r_f2->getY() + duration * step[1]);  // Plan with foot orientation
+//         r_f2->setYaw(r_f2->getYaw() + duration * step[2]);
+        r_f2[0] += duration * step[0];  // Plan only on foot position keeping 0-orientation
+        r_f2[1] += duration * step[1];
     }
 }
 
-void plan()
+void loadModel(std::shared_ptr<XBot::ModelInterface>& model)
+{
+    auto cfg = XBot::ConfigOptionsFromParamServer();
+    model = XBot::ModelInterface::getModel(cfg);
+}
+
+void solveIK(ompl::geometric::PathGeometric* solution, 
+             std::shared_ptr<XBot::ModelInterface> model,
+             std::vector<Eigen::VectorXd>& q, 
+             ros::NodeHandle& nh,
+             std::shared_ptr<XBot::Cartesian::Planning::PositionCartesianSolver> solver)
+{
+
+    
+    auto sw = std::make_shared<XBot::Cartesian::Planning::StateWrapper>(XBot::Cartesian::Planning::StateWrapper::StateSpaceType::REALVECTOR, 2);
+    Eigen::VectorXd rfoot, lfoot;
+    Eigen::Affine3d T_r, T_l, T_com;
+    
+    T_r.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+    T_l.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+    T_com.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+    
+    for (int i = 0; i < solution->getStateCount(); i++)
+    {
+        auto state = solution->getState(i)->as<ompl::base::CompoundStateSpace::StateType>();
+        auto r_foot = state->as<ompl::base::RealVectorStateSpace::StateType>(0);
+        auto l_foot = state->as<ompl::base::RealVectorStateSpace::StateType>(1);
+        sw->getState(r_foot, rfoot);
+        sw->getState(l_foot, lfoot);
+                
+        T_r.translation() << rfoot[0], rfoot[1], 0;
+        T_l.translation() << lfoot[0], lfoot[1], 0;
+        T_com.translation() << (rfoot[0] + lfoot[0])/2, (rfoot[1] + lfoot[1])/2, 0;
+        
+        solver->setDesiredPose("l_sole", T_l);
+        solver->setDesiredPose("r_sole", T_r);
+        solver->setDesiredPose("Com", T_com);
+        
+        if (solver->solve())
+        {
+            solver->getModel()->getJointPosition(q[i]);
+        }
+        else
+        {
+            std::cout << "Approximate solution found for state " << i << std::endl;
+            solver->getModel()->getJointPosition(q[i]);
+        }
+        
+    }
+}
+
+void solveIK1(ompl::base::State* state, 
+              ompl::control::Control* control,
+              std::vector<Eigen::VectorXd>& q,
+              std::shared_ptr<XBot::Cartesian::Planning::PositionCartesianSolver> solver,
+              int n_step)
+{
+    Eigen::Vector3d com_start, com_goal, com_traj;
+    
+    // Cast state and control to the desired type
+    auto s = state->as<ob::CompoundStateSpace::StateType>();
+    auto rfoot = s->as<ob::RealVectorStateSpace::StateType>(0)->values;
+    auto lfoot = s->as<ob::RealVectorStateSpace::StateType>(1)->values;
+    
+    auto c = control->as<oc::CompoundControlSpace::ControlType>();
+    auto sel = c->as<oc::DiscreteControlSpace::ControlType>(0)->value;
+    
+    // Set start and goal position of the com depending on the swing foot
+    com_start << (rfoot[0] + lfoot[0])/2, (rfoot[1] + lfoot[1])/2, 0;
+    if (sel == 1)
+        com_goal << lfoot[0], lfoot[1], 0;
+    else
+        com_goal << rfoot[0], rfoot[1], 0;
+    
+    // Compute the trajectory
+    Eigen::Vector3d step = (com_goal - com_start)/n_step; 
+    Eigen::Affine3d T_com;
+    T_com.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+    Eigen::VectorXd joint_pos;
+
+    for (int j = 0; j <= n_step; j ++)
+    {
+        com_traj = com_start + j*step;
+        T_com.translation() = com_traj;
+        
+        solver->setDesiredPose("Com", T_com);
+        if (solver->solve())
+        {
+            solver->getModel()->getJointPosition(joint_pos);
+            q.push_back(joint_pos);
+        }
+        else
+        {
+            std::cout << "Warning: approximate solution found while creating first trajectory" << std::endl;
+            solver->getModel()->getJointPosition(joint_pos);
+            q.push_back(joint_pos);
+        }
+    }
+    
+}
+
+void solveIK2(ompl::geometric::PathGeometric path,
+              ompl::control::Control* control,
+              std::vector<Eigen::VectorXd>& q,
+              std::shared_ptr<XBot::Cartesian::Planning::PositionCartesianSolver> solver)
+{
+    auto sel = control->as<oc::CompoundControlSpace::ControlType>()->as<oc::DiscreteControlSpace::ControlType>(0)->value;
+    
+    double clearence = 0.1;
+    
+    Eigen::Affine3d T_sf;
+    T_sf.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+    double z = 0;
+    
+    for (int i = 0; i < path.getStateCount(); i ++)
+    {
+        auto swing_foot = path.getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(sel - 1)->values;
+        z = -(0.4*clearence*(0.1*i)*(0.1*i)) + 0.4*clearence*(0.1*i);
+                
+        T_sf.translation() << swing_foot[0], swing_foot[1], z;
+        
+        if (sel == 1)
+            solver->setDesiredPose("r_sole", T_sf);
+        else
+            solver->setDesiredPose("l_sole", T_sf);
+        
+        Eigen::VectorXd joint_pos;
+        if (solver->solve())
+        {
+            solver->getModel()->getJointPosition(joint_pos);
+            q.push_back(joint_pos);
+        }
+        else
+        {
+            std::cout << "Warning: approximate solution found while creating the second trajectory" << std::endl;
+            solver->getModel()->getJointPosition(joint_pos);
+            q.push_back(joint_pos);
+        }
+    }  
+}
+
+void solveIK3(ompl::base::State* state, 
+              ompl::control::Control* control,
+              std::vector<Eigen::VectorXd>& q,
+              std::shared_ptr<XBot::Cartesian::Planning::PositionCartesianSolver> solver,
+              int n_step)
+{
+    // Cast state and control to the desired type
+    auto s = state->as<ob::CompoundStateSpace::StateType>();
+    auto rfoot = s->as<ob::RealVectorStateSpace::StateType>(0)->values;
+    auto lfoot = s->as<ob::RealVectorStateSpace::StateType>(1)->values;
+    
+    Eigen::Vector3d com_start, com_goal, com_traj;
+    auto sel = control->as<ompl::control::CompoundControlSpace::ControlType>()->as<ompl::control::DiscreteControlSpace::ControlType>(0)->value;
+    
+    if (sel == 1)
+        com_start << lfoot[0], lfoot[1], 0;
+    else
+        com_start << rfoot[0], rfoot[1], 0;
+    
+    com_goal << (lfoot[0] + rfoot[0])/2, (lfoot[1] + rfoot[1])/2, 0;
+    
+    // Compute the trajectory
+    Eigen::Vector3d step = (com_goal - com_start)/n_step; 
+    Eigen::Affine3d T_com;
+    T_com.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+    Eigen::VectorXd joint_pos;
+
+    for (int j = 0; j <= n_step; j ++)
+    {
+        com_traj = com_start + j*step;
+        T_com.translation() = com_traj;
+        
+        solver->setDesiredPose("Com", T_com);
+        if (solver->solve())
+        {
+            solver->getModel()->getJointPosition(joint_pos);
+            q.push_back(joint_pos);
+        }
+        else
+        {
+            std::cout << "Warning: approximate solution found while creating first trajectory" << std::endl;
+            solver->getModel()->getJointPosition(joint_pos);
+            q.push_back(joint_pos);
+        }
+    }
+    
+    
+}
+
+std::shared_ptr<ompl::base::Path> plan()
 {
     // Define state space for first foot
-    auto foot1 = std::make_shared<ompl::base::SE2StateSpace>();
+//     auto foot1 = std::make_shared<ompl::base::SE2StateSpace>();         // Plan with foot orientation
+    auto foot1 = std::make_shared<ompl::base::RealVectorStateSpace>(2);  // Plan only on foot position keeping 0-orientation
     ob::RealVectorBounds bounds_foot1(2);
     bounds_foot1.setLow(-3.0);
     bounds_foot1.setHigh(3.0);
     foot1->setBounds(bounds_foot1);
     
     // Define state space for second foot
-    auto foot2 = std::make_shared<ompl::base::SE2StateSpace>();
+//     auto foot2 = std::make_shared<ompl::base::SE2StateSpace>();          // Plan with foot orientation
+    auto foot2 = std::make_shared<ompl::base::RealVectorStateSpace>(2);  // Plan only on foot position keeping 0-orientation
     ob::RealVectorBounds bounds_foot2(2);
     bounds_foot2.setLow(-3.0);
     bounds_foot2.setHigh(3.0);
@@ -441,16 +707,19 @@ void plan()
     
     // Create compound control space
     auto foot_sel = std::make_shared<ompl::control::DiscreteControlSpace>(space, 1, 2);
+    foot_sel->setControlSamplerAllocator(getSampler);
     
-    auto step = std::make_shared<ompl::control::RealVectorControlSpace>(space, 3);
-    ob::RealVectorBounds step_bounds(3);
+//     auto step = std::make_shared<ompl::control::RealVectorControlSpace>(space, 3);  // Plan with 
+//     ob::RealVectorBounds step_bounds(3);                                            // foot orientation
+    auto step = std::make_shared<ompl::control::RealVectorControlSpace>(space, 2);  // Plan only on foot position   
+    ob::RealVectorBounds step_bounds(2);                                            // keeping 0-orientation
     step_bounds.setLow(-1);
     step_bounds.setHigh(1);
     step->setBounds(step_bounds);
     
     auto cspace = std::make_shared<ompl::control::CompoundControlSpace>(space);
     cspace->addSubspace(foot_sel);
-    cspace->addSubspace(step);
+    cspace->addSubspace(step);    
     
     auto si = std::make_shared<oc::SpaceInformation>(space, cspace);
     si->setStateValidityChecker([&si](const ob::State* state){ return(isStateValid(si.get(), state)); });
@@ -459,16 +728,22 @@ void plan()
     auto pdef = std::make_shared<ob::ProblemDefinition>(si);
     
     ob::ScopedState<> start(space);
-    start[0] = start[3] = 0.0;
+//     start[0] = start[3] = 0.0;
+//     start[1] = -0.1;
+//     start[4] = -start[1];
+//     start[2] = start[5] = 0;
+    start[0] = start[2] = 0.0;
     start[1] = -0.1;
-    start[4] = -start[1];
-    start[2] = start[5] = 0;
+    start[3] = -start[1];
     
     ob::ScopedState<> goal(space);
-    goal[0] = goal[3] = 2.5;
+//     goal[0] = goal[3] = 2.5;
+//     goal[1] = start[1];
+//     goal[4] = start[4];
+//     goal[2] = goal[5] = 0;
+    goal[0] = goal[2] = 2.5;
     goal[1] = start[1];
-    goal[4] = start[4];
-    goal[2] = goal[5] = 0;
+    goal[3] = start[3];
     
     pdef->setStartAndGoalStates(start, goal);
     
@@ -490,41 +765,148 @@ void plan()
         auto geom_path = path->as<ompl::geometric::PathGeometric>();
         auto control_path = path->as<oc::PathControl>();
         
-        XBot::Cartesian::Planning::StateWrapper sw(XBot::Cartesian::Planning::StateWrapper::StateSpaceType::SE2SPACE, 3);
+//         XBot::Cartesian::Planning::StateWrapper sw(XBot::Cartesian::Planning::StateWrapper::StateSpaceType::SE2SPACE, 3);
         
-        auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/2feet");
-        logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
-        Eigen::VectorXd r_foot(si->getStateDimension()/2);
-        Eigen::VectorXd l_foot(si->getStateDimension()/2);
-        
-        for (int i = 0; i < geom_path->getStateCount(); i++)
-        {
-            auto state = geom_path->getState(i)->as<ob::CompoundStateSpace::StateType>();
-            auto rf = state->as<ob::SE2StateSpace::StateType>(0);
-            auto lf = state->as<ob::SE2StateSpace::StateType>(1);
-            
-            sw.getState(rf, r_foot);
-            sw.getState(lf, l_foot);
-            logger->add("r_foot", r_foot);
-            logger->add("l_foot", l_foot);
-        }
-        
-        for (int i = 0; i < control_path->getControlCount(); i++)
-        {
-            auto ctrl = control_path->getControl(i)->as<oc::CompoundControlSpace::ControlType>();
-            int foot_sel = ctrl->as<oc::DiscreteControlSpace::ControlType>(0)->value;
-            
-            logger->add("foot_sel", foot_sel);
-        }
+//         auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/2feet");
+//         logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+//         Eigen::VectorXd r_foot(si->getStateDimension()/2);
+//         Eigen::VectorXd l_foot(si->getStateDimension()/2);
+//         
+//         for (int i = 0; i < geom_path->getStateCount(); i++)
+//         {
+//             auto state = geom_path->getState(i)->as<ob::CompoundStateSpace::StateType>();
+// //             auto rf = state->as<ob::SE2StateSpace::StateType>(0);
+// //             auto lf = state->as<ob::SE2StateSpace::StateType>(1);
+//             auto rf = state->as<ob::RealVectorStateSpace::StateType>(0)->values;  // Plan only on foot position keeping 0-orientation
+//             auto lf = state->as<ob::RealVectorStateSpace::StateType>(1)->values;
+//             
+//             r_foot[0] = rf[0];
+//             r_foot[1] = rf[1];
+//             l_foot[0] = lf[0];
+//             l_foot[1] = lf[1];
+//             
+// //             sw.getState(rf, r_foot);
+// //             sw.getState(lf, l_foot);
+//             logger->add("r_foot", r_foot);
+//             logger->add("l_foot", l_foot);
+//         }
+//         
+//         for (int i = 0; i < control_path->getControlCount(); i++)
+//         {
+//             auto ctrl = control_path->getControl(i)->as<oc::CompoundControlSpace::ControlType>();
+//             int foot_sel = ctrl->as<oc::DiscreteControlSpace::ControlType>(0)->value;
+//             
+//             logger->add("foot_sel", foot_sel);
+//         }
         
         path->print(std::cout);
+        return path;
     }
     else
+    {
         std::cout << "Solution Not Found!" << std::endl;   
+    }
+    
 }
 
-int main()
+int main(int argc, char** argv)
 {
-    plan();
+    ros::init(argc, argv, "ompl_control_test");
+    ros::NodeHandle nh;
+    
+    // Load the robot model
+    std::shared_ptr<XBot::ModelInterface> model;
+    loadModel(model);
+    
+    // Load the home state and publish
+    Eigen::VectorXd qhome;
+    model->getRobotState("home", qhome);
+    model->setJointPosition(qhome);
+    model->update();
+    
+    std::cout << "Home Position: \n" << qhome << std::endl;
+    
+    XBot::Cartesian::Utils::RobotStatePublisher RobotStatePublisher(model);
+    RobotStatePublisher.publishTransforms(ros::Time::now(), "");
+
+    // Compute the plan for the feet
+    std::shared_ptr<ompl::base::Path> solution = plan();
+    auto solution_geom = solution->as<ompl::geometric::PathGeometric>();
+    auto solution_ctrl = solution->as<ompl::control::PathControl>();
+  
+    
+    // Create an instance of the CartesianInterface
+    std::string problem_description;
+    if(!nh.getParam("problem_description", problem_description))
+    {
+        ROS_ERROR("planner/problem_description!");
+        throw std::runtime_error("planner/problem_description!");
+    }
+
+    auto ik_yaml_goal = YAML::Load(problem_description);
+
+    double ci_period = 1.0;
+    auto ci_ctx = std::make_shared<XBot::Cartesian::Context>(
+                  std::make_shared<XBot::Cartesian::Parameters>(ci_period),
+                  model);
+    auto ik_prob = XBot::Cartesian::ProblemDescription(ik_yaml_goal, ci_ctx);
+
+    auto ci = XBot::Cartesian::CartesianInterfaceImpl::MakeInstance("OpenSot",
+                                                        ik_prob, ci_ctx); 
+    auto solver = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(ci);
+    
+    
+    // THESE 2 ROWS CREATE PROJECTS THE ROBOT ONLY ON THE FEET POSITION FOUND WITH THE PLANNER
+//     std::vector<Eigen::VectorXd> q(solution_geom->getStateCount());
+
+//     solveIK(solution_geom, model, q, nh, solver);
+    
+    
+    // THIS SECTION CREATES A STATIC WALK GOING THROUGH THE FOOT STEP FOUND WITH THE PLANNER
+    int n_step = 10;
+    std::vector<Eigen::VectorXd> q_vect;
+    
+    for (int i = 0; i < solution_geom->getStateCount()-1; i++)
+    {
+        // Solution split in 3 parts:
+        // 1) COM moves in corrispondence of the support foot
+        // 2) Swing foot moves to the computed position
+        // 3) COM move in the middle of the two feet
+        
+        //1)
+        solveIK1(solution_geom->getState(i), solution_ctrl->getControl(i), q_vect, solver, n_step);
+        //2)
+        // Construct a geometric path segment between the state i and the state i+1
+        ompl::geometric::PathGeometric sw_traj(solution->getSpaceInformation(), 
+                                               solution_geom->getState(i),
+                                               solution_geom->getState(i+1));
+        // Interpolate
+        sw_traj.interpolate(n_step+1);
+        solveIK2(sw_traj, solution_ctrl->getControl(i), q_vect , solver);
+        
+        //3)
+        solveIK3(solution_geom->getState(i+1), solution_ctrl->getControl(i), q_vect, solver, n_step);
+    }
+    
+    
+    int i = 0;
+    ros::Rate rate(10);
+    while (ros::ok())
+    {
+//         std::cout << "Start ros loop number " << i << std::endl;
+        model->setJointPosition(q_vect[i]);
+        model->update();
+        
+        RobotStatePublisher.publishTransforms(ros::Time::now(), "");
+//         std::cout << "Transform " << i << " sent!" << std::endl;
+        i++;
+        
+        if (i == q_vect.size())
+            i = 0;
+        
+        rate.sleep();
+    }
+    
+    
     return 0;
 }    

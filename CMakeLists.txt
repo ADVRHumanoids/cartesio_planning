@@ -85,6 +85,7 @@ add_service_files(
     FILES
     CartesioPlanner.srv
     CartesioGoal.srv
+    FootStepPlanner.srv
     )
 
 ## Generate actions in the 'action' folder
@@ -160,6 +161,7 @@ add_library(cartesio_planning SHARED
     src/planner/cartesio_ompl_planner.cpp
     src/state_wrapper.cpp
     src/utils/robot_viz.cpp
+    src/utils/map_converter.cpp
     src/validity_checker/validity_checker_context.cpp
     src/validity_checker/stability/cartesian_utils.cpp
     src/validity_checker/stability/convex_hull_utils.cpp
@@ -210,6 +212,16 @@ target_link_libraries(previewer
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
+    
+add_executable(previewer_fp
+    src/nodes/previewer_fp.cpp
+    )
+
+target_link_libraries(previewer_fp
+    trajectory_interpolation
+    ${XBotInterface_LIBRARIES}
+    ${catkin_LIBRARIES}
+    matlogger2::matlogger2)
 
 # Self collision robot node
 add_executable(self_collision_robot
@@ -225,17 +237,17 @@ target_link_libraries(self_collision_robot ${OMPL_LIBRARIES}
     matlogger2::matlogger2)
 
 # goal_generation node
-add_executable(goal_generation_node
-    src/goal_generation_test.cpp
-    )
+# add_executable(goal_generation_node
+#     src/goal_generation_test.cpp
+#     )
 
-target_link_libraries(goal_generation_node ${OMPL_LIBRARIES}
-    yaml-cpp
-    dl
-    cartesio_planning
-    ${XBotInterface_LIBRARIES}
-    ${catkin_LIBRARIES}
-    matlogger2::matlogger2)
+# target_link_libraries(goal_generation_node ${OMPL_LIBRARIES}
+#     yaml-cpp
+#     dl
+#     cartesio_planning
+#     ${XBotInterface_LIBRARIES}
+#     ${catkin_LIBRARIES}
+#     matlogger2::matlogger2)
 
 # Planning scene test and publisher
 add_executable(planning_scene_test src/planning_scene_test.cpp)
@@ -245,8 +257,11 @@ add_executable(planning_scene_publisher src/planning_scene_publisher.cpp)
 target_link_libraries(planning_scene_publisher ${catkin_LIBRARIES})
 
 # Executor
-add_executable(planning_server src/nodes/planner_executor_main.cpp src/nodes/planner_executor.cpp)
-target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning cartesian_trajectory_interpolation)
+# add_executable(planning_server src/nodes/planner_executor_main.cpp src/nodes/planner_executor.cpp)
+# target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning cartesian_trajectory_interpolation matlogger2::matlogger2)
+
+add_executable(foot_step_planner src/nodes/foot_step_planner_main.cpp src/nodes/foot_step_planner.cpp)
+target_link_libraries(foot_step_planner ${catkin_LIBRARIES} cartesio_planning matlogger2::matlogger2)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -288,6 +303,12 @@ add_dependencies(cartesio_planning ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_
 
 ## Mark executables and/or libraries for installation
 install(TARGETS previewer
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+    
+install(TARGETS previewer_fp
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -342,7 +363,13 @@ install(TARGETS planning_scene_test
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
-install(TARGETS planning_server
+# install(TARGETS planning_server
+#     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#     )
+#     
+install(TARGETS foot_step_planner
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

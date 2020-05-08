@@ -1,0 +1,27 @@
+<launch>
+            
+    <param name="robot_description" textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
+    <param name="robot_description_semantic" textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
+    
+    <param name="problem_description"
+            textfile="$(find cartesio_planning)/configs/problem/comanplus_fp_stack.yaml"/> 
+        
+    <node pkg="cartesio_planning" type="ompl_control_test" name="ompl_control_test"/>
+    
+    <node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+        <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
+        <param name="scale_x" type="double" value="1."/>
+        <param name="scale_y" type="double" value="4.0"/>
+        <param name="scale_z" type="double" value=".2"/>
+        <rosparam param="position"> [1.5, 0.0, 0.1] </rosparam>
+        <rosparam param="orientation"> [0.0, 0.0, 0.0, 1.0] </rosparam>
+        <param name="frame_id" value="world"/>
+        <param name="name_id" value="floor"/>
+        <param name="show_control_axis" type="bool" value="True"/>
+        <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
+    </node>
+    
+    <node pkg="rviz" type="rviz" name="rviz"
+        args="-d $(find cartesio_planning)/configs/rviz/step_planning.rviz" output="screen"/>
+    
+</launch>

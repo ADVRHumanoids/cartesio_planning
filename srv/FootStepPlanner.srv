@@ -1,0 +1,10 @@
+#planner types
+string RRT=RRT
+
+string planner_type
+
+int32 time
+
+---
+
+cartesio_planning/CartesioPlannerStatus status

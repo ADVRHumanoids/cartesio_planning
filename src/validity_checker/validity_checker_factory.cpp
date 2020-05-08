@@ -73,6 +73,57 @@ std::function<bool ()> MakeConvexHullChecker(YAML::Node vc_node,
     return validity_checker;
 
 }
+// TODO: must be modified for a more general n-legs case
+std::function<bool ()> MakeDistanceChecker(YAML::Node vc_node,
+                                            XBot::ModelInterface::ConstPtr model)
+{
+    if (!vc_node["end_effector"])
+    {
+        throw std::runtime_error("Mandatory private 'end_effector' parameter missing");
+    }
+    YAML_PARSE_OPTION(vc_node, end_effector, std::vector<std::string>, {});
+    
+    if (!vc_node["max_x_distance"])
+    {
+        std::cout << "'max_x_distance' parameter missing, using default 0.5 value" << std::endl;
+    }
+    YAML_PARSE_OPTION(vc_node, max_x_distance, double, 0.5);
+    
+    if (!vc_node["max_y_distance"])
+    {
+        std::cout << "'max_y_distance' parameter missing, using default 0.35 value" << std::endl;
+    }
+    YAML_PARSE_OPTION(vc_node, max_y_distance, double, 0.35);
+    
+    auto validity_checker = [=] ()
+    {        
+        Eigen::Affine3d T; 
+        std::vector<double> x (end_effector.size());
+        std::vector<double> y (end_effector.size());
+        for (int i = 0; i < end_effector.size(); i++)
+        {
+            model->getPose(end_effector[i], T);
+            x[i] = T.translation().x();
+            y[i] = T.translation().y();
+        }
+        
+//         double difference_x = std::max_element(x.begin(), x.end()) - std::min_element(x.begin(),x.end());
+//         double difference_y = std::max_element(y.begin(), y.end()) - std::min_element(y.begin(),y.end());
+
+        double difference_x = abs(x[1] - x[0]);
+        double difference_y = abs(y[1] - y[0]);
+    
+        if (difference_x < max_x_distance && difference_y < max_y_distance)
+            return true;
+        else
+        {
+            std::cout << "difference_x: " << difference_x << " ("<< x[0] << "-" << x[1] << ") " << "and difference_y: " << difference_y << " ("<< y[0] << "-" << y[1] << ") " << " violates bounds" << std::endl;
+            return false;
+        }
+    };
+    
+    return validity_checker; 
+}
 
 }
 
@@ -99,6 +150,10 @@ std::function<bool ()> XBot::Cartesian::Planning::MakeValidityChecker(YAML::Node
         else if(vc_type == "ConvexHull")
         {
             return MakeConvexHullChecker(vc_node, model, nh);
+        }
+        else if(vc_type == "Distance")
+        {
+            return MakeDistanceChecker(vc_node, model);
         }
         else
         {

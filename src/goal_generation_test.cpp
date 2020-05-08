@@ -60,7 +60,7 @@ int main(int argc, char ** argv)
     // load planner config file (yaml)
     std::string planner_config_string;
     n.getParam("planner_config", planner_config_string);
-
+    
     XBot::Cartesian::Planning::ValidityCheckContext vc_context(YAML::Load(planner_config_string),
                                                                model, nh);
 

@@ -19,11 +19,14 @@
 #include <ompl/control/spaces/RealVectorControlSpace.h>
 #include <ompl/control/spaces/DiscreteControlSpace.h>
 #include <ompl/control/SpaceInformation.h>
+#include <ompl/control/PathControl.h>
 
 #include <Eigen/Dense>
 #include <yaml-cpp/yaml.h>
 
 #include "../state_wrapper.h"
+
+#include <matlogger2/matlogger2.h>
 
 
 namespace XBot { namespace Cartesian { namespace Planning {
@@ -137,6 +140,8 @@ private:
     std::shared_ptr<StateWrapper> _sw;
 
     YAML::Node _options;
+    
+    
 
 
 };

@@ -50,11 +50,12 @@ std::function<bool ()> ValidityCheckContext::make_collision_checker(YAML::Node v
 
     // parse options
     YAML_PARSE_OPTION(vc_node, include_environment, bool, true);
-
+    
     // construct planning scene for model
     planning_scene = std::make_shared<PlanningSceneWrapper>(_model);
 
     auto planning_scene_capture = planning_scene;
+    planning_scene_capture->startMonitor();
 
     // define validity checker
     auto validity_checker = [include_environment,
@@ -70,11 +71,11 @@ std::function<bool ()> ValidityCheckContext::make_collision_checker(YAML::Node v
         {
             return !planning_scene_capture->checkSelfCollisions();
         }
-
     };
 
     return validity_checker;
 }
+   
 
 XBot::Cartesian::Planning::ValidityCheckContext::ValidityCheckContext()
 {

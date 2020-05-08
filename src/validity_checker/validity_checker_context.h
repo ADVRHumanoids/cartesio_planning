@@ -7,6 +7,7 @@
 
 #include "validity_checker/validity_predicate_aggregate.h"
 #include "validity_checker/collisions/planning_scene_wrapper.h"
+#include "ik/position_ik_solver.h"
 
 namespace XBot { namespace Cartesian { namespace Planning {
 
@@ -18,16 +19,18 @@ public:
     ValidityCheckContext();
 
     ValidityCheckContext(YAML::Node config,
-                         ModelInterface::ConstPtr model, ros::NodeHandle& nh);
+                         ModelInterface::ConstPtr model, 
+                         ros::NodeHandle& nh);
 
     PlanningSceneWrapper::Ptr planning_scene;
     ValidityPredicateAggregate vc_aggregate;
+    
+    ModelInterface::ConstPtr _model;
+
 
 private:
 
     std::function<bool()> make_collision_checker(YAML::Node vc_node);
-
-    ModelInterface::ConstPtr _model;
 
 };
 

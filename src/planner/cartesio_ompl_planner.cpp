@@ -29,6 +29,7 @@
 #include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
 
 #include <ompl/control/planners/rrt/RRT.h>
+#include <ompl/control/planners/est/EST.h>
 
 
 #include "cartesio_ompl_planner.h"
@@ -522,19 +523,56 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
         _planner->setProblemDefinition(_pdef);
         _planner->setup();
 
-
         print();
 
         _solved = _planner->ompl::base::Planner::solve(timeout);
 
         if(_solved)
         {
-            auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+            auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/vertices/discrete_control");
+            logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+            
+            if (!_options["control_space"])
+            {
+                auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+                Eigen::VectorXd traj(_cspace_info->getStateDimension());
+                for (int i = 0; i < geom_path->getStateCount(); i++)
+                {
+                    _sw->getState(geom_path->getState(i),traj);
+                    logger->add("trajectory", traj);
+                }
+                geom_path->interpolate();
+                if(!geom_path->check())
+                    return false;
+            }
+            else
+            {
+                auto * control_path = _pdef->getSolutionPath()->as<ompl::control::PathControl>();
+                Eigen::VectorXd traj(_cspace_info->getStateDimension());
+                for (int i = 0; i < control_path->getStateCount(); i++)
+                {
+                    _sw->getState(control_path->getState(i),traj);
+                    logger->add("trajectory", traj);
+                }
+                control_path->interpolate();
+   
+                if (!control_path->check())
+                    return false;
+            }
+                       
+            ompl::control::PlannerData data(_cspace_info);
+            _planner->getPlannerData(data);
+            Eigen::VectorXd vertex(_cspace_info->getStateDimension());
+            
+            for (int i = 0; i < data.numVertices(); i++)
+            {
+                _sw->getState(data.getVertex(i).getState(), vertex);
+                logger->add("vertices", vertex);
+            }
 
-            geom_path->interpolate();
+            
 
-            if(!geom_path->check())
-                return false;
+            
         }
 
         return _solved;
@@ -678,6 +716,11 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
     ADD_PLANNER_AND_IF("LBKPIECE1")
     {
         return std::make_shared<ompl::geometric::LBKPIECE1>(_space_info);
+    }
+    
+    ADD_PLANNER_AND_IF("EST")
+    {
+        return std::make_shared<ompl::control::EST>(_cspace_info);
     }
 
     std::cout << "Valid planners are \n";

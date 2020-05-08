@@ -1,12 +1,20 @@
 #include <ros/ros.h>
 #include <trajectory_msgs/JointTrajectory.h>
-
-#include <cartesian_interface/utils/RobotStatePublisher.h>
-
+#include <Eigen/Dense>
+#include <robot_state_publisher/robot_state_publisher.h>
 #include <XBotInterface/ModelInterface.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>
+#include <tf/transform_broadcaster.h>
+#include <tf_conversions/tf_eigen.h>
+#include <tf/transform_listener.h>
+#include <sensor_msgs/JointState.h>
+#include <cartesian_interface/utils/RobotStatePublisher.h>
 
-int main(int argc, char ** argv)
+trajectory_msgs::JointTrajectory trj_msg;
+int counter;
+
+
+int main(int argc, char **argv)
 {
     // initialize ros
     ros::init(argc, argv, "trajectory_viewer");
@@ -33,8 +41,7 @@ int main(int argc, char ** argv)
         }
 
 
-//         rate = std::make_shared<ros::Rate>(1./(msg->points[1].time_from_start.nsec/1e9)); //We assume constant time along the traj.
-        rate = std::make_shared<ros::Rate>(1);
+        rate = std::make_shared<ros::Rate>(1./(msg->points[1].time_from_start.nsec/1e9)); //We assume constant time along the traj.
         k = 0;
     };
 
@@ -46,37 +53,7 @@ int main(int argc, char ** argv)
 
 
     ros::Rate fixed_rate(100.);
-    while(ros::ok())
-    {
-        if(rate)
-        {
-            rate->sleep();
+    while ( ros::ok ) 
+    {}
 
-            ros::spinOnce();
-
-
-            // evaluate trajectory at time
-            auto qi = trj_points[k];
-
-            // set model accordingly
-            model->setJointPosition(qi);
-            model->update();
-
-            k += 1;
-
-            // rewind trajectory playback
-            if(k >= trj_points.size())
-            {
-                k = 0;
-            }
-
-            // publish model tf
-            rspub.publishTransforms(ros::Time::now(), "planner");
-        }
-        else
-        {
-            fixed_rate.sleep();
-            ros::spinOnce();
-        }
-    }
 }

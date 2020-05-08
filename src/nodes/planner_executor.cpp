@@ -18,6 +18,8 @@ PlannerExecutor::PlannerExecutor():
     _nh("planner"),
     _nhpr("~")
 {
+    _logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/EE_pose");
+    _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
     init_load_config();
     init_load_model();
     init_load_planner();
@@ -54,7 +56,7 @@ void PlannerExecutor::init_load_model()
 
     _model->setJointPosition(qhome);
     _model->update();
-
+    
     _start_model->setJointPosition(qhome);
     _start_model->update();
 
@@ -251,8 +253,6 @@ void PlannerExecutor::init_load_validity_checker()
 {
     _vc_context = Planning::ValidityCheckContext(_planner_config,
                                                  _model, _nh);
-
-    _vc_context.planning_scene->startMonitor();
 
     _vc_context.planning_scene->startMonitor();
 
@@ -603,11 +603,6 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
 
     std::cout<< "goal_threshold: "<<req.goal_threshold<<std::endl;
 
-
-
-
-
-
     std::vector<Eigen::VectorXd> trajectory;
     std::vector<std::vector<Eigen::Affine3d> > cartesian_trajectories;
     if(_distal_links.empty())
@@ -742,6 +737,8 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
         trajectory.push_back(_interpolator->evaluate(t));
         t += interpolation_time;
     }
+    
+    _logger.reset();
 
     return ompl::base::PlannerStatus::StatusType(_planner->getPlannerStatus());
 }
@@ -813,7 +810,7 @@ void PlannerExecutor::enforce_bounds(Eigen::VectorXd & q) const
 ompl::control::StatePropagatorPtr PlannerExecutor::make_propagator(std::string propagatorType)
 {
     if (propagatorType == "discrete")
-        return std::make_shared<XBot::Cartesian::Planning::Propagators::discretePropagator>(_planner->getControlSpaceInfo(), _planner->getStateWrapper(), _model, _nh);
+        return std::make_shared<XBot::Cartesian::Planning::Propagators::discretePropagator>(_planner->getControlSpaceInfo(), _planner->getStateWrapper(), _model, _nh, _logger);
     
     else if (propagatorType == "RK1")
         return std::make_shared<XBot::Cartesian::Planning::Propagators::RK1>(_planner->getControlSpaceInfo(), _planner->getStateWrapper());

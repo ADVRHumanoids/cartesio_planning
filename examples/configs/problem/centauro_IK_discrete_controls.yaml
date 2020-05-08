@@ -1,0 +1,45 @@
+solver_options:
+    regularization: 1e-4
+    back_end: "qpoases"
+
+stack:
+    - ["Pelvis", "Wheel1", "Wheel2", "Wheel3", "Wheel4"]
+    - ["Postural"]
+    
+constraints: ["JointLimits"]
+
+JointLimits:
+    type: "JointLimits"
+
+
+Pelvis:
+    type: "Cartesian"
+    distal_link: "pelvis"
+    lambda: 0.1
+    indices: [0,1,2]
+    
+Wheel1:
+    type: "Cartesian"
+    distal_link: "wheel_1"
+    indices: [2]
+    
+Wheel2:
+    type: "Cartesian"
+    distal_link: "wheel_2"
+    indices: [2]
+    
+Wheel3:
+    type: "Cartesian"
+    distal_link: "wheel_3"
+    indices: [2]
+    
+Wheel4:
+    type: "Cartesian"
+    distal_link: "wheel_4"
+    indices: [2]
+    
+Postural:
+     type: "Postural"
+     lambda: 0.1
+
+

@@ -155,7 +155,8 @@ private:
     bool _plan_controls;
         
     ompl::control::StatePropagatorPtr _propagator;
-
+    
+    std::shared_ptr<XBot::MatLogger2> _logger;
 
 };
 

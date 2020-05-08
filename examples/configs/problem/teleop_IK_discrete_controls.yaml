@@ -1,6 +1,7 @@
 solver_options:
     regularization: 1e-4
     back_end: "qpoases"
+    dt: 0.01
 
 stack:
     #- ["ArmPosition", "ArmOrientation"]
