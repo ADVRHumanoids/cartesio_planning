@@ -28,8 +28,8 @@ void StateWrapper::setState(ompl::base::State * state,
     }
     else //SE2 state space
     {
-        state->as<ompl::base::SE2StateSpace::StateType>()->setXY(value[0], value[1]);
-        state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(value[2]);
+        state->as<ompl::base::SE2StateSpace::StateType>()->setXY(value(0), value(1));
+        state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(value(2));
     }
 
 }
@@ -48,8 +48,14 @@ void StateWrapper::getState(const ompl::base::State * state,
     }
     else
     {
-        value[0] = state->as<ompl::base::SE2StateSpace::StateType>()->getX();
-        value[1] = state->as<ompl::base::SE2StateSpace::StateType>()->getY();
-        value[2] = state->as<ompl::base::SE2StateSpace::StateType>()->getYaw();
+        value.resize(_size);
+        value << state->as<ompl::base::SE2StateSpace::StateType>()->getX(),
+                 state->as<ompl::base::SE2StateSpace::StateType>()->getY(),
+                 state->as<ompl::base::SE2StateSpace::StateType>()->getYaw();
     }
+}
+
+StateWrapper::StateSpaceType StateWrapper::getStateSpaceType() 
+{
+    return _state_space_type;
 }

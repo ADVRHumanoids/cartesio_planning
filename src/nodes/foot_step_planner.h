@@ -84,7 +84,7 @@ public:
     void setStartAndGoalState();
     
     void run();
-    
+        
 private:
     void init_load_config();
     void init_load_model();
@@ -137,9 +137,9 @@ private:
     
     Planning::RobotViz::Ptr _start_viz, _goal_viz;
     
-    ros::Subscriber _goal_sub, _start_sub;
+    ros::Subscriber _goal_sub, _start_sub, _map_subscriber;
         
-    ros::NodeHandle _nh, _nhpr;
+    ros::NodeHandle _nh, _nhpr, _n;
     
     YAML::Node _planner_config;
     
@@ -171,6 +171,9 @@ private:
     double _z_wheel;
     
     std::shared_ptr<XBot::Converter::MapConverter> _map;
+    
+    std::map<ompl::base::State*, Eigen::VectorXd> _postural_map;
+    std::vector<ompl::base::State*> _start_vect;
         
 };
 

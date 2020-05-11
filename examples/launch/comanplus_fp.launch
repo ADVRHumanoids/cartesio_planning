@@ -3,9 +3,9 @@
     <arg name="is_model_floating_base" default="true"/>
     
     <!--  <include file="$(find centauro_gazebo)/launch/centauro_world.launch" />-->
-   <param name="robot_description" textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
+    <param name="robot_description" textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
     <param name="robot_description_semantic" textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/> 
-    
+        
 <!--     <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/configs/CentauroConfig/urdf/centauro.urdf"/> -->
 <!--     <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/configs/CentauroConfig/srdf/centauro.srdf"/>  -->
     
@@ -14,6 +14,9 @@
     
     <param name="planner/problem_goal_description"
             textfile="$(find cartesio_planning)/configs/problem/comanplus_fp_goal_stack.yaml"/> 
+    
+        <!-- .bag file containing 2 boxes acquired using octomap -->
+    <node pkg="rosbag" type="play" name="bag_player" args="-l $(env ROBOTOLOGY_ROOT)/external/cartesio_planning/bagfiles/subset1.bag" output="screen"/>
     
     <node pkg="cartesio_planning" type="foot_step_planner" name="foot_step_planner" output="screen">
         <param name="solver" value=""/>
@@ -105,8 +108,8 @@
         <remap from="mesh_viz_floor1/floor1" to="planner/collision_objects"/>
     </node>-->
     
-    <!-- .bag file containing 2 boxes acquired using octomap -->
-    <node pkg="rosbag" type="play" name="bag_player" args="-l $(env ROBOTOLOGY_ROOT)/external/cartesio_planning/bagfiles/subset.bag"/>
+    <!-- Octomap converter -->
+    <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_converter" output="screen"/>
     
     <!-- Planning scene -->
     <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/> 

@@ -34,6 +34,8 @@ public:
 
     void getState(const ompl::base::State * state,
                   Eigen::VectorXd& value) const;
+                  
+    StateSpaceType getStateSpaceType();
 
 private:
 

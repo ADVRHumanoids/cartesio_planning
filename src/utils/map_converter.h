@@ -32,6 +32,9 @@ public:
     bool checkForCollision(Eigen::VectorXd pos,
                            double size);
     
+    ros::Subscriber _sub;
+
+    
     
 private:
     nav_msgs::OccupancyGrid _map;
@@ -39,7 +42,6 @@ private:
     std::vector<double> _x_occ, _y_occ;
     
     ros::NodeHandle _nh;
-    ros::Subscriber _sub;
 };
 
 } }

@@ -201,6 +201,10 @@ add_executable(ompl_control_test
     )
 target_link_libraries(ompl_control_test cartesio_planning ${XBotInterface_LIBRARIES} matlogger2::matlogger2 ${catkin_LIBRARIES})
 
+add_executable(octomap_collision_main
+    src/utils/octomap_collision_main.cpp
+    )
+target_link_libraries(octomap_collision_main cartesio_planning ${catkin_LIBRARIES})
 
 # Previewer node
 add_executable(previewer
@@ -358,6 +362,12 @@ install(TARGETS ompl_control_test
     )
 
 install(TARGETS planning_scene_test
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+    
+install(TARGETS octomap_collision_main
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
