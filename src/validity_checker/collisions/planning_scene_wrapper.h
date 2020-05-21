@@ -66,6 +66,8 @@ public:
      * @brief Get the names of the links that are involved in collisions for the current state
      */
     std::vector<std::string> getCollidingLinks() const;
+    
+    std::vector<XBot::ModelChain> getCollidingChains() const;
 
     void applyPlanningScene(const moveit_msgs::PlanningScene& scene);
 
