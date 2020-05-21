@@ -110,6 +110,8 @@ public:
      * @param max_iter
      */
     void setMaxIterations(const int max_iter);
+    
+    CartesianInterfaceImpl::Ptr getCI();
 
 private:
 
