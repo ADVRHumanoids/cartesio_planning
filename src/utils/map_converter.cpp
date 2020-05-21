@@ -34,7 +34,7 @@ void MapConverter::convert ()
     {
         for (int height = 0; height < _map.info.height; height++)
         {
-            if (_map.data[height*_map.info.width + width] > 0 /*|| _map.data[height*_map.info.width + width] == -1*/)
+            if (_map.data[height*_map.info.width + width] > 0 || _map.data[height*_map.info.width + width] == -1)
             {
                 _x_occ.push_back(width * _map.info.resolution + _map.info.resolution/2 + _map.info.origin.position.x);
                 _y_occ.push_back(height * _map.info.resolution + _map.info.resolution/2 + _map.info.origin.position.y);
@@ -63,7 +63,6 @@ bool MapConverter::checkForCollision (Eigen::VectorXd pos,
         if (sqrt((pos(0) - _x_occ[i]) * (pos(0) - _x_occ[i])) < size/2 + _map.info.resolution/2 &&
             sqrt((pos(1) - _y_occ[i]) * (pos(1) - _y_occ[i])) < size/2 + _map.info.resolution/2)
         {
-            std::cout << "Foot in position [" << pos[0] << " " << pos[1] << "] in collision with element in position [" << _x_occ[i] << " " << _y_occ[i] << "]" << std::endl;
             check = true;
         }
     }
