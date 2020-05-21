@@ -157,6 +157,7 @@ include_directories(
 add_library(cartesio_planning SHARED
     src/constraints/cartesian_constraint.cpp
     src/goal/goal_sampler.cpp
+    src/goal/goal_sampler2.cpp
     src/ik/position_ik_solver.cpp
     src/planner/cartesio_ompl_planner.cpp
     src/state_wrapper.cpp
