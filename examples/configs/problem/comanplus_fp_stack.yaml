@@ -3,8 +3,8 @@ solver_options:
     back_end: "qpoases"
 
 stack:
-    - ["LeftFoot", "RightFoot"]
-    - ["Com", "Waist"]
+    - ["LeftFoot", "RightFoot", "ComXY"]
+    - ["ComZ"]#, "Waist"]
     - ["Postural"]
 
 constraints: ["JointLimits"]
@@ -24,17 +24,27 @@ RightFoot:
 
 Postural:
     type: "Postural"
-    lambda: 0.2
-    
-Com:
-    type: "Com"
-    indices: [0, 1]
     lambda: 0.1
+    
+ComTask:
+    type: "Com"
+    weight: 10
+    lambda: 0.05
+
+ComXY:
+    type: "Subtask"
+    task: "ComTask"
+    indices: [0, 1]
+
+ComZ:
+    type: "Subtask"
+    task: "ComTask"
+    indices: [2]
     
 Waist:
     type: "Cartesian"
     distal_link: "base_link"
-    indices: [3, 4]
+    indices: [4]
     
 
 
@@ -46,7 +56,7 @@ Waist:
 #stack:
     #- ["Wheel1", "Wheel2", "Wheel3", "Wheel4","Ankle1", "Ankle2", "Ankle3", "Ankle4"]
     #- ["Pelvis"]
-    ##- ["Postural"]
+    #- ["Postural"]
 
 #constraints: ["JointLimits"]
 
@@ -80,10 +90,11 @@ Waist:
 #Com:
     #type: "Com"
     #lambda: 0.1
+    #indices: [0, 1]
     
 #Postural:
     #type: "Postural"
-    #lambda: 0.001
+    #lambda: 0.1
     
 #Ankle1:
     #type: "Cartesian"
@@ -118,4 +129,4 @@ Waist:
     #type: "Cartesian"
     #base_link: "world"
     #distal_link: "pelvis"
-    #indices: [3]
+    #indices: [0, 1, 3]

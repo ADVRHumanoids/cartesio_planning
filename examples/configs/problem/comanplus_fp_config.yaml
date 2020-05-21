@@ -1,4 +1,4 @@
-### COMANPLUS_CONFIG ###
+#### COMANPLUS_CONFIG ###
 state_space:
     ee_number: 2
     bounds_x: [-1.0, 6.0]
@@ -39,11 +39,11 @@ distance:
 #control_space:
     #step_size_max: 0.1
     #min_control_duration: 1
-    #max_control_duration: 50
+    #max_control_duration: 100
     
 #propagator:
     #type: "stepPropagator"
-    #duration: 0.1
+    #duration: 0.6
     
 #state_validity_check:
     #- collisions

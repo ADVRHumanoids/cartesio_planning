@@ -1,5 +1,7 @@
 #include "foot_step_planner.h"
 
+#include <thread>
+#include <chrono>
 
 #include "utils/parse_yaml_utils.h"
 
@@ -11,6 +13,7 @@ FootStepPlanner::FootStepPlanner ():
     _nhpr("~"),
     _n()
 {
+//     _sw = std::make_shared<Planning::StateWrapper>(Planning::StateWrapper::StateSpaceType::REALVECTOR, 2);
     _sw = std::make_shared<Planning::StateWrapper>(Planning::StateWrapper::StateSpaceType::SE2SPACE, 3);
     init_load_config();
     init_load_model();
@@ -80,7 +83,6 @@ void FootStepPlanner::init_load_model ()
     _solver_model->update();
     
     _map = std::make_shared<XBot::Converter::MapConverter>(_n, "projected_map");
-//     _map_subscriber = _n.subscribe<nav_msgs::OccupancyGrid>("projected_map", 1000, &FootStepPlanner::callback, this);
 }
 
 void FootStepPlanner::init_load_position_cartesian_solver() 
@@ -242,7 +244,8 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
     {
         std::vector<Eigen::VectorXd> ee(_ee_number);  
         Eigen::Vector3d x_com = {0, 0, 0};
-        Eigen::VectorXd x;
+        double sum_x = 0;
+        double sum_y = 0;
         Eigen::Affine3d T;
         
         // Transform state in Eigen::VectorXd and fill the IK solver
@@ -250,9 +253,9 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         {
 //             _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), ee[i]);
             _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), ee[i]);
-            x_com(0) += ee[i](0);
-            x_com(1) += ee[i](1);
-            T.translation() << ee[i](0), ee[i](1), 0 /*_z_wheel*/;
+            sum_x += ee[i](0);
+            sum_y += ee[i](1);
+            T.translation() << ee[i](0), ee[i](1), 0; // _z_wheel;
             T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
             T.rotate( Eigen::AngleAxis<double>( ee[i](2), Eigen::Vector3d(0,0,1) ));         // UNCOMMENT THIS WHEN PLANNING IN SE2
 
@@ -316,23 +319,12 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
 //         {
 //             return false;
 //         }
+//         
+//         T.translation() << sum_x / _ee_number, sum_y / _ee_number, 0;
+//         _solver->setDesiredPose("pelvis", T);
 
         
-        // VALIDITY FUNCTIONS FOR COMANPLUS
-        // Check whether one of the two feet is in collision with the environment
-        _map->convert();
-//         Eigen::VectorXd x_occ, y_occ;
-//         _map->getOccupiedPoints(x_occ, y_occ);
-        for (int i = 0; i < _ee_number; i++)
-        {
-            if (_map->checkForCollision(ee[i], 0.0))
-            {
-                std::cout << "End effector called " << _ee_name[i] << " is in collision!" << std::endl;
-                return false;
-            }
-        }
-            
-        
+        // VALIDITY FUNCTIONS FOR COMANPLUS          
         // Check for relative distance
         double x_diff = sqrt((ee[0](0) - ee[1](0)) * (ee[0](0) - ee[1](0))); 
         double y_diff = sqrt((ee[0](1) - ee[1](1)) * (ee[0](1) - ee[1](1)));
@@ -347,12 +339,16 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         double res2 = (boost::math::constants::pi<double>()*2 - (ee[0](2) - ee[1](2))); 
     
         if (std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) > boost::math::constants::pi<double>()/6)
+        {
             return false;
+        }
         
         // Set Com Pose
-        x_com(0) = x_com(0)/_ee_number;
-        x_com(1) = x_com(1)/_ee_number;
-        T.translation() << x_com(0), x_com(1), 0;
+        _start_model->getCOM(x_com);
+        x_com(0) = sum_x / _ee_number;
+        x_com(1) = sum_y / _ee_number;
+        
+        T.translation() << x_com(0), x_com(1), x_com(2);
                 
         _solver->setDesiredPose("Com", T);
         
@@ -361,94 +357,120 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         double xRel_w = ee[0](0) - ee[1](0);
         double yRel_w = ee[0](1) - ee[1](1);
    
-        if (-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > -0.19)                
+        if (-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > -0.20)                
         {
             return false;        
         }
+
+        // Check whether one of the two feet is in collision with the environment
+        _map->convert();
+        for (int i = 0; i < _ee_number; i++)
+        {
+            // TODO set size as parameter from config
+            if (_map->checkForCollision(ee[i], 0.2))
+            {
+                return false;
+            }
+        }
+         
+        if (!_space_info->satisfiesBounds(state))
+        {
+            return false;
+        }
         
         _model->setJointPosition(_qhome);
-        _model->update();
+        _model->update();           
         
+        // Extract the home state as a Eigen::VectorXd
+        XBot::JointNameMap jmap, jmap_home;
+        _ci->getReferencePosture(jmap);
+        _ci->getReferencePosture(jmap_home);
+        
+        _model->eigenToMap(_qhome, jmap_home);
+       
+        // Check if the start state has been already explored and pick the relative postural
+        // at the beginning, the postural is equal to the home state
+        auto step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator>(_propagator);
+        
+        // Transform the start state in a std::vector
+        auto sstate = step_propagator->getStartState();
+        std::vector<double> state_vect;
+        for (int i = 0; i < _ee_number; i++)
+        {
+            Eigen::VectorXd vect;
+//             _sw->getState(sstate->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), vect);
+            _sw->getState(sstate->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), vect);
+            for (int j = 0; j < vect.size(); j++)
+                state_vect.push_back(vect(j));
+        }
+        
+        // Look for the start state inside the unordered_map
+        std::unordered_map<std::vector<double>, Eigen::VectorXd, posturalHash>::iterator it;
+        it = _postural_map.find(state_vect);
+        
+        if (it != _postural_map.end())
+        {
+            Eigen::VectorXd qpost(_solver->getModel()->getJointNum());
+            qpost = it->second; 
+            _model->eigenToMap(qpost, jmap);
+            _ci->setReferencePosture(jmap);
+            _start_model->setJointPosition(qpost);
+            _start_model->update();
+            _start_viz->publishMarkers(ros::Time::now(), {});
+        }
+        else // reset postural to home state
+        {            
+            _ci->setReferencePosture(jmap_home);
+            
+            //TODO check size std::map
+            _postural_map.insert(std::make_pair(state_vect, _qhome));
+            _trajectory_map.insert(std::make_pair(state_vect, _qhome));
+            _start_model->setJointPosition(_qhome);
+            _start_model->update();
+            _start_viz->publishMarkers(ros::Time::now(), {});
+        }
+        
+        Eigen::VectorXd x;
+        
+        // solve
         if (_solver->solve())
         {
             _solver->getModel()->getJointPosition(x);
             if (!svp(x))
             {
-                return false;
-//                 Eigen::VectorXd qrand;
-//                 std::cout << "Pose found is in collision; computing a new one..." << std::endl;
-//                 if(_goal_generator->sample(qrand, 5))
-//                 {
-//                     std::cout << "Feasible pose found!" << std::endl;
-//                     return true;
-//                 }
-//                 else
-//                 {
-//                     std::cout << "No feasible pose found, discarding state..." << std::endl;
-//                     return false;
-//                 }
-                // Compute a new random joint pose and set as new Postural
-//                 Eigen::VectorXd qrand, qmin, qmax;
-//                 _solver->getModel()->getJointLimits(qmin, qmax);
-//                 
-//                 qrand.setRandom(_solver->getModel()->getJointNum()); // uniform in -1 < x < 1
-//                 qrand = (qrand.array() + 1)/2.0; // uniform in 0 < x < 1
-// 
-//                 qrand = qmin + qrand.cwiseProduct(qmax - qmin); // uniform in qmin < x < qmax
-// 
-//                 if(_solver->getModel()->isFloatingBase())
-//                 {
-//                     qrand.head<6>() = x.head<6>(); // we keep virtual joints between -1 and 1 (todo: improve)
-//                     qrand.head<6>().tail<3>() = x.head<6>().tail<3>();
-//                 }
-//                 
-//                 _msg.header.stamp = ros::Time::now();
-//                 _msg.name = {"VIRTUALJOINT_1", "VIRTUALJOINT_2", "VIRTUALJOINT_3", "VIRTUALJOINT_4", "VIRTUALJOINT_5", "VIRTUALJOINT_6",
-//                          "LHipLat", "LHipSag", "LHipYaw", "LKneePitch", "LAnklePitch", "LAnkleRoll", "RHipLat", "RHipSag",
-//                          "RHipYaw", "RKneePitch", "RAnklePitch", "RAnkleRoll", "WaistLat", "WaistYaw", "LShSag", "LShLat",
-//                          "LShYaw", "LElbj", "LForearmPlate", "LWrj1", "LWrj2", "RShSag", "RShLat", "RShYaw", "RElbj", "RForearmPlate",
-//                          "RWrj1", "RWrj2"};
-//                 _msg.position.assign(qrand.data(), qrand.data() + qrand.size());
-//                 _postural_pub.publish(_msg);
-//                 
-//                 // Solve starting from the previous IK solution in collision/self-collision using the new Postural
-//                 if (!_solver->solve())
-//                     continue;
-//                 else
-//                 {
-//                     _solver->getModel()->getJointPosition(x);
-//                 }
-//                 iter ++;
-//                 if (iter == 100)
-//                     return false;
-//             }
-//             
-//             // Add each valid state inside a map containing the state value and the corresponding Postural            
-//             return true;
-//             
-            } 
-            else
-            {
-                auto step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator>(_propagator);
-                ompl::base::State* start =_space_info->allocState();
-                _space_info->getStateSpace()->copyState(start, step_propagator->getStartState());
-                
-                if (std::none_of(_start_vect.begin(), _start_vect.end(), [start, this](ompl::base::State* state){return _space_info->equalStates(start, state);}))
-                {
-                    _start_vect.push_back(start);
-                    
-                    Eigen::VectorXd q_post;
-                    _ci->getReferencePosture(q_post);
-                    
-                    _postural_map.insert(std::make_pair(start, q_post));
-                    return true;
-                }
-                _space_info->freeState(start);
+                XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
+                goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
+                if (goal_sampler->sample(2.0))
+                    _solver->getModel()->getJointPosition(x);
+                else
+                    return false;
             }
+                      
+//          std::cout << "Found a collision free pose, adding new postural corresponing to the result state" << std::endl;
+            // Add the new postural to the std::map together with the start state
+            Eigen::VectorXd diff = x - _qhome;
+            double err = diff.norm();
+            std::vector<double> result_vect;
+            if (err > 1.5)
+            {               
+                for (int i = 0; i < _ee_number; i++)
+                {
+                    Eigen::VectorXd vect;
+//                     _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), vect);
+                    _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), vect);
+                    for (int j = 0; j < vect.size(); j++)
+                        result_vect.push_back(vect(j));
+                }
+
+                _postural_map.insert(std::make_pair(result_vect, x));  
+            }
+            _trajectory_map.insert(std::make_pair(result_vect,x));
+//           std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            return true; 
         }
         else
         {
-            std::cout << "IK solution not found, discarding state..." << std::endl;
+            // IK solution not found, discarding state
             return false;
         }       
     };
@@ -533,6 +555,10 @@ void FootStepPlanner::setStartAndGoalState()
     T.rotate( Eigen::AngleAxis<double>(goal[5], Eigen::Vector3d(0,0,1)));
     _goal_solver->setDesiredPose("l_sole", T);
     
+    T.translation() << (goal[0] + goal[3])/2, (goal[1] + goal[4])/2, 0;
+    T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+    _goal_solver->setDesiredPose("base_link", T);
+    
     _goal_solver->solve();
 
     // CENTAURO GOAL
@@ -572,7 +598,7 @@ void FootStepPlanner::setStartAndGoalState()
 //     _solver_model->update();
     
     // Set start and goal states
-    _pdef->setStartAndGoalStates(start, goal, 1.0);
+    _pdef->setStartAndGoalStates(start, goal, 0.2);
 }
 
 void FootStepPlanner::init_planner_srv()
@@ -613,9 +639,10 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
     {
         _path = _pdef->getSolutionPath();
         _path->print(std::cout);
+        std::cout << "Discarded " << _counter << " states due to goal_sampler" << std::endl;
+        std::cout << "Created a map with: " << _postural_map.size() << " entries" << std::endl;
         Eigen::VectorXd q_temp;
         Eigen::Affine3d T;
-//         std::vector<Eigen::Vector3d> ee(_ee_number);  // use when planning in SE2
         std::vector<Eigen::VectorXd> ee(_ee_number);
         
         trajectory_msgs::JointTrajectory trj;
@@ -623,59 +650,76 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
              
         for (int i = 0; i < _path->as<ompl::geometric::PathGeometric>()->getStateCount(); i++)
         {
-            for (int j = 0; j < _ee_number; j++)
-            {
-//                 _sw->getState(_path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(j), ee[j]);
-                   _sw->getState(_path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(j), ee[j]);
-//                 auto s = _path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>();
-//                 ee[j](0) = s->as<ompl::base::SE2StateSpace::StateType>(j)->getX();
-//                 ee[j](1) = s->as<ompl::base::SE2StateSpace::StateType>(j)->getY();
-//                 ee[j](2) = s->as<ompl::base::SE2StateSpace::StateType>(j)->getYaw();
-                T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
-                T.rotate( Eigen::AngleAxis<double>( ee[j](2), Eigen::Vector3d(0,0,1) ));         // UNCOMMENT THIS WHEN PLANNING IN SE2
-                T.translation() << ee[j](0), ee[j](1), 0 /*_z_wheel*/;
-                _solver->setDesiredPose(_ee_name[j], T);
-            }
-            double sum_x = 0;
-            double sum_y = 0;
-            for (int j = 0; j < _ee_number; j++)
-            {
-                sum_x += ee[j](0);
-                sum_y += ee[j](1);
-            }
-            T.translation() << sum_x/_ee_number, sum_y/_ee_number, 0;
-            _solver->setDesiredPose("Com", T);
-            _solver->solve();
+//             for (int j = 0; j < _ee_number; j++)
+//             {
+// //                 _sw->getState(_path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(j), ee[j]);
+//                 _sw->getState(_path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(j), ee[j]);
+//                 T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+//                 T.rotate( Eigen::AngleAxis<double>( ee[j](2), Eigen::Vector3d(0,0,1) ));         // UNCOMMENT THIS WHEN PLANNING IN SE2
+//                 T.translation() << ee[j](0), ee[j](1), 0 /*_z_wheel*/;
+//                 _solver->setDesiredPose(_ee_name[j], T);
+//             }
+//             double sum_x = 0;
+//             double sum_y = 0;
+//             for (int j = 0; j < _ee_number; j++)
+//             {
+//                 sum_x += ee[j](0);
+//                 sum_y += ee[j](1);
+//             }
+//             T.translation() << sum_x/_ee_number, sum_y/_ee_number, 0;
+//             _solver->setDesiredPose("Com", T);
             
-            bool pose_valid = check_state_valid(_solver->getModel());           
-
-            // If IK solution is in collision/self-collision, find a new pose using goal_generator
-            if (!pose_valid)
+            std::unordered_map<std::vector<double>, Eigen::VectorXd, posturalHash>::iterator it;
+            std::vector<double> state_vect;
+            for (int j = 0; j < _ee_number; j++)
             {
-                std::cout << "Pose found for state " << i << " does not respect constraints, finding a new IK solution" << std::endl;
-                
-                Eigen::VectorXd qrand;
-                
-                int max_iterations;
-                if(_nhpr.getParam("goal_generator_max_iterations", max_iterations))
-                {
-                    _goal_generator->setMaxIterations(max_iterations);
-                }
-
-                double error_tolerance;
-                if(_nhpr.getParam("goal_generator_error_tolerance", error_tolerance))
-                {
-                    _goal_generator->setErrorTolerance(error_tolerance);
-                }
-                             
-                _goal_generator->sample(qrand, 20);   
-                iter ++;
+                Eigen::VectorXd vect;
+//                 _sw->getState(_path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(j), vect);
+                _sw->getState(_path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(j), vect);
+                for (int j = 0; j < vect.size(); j++)
+                    state_vect.push_back(vect(j));
             }
-            _solver->getModel()->getJointPosition(q_temp);
-            _q_vect.push_back(q_temp);            
+            it = _trajectory_map.find(state_vect);
+            Eigen::VectorXd qpost(_solver->getModel()->getJointNum());
+            if (it != _trajectory_map.end())
+                qpost = it->second;
+            else
+                std::runtime_error("Unable to find a postural reference pose in the map...");
+//             XBot::JointNameMap jmap;
+//             _ci->getReferencePosture(jmap);
+//             _solver->getModel()->eigenToMap(qpost, jmap);
+//             _ci->setReferencePosture(jmap);
+            
+//             _solver->solve();
+            
+//             bool pose_valid = check_state_valid(_solver->getModel());           
+// 
+//             // If IK solution is in collision/self-collision, find a new pose using goal_generator
+//             if (!pose_valid)
+//             {
+//                 std::cout << "Pose found for state " << i << " does not respect constraints, finding a new IK solution" << std::endl;
+//                 
+//                 Eigen::VectorXd qrand;
+//                 
+//                 int max_iterations;
+//                 if(_nhpr.getParam("goal_generator_max_iterations", max_iterations))
+//                 {
+//                     _goal_generator->setMaxIterations(max_iterations);
+//                 }
+// 
+//                 double error_tolerance;
+//                 if(_nhpr.getParam("goal_generator_error_tolerance", error_tolerance))
+//                 {
+//                     _goal_generator->setErrorTolerance(error_tolerance);
+//                 }
+//                              
+//                 _goal_generator->sample(qrand, 20);   
+//                 iter ++;
+//             }
+//             _solver->getModel()->getJointPosition(q_temp);
+            _q_vect.push_back(qpost);            
         }
         
-        std::cout << "Goal generator called " << iter << " times relative to " << _path->as<ompl::geometric::PathGeometric>()->getStateCount() << " states" << std::endl;
         
         auto t = ros::Duration(0.);
         
@@ -799,9 +843,6 @@ ompl::control::StatePropagatorPtr FootStepPlanner::make_propagator ( const std::
 {
     if (propagatorType == "stepPropagator")
         return std::make_shared<Planning::Propagators::stepPropagator>(_space_info, _sw);
-    
-    else if (propagatorType == "stepPropagatorSE2")
-        return std::make_shared<Planning::Propagators::stepPropagatorSE2>(_space_info, _sw);
 }
 
 ompl::base::PlannerPtr FootStepPlanner::make_planner ( std::__cxx11::string plannerType ) 
@@ -874,9 +915,6 @@ void FootStepPlanner::publish_tf(ros::Time time)
     _goal_viz->setRGBA(goal_color);
     _goal_viz->publishMarkers(time, red_links);
     
-    // Publish desired postural pose
-    _postural_pub.publish(_msg);
-
 }
 
 void FootStepPlanner::on_start_state_recv(const sensor_msgs::JointStateConstPtr & msg)

@@ -45,22 +45,22 @@
 #include <cartesian_interface/utils/RobotStatePublisher.h>
 #include <cartesian_interface/markers/CartesianMarker.h>
 
+#include <ros/ros.h>
 
 #include <cartesio_planning/FootStepPlanner.h>
-
-#include <ros/ros.h>
 
 #include "state_wrapper.h"
 #include "ik/position_ik_solver.h"
 #include "samplers/stepSampler.h"
 #include "propagators/stepPropagator.h"
-#include "propagators/stepPropagatorSE2.h"
 #include "validity_checker/validity_checker_context.h"
 #include "utils/robot_viz.h"
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "nodes/goal_generation.h"
 #include "goal/goal_sampler.h"
+#include "goal/goal_sampler2.h"
 #include "utils/map_converter.h"
+#include "utils/hash.h"
 
 
 
@@ -172,8 +172,10 @@ private:
     
     std::shared_ptr<XBot::Converter::MapConverter> _map;
     
-    std::map<ompl::base::State*, Eigen::VectorXd> _postural_map;
+    std::unordered_map<std::vector<double>, Eigen::VectorXd, posturalHash> _postural_map, _trajectory_map;
     std::vector<ompl::base::State*> _start_vect;
+    
+    int _counter;
         
 };
 
