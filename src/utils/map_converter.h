@@ -39,7 +39,7 @@ public:
 private:
     nav_msgs::OccupancyGrid _map;
     
-    std::vector<double> _x_occ, _y_occ;
+    std::vector<std::vector<double>> _pos_occ;
     
     ros::NodeHandle _nh;
 };
