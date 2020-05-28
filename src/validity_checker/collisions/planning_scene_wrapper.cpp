@@ -75,6 +75,8 @@ PlanningSceneWrapper::PlanningSceneWrapper(ModelInterface::ConstPtr model):
 
     // planning scene monitor automatically updates planning scene from topics
     _monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>(rml);
+    
+    _srdf = _model->getSrdf();
 
 }
 
@@ -236,22 +238,20 @@ std::vector<XBot::ModelChain> PlanningSceneWrapper::getCollidingChains() const
 {
     auto chain_names = _model->getChainNames();
     std::vector<std::string> colliding_links = getCollidingLinks();  
-    std::cout << "Colliding links: \n";
-    for (auto i : colliding_links)
-        std::cout << i << std::endl;
+    _model->getSrdf().getGroups();
     std::vector<XBot::ModelChain> colliding_chains;
-    for (auto i:chain_names)
+    for (auto i:_srdf.getGroups())
     {
-        
-        auto chain = _model->chain(i);
-        auto link  = chain.getUrdfLinks();
-        for (int k = 0; k < link.size(); k++)
-            for (int j = 0; j < colliding_links.size(); j++)
-                if (link[k]->name == colliding_links[j])
-                {
-                    colliding_chains.push_back(_model->chain(i));
-                    continue;
-                }
+        auto link  = i.links_;
+        for (auto j : link)
+        {
+            if (std::any_of(colliding_links.begin(), colliding_links.end(), [j](std::string k){ return k == j; }))
+            {
+               colliding_chains.push_back(_model->chain(i.name_));
+               goto cnt;
+            }
+        }
+        cnt:;      
     }
     return colliding_chains;
 }
