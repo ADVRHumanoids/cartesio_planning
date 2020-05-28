@@ -35,7 +35,7 @@ public:
         _si->getStateSpace()->copyState(result, start);
         
         // Extra action for Centauro: move all the wheel together
-        if (foot_sel == 5)
+        if (foot_sel == 3 || foot_sel == 4)
         {
             for (int i = 0; i < 4; i++)
             {
@@ -50,26 +50,68 @@ public:
             }
         }
         
-        else
+        else if (foot_sel == 1)
         {
-            // Select the swing foot and cast it to the desired value
-            ompl::base::State* moved_foot;
-            if (_sw->getStateSpaceType() == StateWrapper::StateSpaceType::REALVECTOR)
-                moved_foot = result->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(foot_sel - 1);
-            else if (_sw->getStateSpaceType() == StateWrapper::StateSpaceType::SE2SPACE)
-                moved_foot = result->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(foot_sel - 1);
+            auto moved_foot = result->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(0);
             
-            // Propagate
             Eigen::VectorXd X, U;
             _sw->getState(moved_foot, X);
-            if (_sw->getStateSpaceType() == StateWrapper::StateSpaceType::REALVECTOR)
-                U = Eigen::VectorXd::Map(step_size, 2);
-            else if (_sw->getStateSpaceType() == StateWrapper::StateSpaceType::SE2SPACE)
-                U = Eigen::VectorXd::Map(step_size, 3);
+            U = Eigen::VectorXd::Map(step_size, 2);
+            
             X += U * duration;
             
             _sw->setState(moved_foot, X);
+            
+            moved_foot = result->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(1);
+            _sw->getState(moved_foot, X);
+            
+            X(0) += U(0) * duration;
+            X(1) -= U(1) * duration;
+            
+            _sw->setState(moved_foot, X);
         }
+        
+        else if (foot_sel == 2)
+        {
+            auto moved_foot = result->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(2);
+            
+            Eigen::VectorXd X, U;
+            _sw->getState(moved_foot, X);
+            U = Eigen::VectorXd::Map(step_size, 2);
+            
+            X += U * duration;
+            
+            _sw->setState(moved_foot, X);
+            
+            moved_foot = result->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(3);
+            _sw->getState(moved_foot, X);
+            
+            X(0) += U(0) * duration;
+            X(1) -= U(1) * duration;
+            
+            _sw->setState(moved_foot, X);
+        }
+        
+//         else
+//         {
+//             // Select the swing foot and cast it to the desired value
+//             ompl::base::State* moved_foot;
+//             if (_sw->getStateSpaceType() == StateWrapper::StateSpaceType::REALVECTOR)
+//                 moved_foot = result->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(foot_sel - 1);
+//             else if (_sw->getStateSpaceType() == StateWrapper::StateSpaceType::SE2SPACE)
+//                 moved_foot = result->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(foot_sel - 1);
+//             
+//             // Propagate
+//             Eigen::VectorXd X, U;
+//             _sw->getState(moved_foot, X);
+//             if (_sw->getStateSpaceType() == StateWrapper::StateSpaceType::REALVECTOR)
+//                 U = Eigen::VectorXd::Map(step_size, 2);
+//             else if (_sw->getStateSpaceType() == StateWrapper::StateSpaceType::SE2SPACE)
+//                 U = Eigen::VectorXd::Map(step_size, 3);
+//             X += U * duration;
+//             
+//             _sw->setState(moved_foot, X);
+//         }
     }
     
     const ompl::base::State* getStartState()
