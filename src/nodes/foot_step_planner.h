@@ -30,6 +30,8 @@
 #include <ompl/control/planners/pdst/PDST.h>
 #include <ompl/control/planners/syclop/GridDecomposition.h>
 #include <ompl/control/SimpleSetup.h>
+#include <ompl/control/SimpleDirectedControlSampler.h>
+#include <ompl/control/PlannerData.h>
 
 #include <Eigen/Geometry>
 
@@ -64,6 +66,7 @@
 
 
 
+
 namespace XBot { namespace Cartesian { 
     
 class FootStepPlanner
@@ -76,6 +79,7 @@ public:
     FootStepPlanner& operator=(const FootStepPlanner&) = delete; // Not assignable  
     
     static ompl::control::ControlSamplerPtr getSampler(const ompl::control::ControlSpace* cspace);
+    static ompl::control::DirectedControlSamplerPtr getDirectedControlSampler(const ompl::control::SpaceInformation* space_info);
     
     ompl::control::StatePropagatorPtr make_propagator(const std::string propagatorType);
     

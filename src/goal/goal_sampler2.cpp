@@ -21,50 +21,58 @@ bool GoalSampler2::sample ( double timeout )
 {
     // BE SURE THAT _ik_solver AND _vc_context HAS THE SAME MODEL
     Eigen::VectorXd x, dqlimits;
-    XBot::JointNameMap chain_map, joint_map, velocity_map;
+    XBot::JointNameMap chain_map, joint_map, velocity_map, random_map;
     _ik_solver->getCI()->getReferencePosture(joint_map);
     
     _ik_solver->getModel()->getVelocityLimits(dqlimits);
     
     _ik_solver->getModel()->getJointPosition(x);
     
+    _ik_solver->getModel()->eigenToMap(x, velocity_map);
+    _ik_solver->getModel()->eigenToMap(dqlimits, velocity_map);
+    
     float T = 0.0;
     double dt = 0.01;
+    int iter = 0;
     
     while(!_vc_context.vc_aggregate.checkAll())
     {
         auto tic = std::chrono::high_resolution_clock::now();
-        
-        _ik_solver->getModel()->eigenToMap(x, joint_map);
-        
-        std::cout << "JOINT MAP BEFORE: \n";
-        for (auto i : joint_map)
-            std::cout << i.first << "                " << i.second << std::endl;
-      
-        velocity_map = joint_map;
-        _ik_solver->getModel()->eigenToMap(dqlimits, velocity_map);
-        
+                
+//         std::cout << "JOINT MAP BEFORE: \n";
+//         for (auto i : joint_map)
+//             std::cout << i.first << "                " << i.second << std::endl;
+       
         auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
-        std::cout << "Colliding chains: \n";
-        for (auto i : colliding_chains)
-        {          
-            std::cout << i.getChainName() << std::endl;
-            i.getJointPosition(chain_map);
-            
-            for (auto j : chain_map)
-            {
-                j.second = generateRandom() * velocity_map[j.first];
-                joint_map[j.first] += j.second * dt;
-            }
+
+        if (iter % 50 == 0)
+        {
+            _ik_solver->getModel()->eigenToMap(x, joint_map);
+            random_map = generateRandomVelocities(colliding_chains);          
         }
         
-        std::cout << "\n JOINT MAP AFTER: \n";
-        for (auto i : joint_map)
-            std::cout << i.first << "                " << i.second << std::endl;
+        for (auto i : random_map)
+            joint_map[i.first] += i.second * dt;
+        
+//         std::cout << iter << std::endl;
+        iter ++;
+        
+//         std::cout << "\n JOINT MAP AFTER: \n";
+//         for (auto i : joint_map)
+//             std::cout << i.first << "                " << i.second << std::endl;
+        
+//         Eigen::VectorXd post;
+//         
+//         _ik_solver->getModel()->mapToEigen(joint_map, post);
+//         _viz_model->setJointPosition(post);
+//         _viz_model->update();
+//         _robot_viz->publishMarkers(ros::Time::now(), {});
         
         _ik_solver->getCI()->setReferencePosture(joint_map);
         _ik_solver->solve();
         
+//         std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                
         auto toc = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec = toc-tic;
         T += fsec.count();
@@ -80,11 +88,43 @@ bool GoalSampler2::sample ( double timeout )
 
 double GoalSampler2::generateRandom() 
 {
-    return (double) (std::rand() - RAND_MAX) / RAND_MAX;
+    return (double) (std::rand() - RAND_MAX/2) / (RAND_MAX/2);
 }
 
-
-
-
-
+XBot::JointNameMap GoalSampler2::generateRandomVelocities(std::vector<XBot::ModelChain> colliding_chains) 
+{
+    XBot::JointNameMap random_map, chain_map, velocityLim_map;
+    Eigen::VectorXd velocity_lim;
+    
+    _ik_solver->getModel()->getVelocityLimits(velocity_lim);
+    
+    _ik_solver->getCI()->getReferencePosture(velocityLim_map);
+    _ik_solver->getModel()->eigenToMap(velocity_lim, velocityLim_map);
+    
+    for (auto i:colliding_chains)
+    {
+        if (i.getChainName() == "front_right_leg" || i.getChainName() == "front_left_leg" || i.getChainName() == "rear_right_leg" || i.getChainName() == "rear_left_leg")
+        {
+            random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
+            random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
+            random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
+        }
+        
+        if (i.getChainName() == "right_arm" || i.getChainName() == "left_arm")
+        {
+            random_map.insert(std::make_pair("torso_yaw", generateRandom() * 2 * velocityLim_map["torso_yaw"]));
+        }
+        
+            i.getJointPosition(chain_map);
+            
+            for (auto j : chain_map)
+            {
+                j.second = generateRandom() * velocityLim_map[j.first];
+                random_map.insert(std::make_pair(j.first, j.second));
+            }
+        
+    }
+    
+    return random_map;
+}
 

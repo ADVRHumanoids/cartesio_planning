@@ -3,11 +3,11 @@
     <arg name="is_model_floating_base" default="true"/>
     
     <!--  <include file="$(find centauro_gazebo)/launch/centauro_world.launch" />-->
-    <param name="robot_description" textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
-    <param name="robot_description_semantic" textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/> 
+    <!--<param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/cogimon.urdf"/>
+    <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/cogimon.srdf"/>--> 
         
-<!--     <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/configs/CentauroConfig/urdf/centauro.urdf"/> -->
-<!--     <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/configs/CentauroConfig/srdf/centauro.srdf"/>  -->
+     <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/centauro.urdf"/> -->
+    <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/centauro.srdf"/>  
     
     <param name="planner/problem_description"
             textfile="$(find cartesio_planning)/configs/problem/comanplus_fp_stack.yaml"/>  
@@ -16,7 +16,7 @@
             textfile="$(find cartesio_planning)/configs/problem/comanplus_fp_goal_stack.yaml"/> 
     
         <!-- .bag file containing 2 boxes acquired using octomap -->
-    <node pkg="rosbag" type="play" name="bag_player" args="-l $(env ROBOTOLOGY_ROOT)/external/cartesio_planning/bagfiles/subset1.bag" output="screen"/>
+    <node pkg="rosbag" type="play" name="bag_player" args="-l $(env ROBOTOLOGY_ROOT)/external/cartesio_planning/bagfiles/narrow_corridor.bag" output="screen"/>
     
     <node pkg="cartesio_planning" type="foot_step_planner" name="foot_step_planner" output="screen">
         <param name="solver" value=""/>
