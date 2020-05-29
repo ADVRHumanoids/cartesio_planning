@@ -14,8 +14,17 @@ FootStepPlanner::FootStepPlanner ():
     _n(),
     _counter(0)
 {
-    _sw = std::make_shared<Planning::StateWrapper>(Planning::StateWrapper::StateSpaceType::REALVECTOR, 2);
-//     _sw = std::make_shared<Planning::StateWrapper>(Planning::StateWrapper::StateSpaceType::SE2SPACE, 3);
+    if (!_n.hasParam("contact_type"))
+        std::runtime_error("'contact_type' parameter missing!");
+    
+    std::string contact_type; 
+    _n.getParam("contact_type", contact_type);
+    
+    if (contact_type == "point")
+        _sw = std::make_shared<Planning::StateWrapper>(Planning::StateWrapper::StateSpaceType::REALVECTOR, 2);
+    else if (contact_type == "surface")
+        _sw = std::make_shared<Planning::StateWrapper>(Planning::StateWrapper::StateSpaceType::SE2SPACE, 3);
+    
     init_load_config();
     init_load_model();
     init_load_position_cartesian_solver();
@@ -66,10 +75,13 @@ void FootStepPlanner::init_load_model ()
     _model->update();
     
     // UNCOMMENT THIS WHEN PLANNING WITH CENTAURO: computes initial z-axis position 
-    // of the wheel that will be used during the whole planner
-    Eigen::Affine3d T;
-    _model->getPose("wheel_1", T);
-    _z_wheel = T.translation().z();
+    // of the wheel that will be used during the whole plannerù
+    if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+    {
+        Eigen::Affine3d T;
+        _model->getPose("wheel_1", T);
+        _z_wheel = T.translation().z();
+    }
     
     // Define start model
     _start_model->setJointPosition(_qhome);
@@ -153,16 +165,22 @@ void FootStepPlanner::init_load_planner()
         bounds.setHigh(1, bounds_y[1]);
     }   
     
-    std::vector<std::shared_ptr<ompl::base::RealVectorStateSpace>> spaces (_ee_number);
-//     std::vector<std::shared_ptr<ompl::base::SE2StateSpace>> spaces (_ee_number);
     _space = std::make_shared<ompl::base::CompoundStateSpace>();
     
     for (int i = 0; i < _ee_number; i++)
-    {        
-        spaces[i] = std::make_shared<ompl::base::RealVectorStateSpace>(2);
-//         spaces[i] = std::make_shared<ompl::base::SE2StateSpace>();
-        spaces[i]->setBounds(bounds);
-        _space->addSubspace(spaces[i], 1.0);
+    {   
+        if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+        {
+            auto spaces = std::make_shared<ompl::base::RealVectorStateSpace>(2);
+            spaces->setBounds(bounds);
+            _space->addSubspace(spaces, 1.0);
+        }
+        else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+        {
+            auto spaces = std::make_shared<ompl::base::SE2StateSpace>();
+            spaces->setBounds(bounds);
+            _space->addSubspace(spaces, 1.0);
+        }       
     }
         
     // Create the Compound Control Space
@@ -255,121 +273,113 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         // Transform state in Eigen::VectorXd and fill the IK solver
         for (int i = 0; i < _ee_number; i++)
         {
-            _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), ee[i]);
-//             _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), ee[i]);
-            sum_x += ee[i](0);
-            sum_y += ee[i](1);
-            T.translation() << ee[i](0), ee[i](1), _z_wheel;
+            if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+            {
+                _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), ee[i]);
+                T.translation() << ee[i](0), ee[i](1), _z_wheel;
+            }
+            else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)   
+            {
+                _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), ee[i]);
+                T.translation() << ee[i](0), ee[i](1), 0;
+            }
+                                   
             T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
             T.rotate( Eigen::AngleAxis<double>( ee[i](2), Eigen::Vector3d(0,0,1) ));         // UNCOMMENT THIS WHEN PLANNING IN SE2
 
             _solver->setDesiredPose(_ee_name[i], T);
         }
-//         for (int i = 0; i < _ee_number; i++)
-//         {
-//             std::cout << "Input State " << i << ": " << ee[i] << std::endl;
-//         }
         
         
 
         // VALIDITY FUNCTIONS FOR CENTAURO
         // Check on relative distance
-//         auto tic = std::chrono::high_resolution_clock::now();
-        double x_diff; 
-        double y_diff;        
-        
-        
-        for (int i = 0; i < _ee_number; i += 2)
+        if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
         {
-            x_diff = sqrt((ee[i](0) - ee[i+1](0)) * (ee[i](0) - ee[i+1](0)));
-            y_diff = sqrt((ee[i](1) - ee[i+1](1)) * (ee[i](1) - ee[i+1](1)));
-            if (x_diff > max_x_distance || y_diff > max_y_distance)
+            double x_diff; 
+            double y_diff;                  
+            
+            for (int i = 0; i < _ee_number; i += 2)
+            {
+                x_diff = sqrt((ee[i](0) - ee[i+1](0)) * (ee[i](0) - ee[i+1](0)));
+                y_diff = sqrt((ee[i](1) - ee[i+1](1)) * (ee[i](1) - ee[i+1](1)));
+                if (x_diff > max_x_distance || y_diff > max_y_distance)
+                {
+                    return false;
+                }
+            }
+            
+            // Check feet crossing
+            double xRel_w;
+            double yRel_w;
+            
+            for (int i = 0; i < _ee_number; i += 2)
+            {
+                xRel_w = ee[i](0) - ee[i+1](0);
+                yRel_w = ee[i](1) - ee[i+1](1);
+                if (yRel_w < 0.15)          
+                {
+                    return false;        
+                }
+            }
+            
+            // Check distance between front and rear feet on x-axis
+            const auto x_left = sqrt((ee[0](0) - ee[2](0)) * (ee[0](0) - ee[2](0)));
+            const auto x_right = sqrt((ee[1](0) - ee[3](0)) * (ee[1](0) - ee[3](0)));
+            const auto x_left_right = sqrt((ee[0](0) - ee[3](0)) * (ee[0](0) - ee[3](0)));
+            const auto x_right_left = sqrt((ee[1](0) - ee[2](0)) * (ee[1](0) - ee[2](0)));
+            
+            if (x_right < front_rear_x_distance || x_left < front_rear_x_distance || x_right > 0.9 || x_left > 0.9 || x_left_right < front_rear_x_distance || x_right_left < front_rear_x_distance || x_right_left > 0.8 || x_left_right > 0.8)
             {
                 return false;
             }
-        }
-        
-        // Check feet crossing
-        double xRel_w;
-        double yRel_w;
-        
-        for (int i = 0; i < _ee_number; i += 2)
-        {
-            xRel_w = ee[i](0) - ee[i+1](0);
-            yRel_w = ee[i](1) - ee[i+1](1);
-            if (yRel_w < 0.15)          
+            
+            // Check distance between front and rear feet on y-axis
+            const auto y_front = sqrt((ee[0](1) - ee[1](1)) * (ee[0](1) - ee[1](1)));
+            const auto y_rear = sqrt((ee[2](1) - ee[3](1)) * (ee[2](1) - ee[3](1)));
+            const auto y_front_rear = sqrt((ee[0](1) - ee[3](1)) * (ee[0](1) - ee[3](1)));
+            const auto y_rear_front = sqrt((ee[2](1) - ee[1](1)) * (ee[2](1) - ee[1](1)));        
+            
+            if (y_front < left_right_y_distance || y_rear < left_right_y_distance || y_front > 0.8 || y_rear > 0.8 || y_front_rear < left_right_y_distance || y_front_rear > 0.8 || y_rear_front < left_right_y_distance || y_rear_front > 0.8)
             {
-                return false;        
+                return false;
             }
+            
         }
-        
-        // Check distance between front and rear feet on x-axis
-        const auto x_left = sqrt((ee[0](0) - ee[2](0)) * (ee[0](0) - ee[2](0)));
-        const auto x_right = sqrt((ee[1](0) - ee[3](0)) * (ee[1](0) - ee[3](0)));
-        const auto x_left_right = sqrt((ee[0](0) - ee[3](0)) * (ee[0](0) - ee[3](0)));
-        const auto x_right_left = sqrt((ee[1](0) - ee[2](0)) * (ee[1](0) - ee[2](0)));
-        
-        if (x_right < front_rear_x_distance || x_left < front_rear_x_distance || x_right > 0.9 || x_left > 0.9 || x_left_right < front_rear_x_distance || x_right_left < front_rear_x_distance || x_right_left > 0.8 || x_left_right > 0.8)
-        {
-            return false;
-        }
-        
-        // Check distance between front and rear feet on y-axis
-        const auto y_front = sqrt((ee[0](1) - ee[1](1)) * (ee[0](1) - ee[1](1)));
-        const auto y_rear = sqrt((ee[2](1) - ee[3](1)) * (ee[2](1) - ee[3](1)));
-        const auto y_front_rear = sqrt((ee[0](1) - ee[3](1)) * (ee[0](1) - ee[3](1)));
-        const auto y_rear_front = sqrt((ee[2](1) - ee[1](1)) * (ee[2](1) - ee[1](1)));        
-        
-        if (y_front < left_right_y_distance || y_rear < left_right_y_distance || y_front > 0.8 || y_rear > 0.8 || y_front_rear < left_right_y_distance || y_front_rear > 0.8 || y_rear_front < left_right_y_distance || y_rear_front > 0.8)
-        {
-            return false;
-        }
-        
-        T.translation() << sum_x / _ee_number, sum_y / _ee_number, 0;
-        _solver->setDesiredPose("Com", T);
 
         
         // VALIDITY FUNCTIONS FOR COMANPLUS          
         // Check for relative distance
-//         double x_diff = sqrt((ee[0](0) - ee[1](0)) * (ee[0](0) - ee[1](0))); 
-//         double y_diff = sqrt((ee[0](1) - ee[1](1)) * (ee[0](1) - ee[1](1)));
-// 
-//         if (x_diff > max_x_distance || y_diff > max_y_distance)
-//         {
-//             return false;
-//         }
-//         
-//         // Check for relative orientation
-//         double res1 = (ee[0](2) - ee[1](2));
-//         double res2 = (boost::math::constants::pi<double>()*2 - (ee[0](2) - ee[1](2))); 
-//     
-//         if (std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) > boost::math::constants::pi<double>()/6)
-//         {
-//             return false;
-//         }
-//         
-//         // Set Com Pose
-//         _start_model->getCOM(x_com);
-//         x_com(0) = sum_x / _ee_number;
-//         x_com(1) = sum_y / _ee_number;
-//         
-//         T.translation() << x_com(0), x_com(1), x_com(2);
-//                 
-//         _solver->setDesiredPose("Com", T);
-//         
-//         
-//         // Check for feet crossing
-//         double xRel_w = ee[0](0) - ee[1](0);
-//         double yRel_w = ee[0](1) - ee[1](1);
-//    
-//         if (-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > -0.20)                
-//         {
-//             return false;        
-//         }
+        else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+        {
+            double x_diff = sqrt((ee[0](0) - ee[1](0)) * (ee[0](0) - ee[1](0))); 
+            double y_diff = sqrt((ee[0](1) - ee[1](1)) * (ee[0](1) - ee[1](1)));
+
+            if (x_diff > max_x_distance || y_diff > max_y_distance)
+            {
+                return false;
+            }
+            
+            // Check for relative orientation
+            double res1 = (ee[0](2) - ee[1](2));
+            double res2 = (boost::math::constants::pi<double>()*2 - (ee[0](2) - ee[1](2))); 
+        
+            if (std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) > boost::math::constants::pi<double>()/6)
+            {
+                return false;
+            }
+                   
+            // Check for feet crossing
+            double xRel_w = ee[0](0) - ee[1](0);
+            double yRel_w = ee[0](1) - ee[1](1);
+    
+            if (-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > -0.20)                
+            {
+                return false;        
+            }
+        }
 
         // Check whether one of the two feet is in collision with the environment
-        
-
         for (int i = 0; i < _ee_number; i++)
         {
             // TODO set size as parameter from config
@@ -404,20 +414,22 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         for (int i = 0; i < _ee_number; i++)
         {
             Eigen::VectorXd vect;
-            _sw->getState(sstate->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), vect);
-//             _sw->getState(sstate->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), vect);
+            if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+                _sw->getState(sstate->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), vect);
+            if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+                _sw->getState(sstate->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), vect);
             for (int j = 0; j < vect.size(); j++)
                 state_vect.push_back(vect(j));
         }
         
         // Look for the start state inside the unordered_map
-        std::unordered_map<std::vector<double>, Eigen::VectorXd, posturalHash>::iterator it;
+        std::unordered_map<std::vector<double>, posturalStruct, posturalHash>::iterator it;
         it = _postural_map.find(state_vect);
         
         if (it != _postural_map.end())
         {
             Eigen::VectorXd qpost(_solver->getModel()->getJointNum());
-            qpost = it->second; 
+            qpost = it->second.postural; 
             _model->eigenToMap(qpost, jmap);
             _ci->setReferencePosture(jmap);
         }
@@ -453,15 +465,21 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             for (int i = 0; i < _ee_number; i++)
             {
                 Eigen::VectorXd vect;
-                _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), vect);
-//              _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), vect);
+                if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+                    _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), vect);
+                if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+                _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), vect);
                 for (int j = 0; j < vect.size(); j++)
                     result_vect.push_back(vect(j));
             }
-            _trajectory_map.insert(std::make_pair(result_vect,x));
-            if (err > 2.5)
-            {               
-                _postural_map.insert(std::make_pair(result_vect, x));  
+            posturalStruct post_struct;
+            post_struct.postural = x;
+            post_struct.parent = state_vect;
+            _trajectory_map.insert(std::make_pair(result_vect, post_struct));
+            
+            if (err > 0.0)
+            {      
+                _postural_map.insert(std::make_pair(result_vect, post_struct));  
             }
             
             return true; 
@@ -522,81 +540,68 @@ void FootStepPlanner::setStartAndGoalState()
         start[j+1] = T.translation().y();
         j += _space->getSubspace(i)->getDimension();
     }
-    
-    // TODO interactive marker
-//     urdf::Model urdf;
-//     urdf.initParam("/robot_description");
-//     XBot::Cartesian::CartesianMarker marker("RightFoot",
-//                                             urdf,
-//                                             visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D,
-//                                             _nh,
-//                                             "",
-//                                             true);
-//     
-//     
-    
-    // COMANPLUS GOAL
-//     ompl::base::ScopedState<> goal(_space);
-//     goal[0] = goal[3] = 2.5;
-//     goal[1] = start[1];
-//     goal[4] = start[4];
-//     goal[2] = start[2];
-//     goal[5] = start[5];
-//     
-//     T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
-//     T.translation() << goal[0], goal[1], 0;
-//     T.rotate( Eigen::AngleAxis<double>(goal[2], Eigen::Vector3d(0,0,1)));
-//     _goal_solver->setDesiredPose("r_sole", T);
-//     
-//     T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
-//     T.translation() << goal[3], goal[4], 0;
-//     T.rotate( Eigen::AngleAxis<double>(goal[5], Eigen::Vector3d(0,0,1)));
-//     _goal_solver->setDesiredPose("l_sole", T);
-//     
-//     T.translation() << (goal[0] + goal[3])/2, (goal[1] + goal[4])/2, 0;
-//     T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
-//     _goal_solver->setDesiredPose("base_link", T);
-//     
-//     _goal_solver->solve();
-
+   
     // CENTAURO GOAL
-    ompl::base::ScopedState<> goal(_space);
-    goal = start;
-    goal[0] += 3.0;
-    goal[2] += 3.0;
-    goal[4] += 3.0;
-    goal[6] += 3.0;
+    if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+    {
+        ompl::base::ScopedState<> goal(_space);
+        goal = start;
+        goal[0] += 3.0;
+        goal[2] += 3.0;
+        goal[4] += 3.0;
+        goal[6] += 3.0;
+        
+        T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+        T.translation() << goal[0], goal[1], _z_wheel;
+        _goal_solver->setDesiredPose(_ee_name[0], T);
+        
+        T.translation() << goal[2], goal[3], _z_wheel;
+        _goal_solver->setDesiredPose(_ee_name[1], T);
+        
+        T.translation() << goal[4], goal[5], _z_wheel;
+        _goal_solver->setDesiredPose(_ee_name[2], T);
+        
+        T.translation() << goal[6], goal[7], _z_wheel;
+        _goal_solver->setDesiredPose(_ee_name[3], T);
+        
+        _goal_solver->solve();
     
-    T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
-    T.translation() << goal[0], goal[1], _z_wheel;
-    _goal_solver->setDesiredPose(_ee_name[0], T);
+        Eigen::VectorXd q;
     
-    T.translation() << goal[2], goal[3], _z_wheel;
-    _goal_solver->setDesiredPose(_ee_name[1], T);
+        _goal_solver->getModel()->getJointPosition(q);
+        _goal_model->setJointPosition(q);
+        _goal_model->update();   
+        
+        // Set start and goal states
+        _pdef->setStartAndGoalStates(start, goal, 2.0);
+    }
+    // COMANPLUS GOAL
+    else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+    {
+        ompl::base::ScopedState<> goal(_space);
+        goal = start;
+        goal[0] = goal[3] = 2.5;
+        goal[1] = goal[4] = start[1];
+        goal[2] = goal[5] = 0.0;
+        
+        T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+        T.translation() << goal[0], goal[1], goal[2];
+        _goal_solver->setDesiredPose(_ee_name[0], T);
+        
+        T.translation() << goal[2], goal[3], goal[4];
+        _goal_solver->setDesiredPose(_ee_name[1], T);
+        
+        _goal_solver->solve();
     
-    T.translation() << goal[4], goal[5], _z_wheel;
-    _goal_solver->setDesiredPose(_ee_name[2], T);
+        Eigen::VectorXd q;
     
-    T.translation() << goal[6], goal[7], _z_wheel;
-    _goal_solver->setDesiredPose(_ee_name[3], T);
-    
-    _goal_solver->solve();
-   
-    Eigen::VectorXd q;
-   
-    _goal_solver->getModel()->getJointPosition(q);
-    _goal_model->setJointPosition(q);
-    _goal_model->update();
-    
-    // Reset models to home state
-//     _model->setJointPosition(_qhome);
-//     _model->update();
-//     
-//     _solver_model->getJointPosition(_qhome);
-//     _solver_model->update();
-    
-    // Set start and goal states
-    _pdef->setStartAndGoalStates(start, goal, 2.0);
+        _goal_solver->getModel()->getJointPosition(q);
+        _goal_model->setJointPosition(q);
+        _goal_model->update();
+              
+        // Set start and goal states
+        _pdef->setStartAndGoalStates(start, goal, 2.0);
+    }
 }
 
 void FootStepPlanner::init_planner_srv()
@@ -655,28 +660,34 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
              
         for (int i = 0; i < _path->as<ompl::geometric::PathGeometric>()->getStateCount(); i++)
         {         
-            std::unordered_map<std::vector<double>, Eigen::VectorXd, posturalHash>::iterator it;
+            std::unordered_map<std::vector<double>, posturalStruct, posturalHash>::iterator it;
             std::vector<double> state_vect;
             for (int j = 0; j < _ee_number; j++)
             {
                 Eigen::VectorXd vect;
-                _sw->getState(_path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(j), vect);
-//                 _sw->getState(_path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(j), vect);
+                if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+                    _sw->getState(_path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(j), vect);
+                else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+                    _sw->getState(_path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(j), vect);
                 for (int j = 0; j < vect.size(); j++)
                     state_vect.push_back(vect(j));
             }
+            
+            auto control = _path->as<ompl::control::PathControl>()->getControl(i);
+            auto duration = _path->as<ompl::control::PathControl>()->getControlDuration(i);
+            
             it = _trajectory_map.find(state_vect);
             Eigen::VectorXd qpost(_solver->getModel()->getJointNum());
             
             if (it != _trajectory_map.end())
-                qpost = it->second;
+                qpost = it->second.postural;
             else
                 std::runtime_error("Unable to find a postural reference pose in the map...");
             
             _q_vect.push_back(qpost);            
         }
         
-        
+
         auto t = ros::Duration(0.);
         
         for(auto x : _q_vect)

@@ -69,6 +69,15 @@
 
 namespace XBot { namespace Cartesian { 
     
+struct posturalStruct
+{
+    // Vector containing postural relative to a specific state
+    Eigen::VectorXd postural;
+    
+    // Parent state
+    std::vector<double> parent;
+};    
+    
 class FootStepPlanner
 {
 public:
@@ -176,12 +185,15 @@ private:
     
     std::shared_ptr<XBot::Converter::MapConverter> _map;
     
-    std::unordered_map<std::vector<double>, Eigen::VectorXd, posturalHash> _postural_map, _trajectory_map;
+//     std::unordered_map<std::vector<double>, Eigen::VectorXd, posturalHash> _postural_map, _trajectory_map;
+    std::unordered_map<std::vector<double>, posturalStruct, posturalHash> _postural_map, _trajectory_map;
     std::vector<ompl::base::State*> _start_vect;
     
     int _counter;
         
 };
+
+
 
 } }
 
