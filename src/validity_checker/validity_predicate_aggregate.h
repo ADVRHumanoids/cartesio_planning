@@ -49,7 +49,7 @@ public:
 
     /**
      * @brief check a single function
-     * @param id of the fucntion to check
+     * @param id of the function to check
      * @return true if suceed, false otherwise
      * NOTE: throw error if id does not exists
      */
