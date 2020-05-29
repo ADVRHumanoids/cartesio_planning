@@ -59,6 +59,7 @@
         <link name="LWrMot2"/>
         <link name="LWrMot3"/>
         <link name="l_wrist"/>
+        <link name="ee1"/>
     </group>
 
     <group name="right_arm">
@@ -71,6 +72,7 @@
         <link name="RWrMot2"/>
         <link name="RWrMot3"/>
         <link name="r_wrist"/>
+        <link name="ee2"/>
     </group>
 
     <group name="torso">
