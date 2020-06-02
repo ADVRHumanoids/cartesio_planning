@@ -97,7 +97,7 @@ XBot::JointNameMap GoalSampler2::generateRandomVelocities(std::vector<XBot::Mode
             
             if (i.getChainName() == "right_arm" || i.getChainName() == "left_arm")
             {
-                random_map.insert(std::make_pair("torso_yaw", generateRandom() * 2 * velocityLim_map["torso_yaw"]));
+                random_map.insert(std::make_pair("torso_yaw", generateRandom() * velocityLim_map["torso_yaw"]));
             }
             
             i.getJointPosition(chain_map);
