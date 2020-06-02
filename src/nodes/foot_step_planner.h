@@ -63,6 +63,7 @@
 #include "goal/goal_sampler2.h"
 #include "utils/map_converter.h"
 #include "utils/hash.h"
+#include "planner/cartesian_trajectory_interpolation.h"
 
 
 
@@ -133,6 +134,8 @@ private:
     
     void enforce_bounds(Eigen::VectorXd & q) const;
     
+    void interpolate(std::vector<Eigen::VectorXd> qold, std::vector<Eigen::VectorXd> qnew);
+    
     ros::ServiceServer _planner_srv;
     ros::ServiceServer _get_planning_scene_srv;
     ros::ServiceServer _apply_planning_scene_srv;
@@ -189,7 +192,9 @@ private:
     std::unordered_map<std::vector<double>, posturalStruct, posturalHash> _postural_map, _trajectory_map;
     std::vector<ompl::base::State*> _start_vect;
     
-    int _counter;
+    int _counter, _goalSampler_counter;
+    
+    CartesianTrajectoryInterpolation::Ptr _interpolator;
         
 };
 

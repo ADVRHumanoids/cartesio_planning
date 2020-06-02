@@ -12,7 +12,8 @@ FootStepPlanner::FootStepPlanner ():
     _nh("planner"),
     _nhpr("~"),
     _n(),
-    _counter(0)
+    _counter(0),
+    _goalSampler_counter(0)
 {
     if (!_n.hasParam("contact_type"))
         std::runtime_error("'contact_type' parameter missing!");
@@ -36,6 +37,7 @@ FootStepPlanner::FootStepPlanner ():
     init_subscribe_start_goal();
     init_planner_srv();
     init_trajectory_publisher();
+    
 }
 
 void FootStepPlanner::run()
@@ -448,6 +450,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             if (!svp(x))
             {
                 XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
+                _goalSampler_counter ++;
                 goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
                 if (goal_sampler->sample(5.0))
                     _solver->getModel()->getJointPosition(x);
@@ -644,6 +647,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
     {
         _path = _pdef->getSolutionPath();
         _path->print(std::cout);
+        std::cout << "Goal Sampler called " << _goalSampler_counter << " times" << std::endl;
         std::cout << "Discarded " << _counter << " states due to goal_sampler" << std::endl;
         std::cout << "Created a map with: " << _postural_map.size() << " entries" << std::endl;
         
@@ -656,38 +660,48 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         std::vector<Eigen::VectorXd> ee(_ee_number);
         
         trajectory_msgs::JointTrajectory trj;
-        int iter = 0;
-             
-        for (int i = 0; i < _path->as<ompl::geometric::PathGeometric>()->getStateCount(); i++)
-        {         
-            std::unordered_map<std::vector<double>, posturalStruct, posturalHash>::iterator it;
-            std::vector<double> state_vect;
-            for (int j = 0; j < _ee_number; j++)
+       
+        auto last_state = _path->as<ompl::geometric::PathGeometric>()->getState(_path->as<ompl::geometric::PathGeometric>()->getStateCount()-1);
+        auto start_state = _path->as<ompl::geometric::PathGeometric>()->getState(0);
+        std::vector<double> last_state_vect, start_state_vect;
+        
+        for (int i = 0; i < _ee_number; i++)
+        {
+            Eigen::VectorXd start_vect, last_vect;
+            if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
             {
-                Eigen::VectorXd vect;
-                if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
-                    _sw->getState(_path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(j), vect);
-                else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
-                    _sw->getState(_path->as<ompl::geometric::PathGeometric>()->getState(i)->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(j), vect);
-                for (int j = 0; j < vect.size(); j++)
-                    state_vect.push_back(vect(j));
+                _sw->getState(start_state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), start_vect);
+                _sw->getState(last_state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), last_vect);
             }
-            
-            auto control = _path->as<ompl::control::PathControl>()->getControl(i);
-            auto duration = _path->as<ompl::control::PathControl>()->getControlDuration(i);
-            
-            it = _trajectory_map.find(state_vect);
-            Eigen::VectorXd qpost(_solver->getModel()->getJointNum());
-            
-            if (it != _trajectory_map.end())
-                qpost = it->second.postural;
-            else
-                std::runtime_error("Unable to find a postural reference pose in the map...");
-            
-            _q_vect.push_back(qpost);            
+            if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+            {
+                _sw->getState(start_state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), start_vect);
+                _sw->getState(last_state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), last_vect);
+            }
+            for (int j = 0; j < start_vect.size(); j++)
+            {
+                last_state_vect.push_back(last_vect(j));
+                start_state_vect.push_back(start_vect(j));
+            }
         }
         
-
+        std::unordered_map<std::vector<double>, posturalStruct, posturalHash>::iterator it;
+        it = _trajectory_map.find(last_state_vect);
+        
+        while (it->second.parent != start_state_vect)
+        {
+            _q_vect.push_back(it->second.postural);
+            
+            it = _trajectory_map.find(it->second.parent);
+        }
+        
+        it = _trajectory_map.find(start_state_vect);
+        _q_vect.push_back(it->second.postural);
+        
+        std::cout << "final q_vect size is " << _q_vect.size() << std::endl;
+        
+        std::reverse(_q_vect.begin(), _q_vect.end());
+        
         auto t = ros::Duration(0.);
         
         for(auto x : _q_vect)
@@ -696,9 +710,9 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
             point.positions.assign(x.data(), x.data() + x.size());
             point.time_from_start = t;
             trj.points.push_back(point);
-            t += ros::Duration(1.0);
+            t += ros::Duration(0.1);
         }
-        
+         
         _trj_publisher.publish(trj);
     }
 }
@@ -708,7 +722,6 @@ void FootStepPlanner::init_trajectory_publisher()
 {
     _trj_publisher = _nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 1, true);
 }
-
 
 int FootStepPlanner::callPlanner(const double time,
                                  const std::string& planner_type)
@@ -922,6 +935,17 @@ void FootStepPlanner::on_goal_state_recv(const sensor_msgs::JointStateConstPtr &
     _goal_model->setJointPosition(q);
     _goal_model->update();
 }
+
+void FootStepPlanner::interpolate ( std::vector< Eigen::VectorXd > qold, std::vector< Eigen::VectorXd > qnew )
+{
+    // First, re-orient wheels in order to move to next state
+    for (int i = 0; i < qold.size(); i++)
+    {
+        
+    }
+}
+
+
 
 
 

@@ -266,7 +266,7 @@ target_link_libraries(planning_scene_publisher ${catkin_LIBRARIES})
 # target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning cartesian_trajectory_interpolation matlogger2::matlogger2)
 
 add_executable(foot_step_planner src/nodes/foot_step_planner_main.cpp src/nodes/foot_step_planner.cpp)
-target_link_libraries(foot_step_planner ${catkin_LIBRARIES} cartesio_planning matlogger2::matlogger2)
+target_link_libraries(foot_step_planner ${catkin_LIBRARIES} cartesian_trajectory_interpolation cartesio_planning matlogger2::matlogger2)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries

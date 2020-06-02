@@ -33,8 +33,8 @@ int main(int argc, char ** argv)
         }
 
 
-//         rate = std::make_shared<ros::Rate>(1./(msg->points[1].time_from_start.nsec/1e9)); //We assume constant time along the traj.
-        rate = std::make_shared<ros::Rate>(1);
+        rate = std::make_shared<ros::Rate>(1./(msg->points[1].time_from_start.nsec/1e9)); //We assume constant time along the traj.
+//         rate = std::make_shared<ros::Rate>(1);
         k = 0;
     };
 
