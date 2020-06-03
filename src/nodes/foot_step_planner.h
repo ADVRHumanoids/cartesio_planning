@@ -37,6 +37,7 @@
 
 #include <iostream>
 #include <string>
+#include <cmath>
 
 #include <boost/math/constants/constants.hpp>
 
@@ -134,7 +135,7 @@ private:
     
     void enforce_bounds(Eigen::VectorXd & q) const;
     
-    void interpolate(std::vector<Eigen::VectorXd> qold, std::vector<Eigen::VectorXd> qnew);
+    void interpolate();
     
     ros::ServiceServer _planner_srv;
     ros::ServiceServer _get_planning_scene_srv;
@@ -176,7 +177,8 @@ private:
     Planning::ValidityCheckContext _vc_context;
     
     Eigen::VectorXd _qhome;
-    std::vector<Eigen::VectorXd> _q_vect;
+    std::vector<Eigen::VectorXd> _q_vect, _q_traj;
+    std::vector<std::vector<double>> _state_vect;
     
     std::vector<sensor_msgs::JointState> _trj;
     
@@ -195,7 +197,6 @@ private:
     int _counter, _goalSampler_counter;
     
     CartesianTrajectoryInterpolation::Ptr _interpolator;
-        
 };
 
 

@@ -691,20 +691,25 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         while (it->second.parent != start_state_vect)
         {
             _q_vect.push_back(it->second.postural);
+            _state_vect.push_back(it->first);
             
             it = _trajectory_map.find(it->second.parent);
         }
         
         it = _trajectory_map.find(start_state_vect);
         _q_vect.push_back(it->second.postural);
+        _state_vect.push_back(it->first);
         
         std::cout << "final q_vect size is " << _q_vect.size() << std::endl;
         
         std::reverse(_q_vect.begin(), _q_vect.end());
+        std::reverse(_state_vect.begin(), _state_vect.end());
+        
+        interpolate();
         
         auto t = ros::Duration(0.);
         
-        for(auto x : _q_vect)
+        for(auto x : _q_traj)
         {
             trajectory_msgs::JointTrajectoryPoint point;
             point.positions.assign(x.data(), x.data() + x.size());
@@ -715,6 +720,101 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
          
         _trj_publisher.publish(trj);
     }
+}
+
+void FootStepPlanner::interpolate()
+{
+    // First, re-orient wheels in order to move to next state
+    double T = 0.;
+    double Tmax = 0.5;
+    double dt = 0.1;
+    std::vector<double> wheel_pos(4,0);
+    std::vector<double> dtheta;
+    _model->setJointPosition(_qhome);
+    _model->update();
+    XBot::JointNameMap jmap;
+    _model->getJointPosition(jmap);
+    
+    for (int i = 1; i < _q_vect.size(); i++)
+    {   
+        for (int j = 0; j < _state_vect[i].size(); j += 2)
+        {
+            double theta;
+            if (_state_vect[i][j] == _state_vect[i-1][j] && _state_vect[i][j+1] > _state_vect[i-1][j+1])
+                theta = boost::math::constants::pi<double>()/2;
+            
+            else if (_state_vect[i][j] == _state_vect[i-1][j] && _state_vect[i][j+1] < _state_vect[i-1][j+1])
+                theta = -boost::math::constants::pi<double>()/2;
+              
+            else if (_state_vect[i][j] == _state_vect[i-1][j] && _state_vect[i][j+1] == _state_vect[i-1][j+1])
+                theta = 0;
+            
+            else
+                theta = std::atan((_state_vect[i][j+1] - _state_vect[i-1][j+1])/(_state_vect[i][j] - _state_vect[i-1][j]));
+            
+            dtheta.push_back(theta);
+        }
+        
+        std::cout << dtheta << std::endl;
+                   
+        jmap["ankle_yaw_1"] = dtheta[0] + 0.746874;
+        jmap["ankle_yaw_2"] = dtheta[1] - 0.746874;
+        jmap["ankle_yaw_3"] = dtheta[2] - 0.746874;
+        jmap["ankle_yaw_4"] = dtheta[3] + 0.746874;
+        Eigen::VectorXd tmp(_model->getJointNum());
+        _model->mapToEigen(jmap, tmp);
+        
+        T = 0.;
+        while (T < Tmax)
+        {
+            _q_traj.push_back(tmp);
+            T += dt;
+        }
+        
+        // Move the whole robot
+        T = 0.;
+        while (T < Tmax)
+        {
+            Eigen::VectorXd tmp(_model->getJointNum());
+            for (int j = 0; j < _q_vect[i].size(); j++)
+            {              
+                double a0, a1, a3;
+                
+                a3 = _q_vect[i-1](j);
+                a0 = (2*_q_vect[i-1](j) - 2*_q_vect[i](j))/Tmax/Tmax/Tmax;
+                a1 = -a0*Tmax + _q_vect[i](j)/Tmax/Tmax - _q_vect[i-1](j)/Tmax/Tmax;
+                
+                double q = a0*T*T*T + a1*T*T + a3;
+                tmp(j) = q;             
+            }
+            _model->eigenToMap(tmp, jmap);
+            jmap["ankle_yaw_1"] = dtheta[0] + 0.746874;
+            jmap["ankle_yaw_2"] = dtheta[1] - 0.746874;
+            jmap["ankle_yaw_3"] = dtheta[2] - 0.746874;
+            jmap["ankle_yaw_4"] = dtheta[3] + 0.746874;
+            
+            // Rotate wheels
+            std::vector<double> rot(4), drot(4);
+            for (int j = 0; j < _q_vect[i].size(); j += 3)
+            {                  
+                double distance = sqrt((_state_vect[i][j+1] - _state_vect[i][j+1])*(_state_vect[i-1][j] - _state_vect[i-1][j]));
+                rot.push_back(distance/0.07);
+            }   
+            jmap["j_wheel_1"] = rot[0] / (Tmax / dt);
+            jmap["j_wheel_2"] = rot[1] / (Tmax / dt);
+            jmap["j_wheel_3"] = rot[2] / (Tmax / dt);
+            jmap["j_wheel_4"] = rot[3] / (Tmax / dt);
+            
+            _model->mapToEigen(jmap, tmp);
+         
+            _q_traj.push_back(tmp);
+            T += dt;
+        }  
+        _model->setJointPosition(tmp);
+        _model->update();
+        dtheta.clear();
+    }
+    std::cout << "Final _q_traj size: " << _q_traj.size() << std::endl;
 }
 
 
@@ -936,14 +1036,7 @@ void FootStepPlanner::on_goal_state_recv(const sensor_msgs::JointStateConstPtr &
     _goal_model->update();
 }
 
-void FootStepPlanner::interpolate ( std::vector< Eigen::VectorXd > qold, std::vector< Eigen::VectorXd > qnew )
-{
-    // First, re-orient wheels in order to move to next state
-    for (int i = 0; i < qold.size(); i++)
-    {
-        
-    }
-}
+
 
 
 
