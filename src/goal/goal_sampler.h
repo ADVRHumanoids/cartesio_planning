@@ -28,8 +28,6 @@ public:
     PositionCartesianSolver::Ptr getIkSolver();
 
 protected:
-
-    bool check_valid_and_time(double& dt) const;
     std::function<bool()> _validity_check;
     PositionCartesianSolver::Ptr _ik_solver;
     Eigen::VectorXd _qmin, _qmax;

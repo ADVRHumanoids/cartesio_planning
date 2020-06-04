@@ -41,8 +41,7 @@ unsigned int GoalSampler::maxSampleCount() const
 }
 
 GoalSamplerBase::GoalSamplerBase(PositionCartesianSolver::Ptr ik_solver):
-    _ik_solver(ik_solver),
-    _validity_check([](){ return true; })
+    _ik_solver(ik_solver)
 {
     ik_solver->getModel()->getJointLimits(_qmin, _qmax);
 }
@@ -69,48 +68,36 @@ double GoalSamplerBase::distanceGoal(const Eigen::VectorXd &q) const
 
 bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q, const unsigned int time_out_sec) const
 {
+    // obtain model
     auto model = _ik_solver->getModel();
 
     bool goal_found = false;
 
-    auto tic = std::chrono::high_resolution_clock::now();
+    double T = 0.0;
     while(!goal_found)
     {
+        auto tic = std::chrono::high_resolution_clock::now();
 
         // generate random configuration
-        int iter_valid_seed = 0;
-        bool valid_seed_found = false;
-        while(!valid_seed_found && iter_valid_seed < 1)
-        {
-            iter_valid_seed++;
+        auto qrand = generateRandomSeed();
 
-            auto qrand = generateRandomSeed();
-            model->setJointPosition(qrand);
-            model->update();
+        // set it to the model
+        model->setJointPosition(qrand);
+        model->update();
 
-            double dt;
-            valid_seed_found = check_valid_and_time(dt);
-        }
+        goal_found = _ik_solver->solve();
 
-        if(!_ik_solver->solve())
-        {
-            continue;
-        }
-        else
-        {
-        }
-
-        double dt;
-        goal_found = check_valid_and_time(dt);
+        if(_validity_check)
+            goal_found = goal_found && _validity_check();
 
         model->getJointPosition(q);
 
         auto toc = std::chrono::high_resolution_clock::now();
 
-        if(std::chrono::duration<float>(toc-tic).count() > time_out_sec)
-        {
+        std::chrono::duration<float> fsec = toc-tic;
+        T += fsec.count();
+        if(T >= time_out_sec)
             return false;
-        }
     }
 
     return true;
@@ -119,19 +106,6 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q, const unsigned int time_out
 PositionCartesianSolver::Ptr GoalSamplerBase::getIkSolver()
 {
     return _ik_solver;
-}
-
-bool GoalSamplerBase::check_valid_and_time(double& dt) const
-{
-    auto tic = std::chrono::high_resolution_clock::now();
-
-    bool ret = _validity_check();
-
-    auto toc = std::chrono::high_resolution_clock::now();
-
-    dt = std::chrono::duration<double>(toc-tic).count();
-
-    return ret;
 }
 
 Eigen::VectorXd GoalSamplerBase::generateRandomSeed() const
