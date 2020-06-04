@@ -734,9 +734,11 @@ void FootStepPlanner::interpolate()
     _model->update();
     XBot::JointNameMap jmap;
     _model->getJointPosition(jmap);
+    std::vector<Eigen::VectorXd> q_fail;
     
     for (int i = 1; i < _q_vect.size(); i++)
     {   
+        
         for (int j = 0; j < _state_vect[i].size(); j += 2)
         {
             double theta;
@@ -754,28 +756,26 @@ void FootStepPlanner::interpolate()
             
             dtheta.push_back(theta);
         }
-        
-        std::cout << dtheta << std::endl;
-                   
-        jmap["ankle_yaw_1"] = dtheta[0] + 0.746874;
-        jmap["ankle_yaw_2"] = dtheta[1] - 0.746874;
-        jmap["ankle_yaw_3"] = dtheta[2] - 0.746874;
-        jmap["ankle_yaw_4"] = dtheta[3] + 0.746874;
-        Eigen::VectorXd tmp(_model->getJointNum());
-        _model->mapToEigen(jmap, tmp);
-        
         T = 0.;
         while (T < Tmax)
-        {
+        {          
+            jmap["ankle_yaw_1"] += ((-dtheta[0] - jmap["hip_yaw_1"])-jmap["ankle_yaw_1"])/(Tmax/dt);
+            jmap["ankle_yaw_2"] += ((-dtheta[1] - jmap["hip_yaw_2"])-jmap["ankle_yaw_2"])/(Tmax/dt);
+            jmap["ankle_yaw_3"] += ((-dtheta[2] - jmap["hip_yaw_3"])-jmap["ankle_yaw_3"])/(Tmax/dt);
+            jmap["ankle_yaw_4"] += ((-dtheta[3] - jmap["hip_yaw_4"])-jmap["ankle_yaw_4"])/(Tmax/dt);
+            
+            Eigen::VectorXd tmp(_model->getJointNum());
+            _model->mapToEigen(jmap, tmp);
+           
             _q_traj.push_back(tmp);
             T += dt;
         }
         
         // Move the whole robot
         T = 0.;
+        Eigen::VectorXd tmp(_model->getJointNum());
         while (T < Tmax)
-        {
-            Eigen::VectorXd tmp(_model->getJointNum());
+        {            
             for (int j = 0; j < _q_vect[i].size(); j++)
             {              
                 double a0, a1, a3;
@@ -788,10 +788,10 @@ void FootStepPlanner::interpolate()
                 tmp(j) = q;             
             }
             _model->eigenToMap(tmp, jmap);
-            jmap["ankle_yaw_1"] = dtheta[0] + 0.746874;
-            jmap["ankle_yaw_2"] = dtheta[1] - 0.746874;
-            jmap["ankle_yaw_3"] = dtheta[2] - 0.746874;
-            jmap["ankle_yaw_4"] = dtheta[3] + 0.746874;
+            jmap["ankle_yaw_1"] = -dtheta[0] - jmap["hip_yaw_1"];
+            jmap["ankle_yaw_2"] = -dtheta[1] - jmap["hip_yaw_2"];
+            jmap["ankle_yaw_3"] = -dtheta[2] - jmap["hip_yaw_3"];
+            jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"];
             
             // Rotate wheels
             std::vector<double> rot(4), drot(4);
@@ -806,6 +806,14 @@ void FootStepPlanner::interpolate()
             jmap["j_wheel_4"] = rot[3] / (Tmax / dt);
             
             _model->mapToEigen(jmap, tmp);
+            
+            _model->setJointPosition(tmp);
+            _model->update();
+            if (!_vc_context.vc_aggregate.check("collisions"))
+            {
+                q_fail.push_back(_q_vect[i-1]);
+                q_fail.push_back(_q_vect[i]);
+            }
          
             _q_traj.push_back(tmp);
             T += dt;
@@ -814,7 +822,7 @@ void FootStepPlanner::interpolate()
         _model->update();
         dtheta.clear();
     }
-    std::cout << "Final _q_traj size: " << _q_traj.size() << std::endl;
+    std::cout << "Collision occured while interpolating between " << q_fail.size() << " states" << std::endl;
 }
 
 

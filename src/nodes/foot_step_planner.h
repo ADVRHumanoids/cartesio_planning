@@ -49,6 +49,7 @@
 #include <cartesian_interface/markers/CartesianMarker.h>
 
 #include <ros/ros.h>
+#include <tf/tf.h>
 
 #include <cartesio_planning/FootStepPlanner.h>
 
