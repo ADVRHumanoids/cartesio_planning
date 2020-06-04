@@ -142,7 +142,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(
+include_directories( SYSTEM
     src/
     include
     ${OMPL_INCLUDE_DIRS}
@@ -176,6 +176,7 @@ target_link_libraries(cartesio_planning
     ${cartesian_interface_LIBRARIES}
     ${catkin_LIBRARIES}
     yaml-cpp
+    matlogger2::matlogger2
     PRIVATE
     ${PCL_LIBRARIES}
     )
@@ -188,7 +189,7 @@ target_link_libraries(cartesian_trajectory_interpolation PRIVATE trajectory_inte
 
 # Stability test exe
 add_executable(stability_test src/test_nodes/stability_test.cpp)
-target_link_libraries(stability_test cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(stability_test cartesio_planning ${XBotInterface_LIBRARIES} matlogger2::matlogger2 ${catkin_LIBRARIES})
 
 # ompl_test_control exe
 add_executable(ompl_control_test
@@ -235,14 +236,13 @@ target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
 
-
 # Planning scene publisher
 add_executable(planning_scene_publisher src/planning_scene_publisher.cpp)
 target_link_libraries(planning_scene_publisher ${catkin_LIBRARIES})
 
 # Executor
 add_executable(planning_server src/nodes/planner_executor_main.cpp src/nodes/planner_executor.cpp)
-target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning cartesian_trajectory_interpolation)
+target_link_libraries(planning_server ${catkin_LIBRARIES} matlogger2::matlogger2 cartesio_planning cartesian_trajectory_interpolation)
 
 # Octomap Collision Main
 add_executable(octomap_collision_main src/utils/octomap_collision_main.cpp)
@@ -341,12 +341,12 @@ install(TARGETS ompl_control_test
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
-
 install(TARGETS goal_generation_test
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
+
 
 install(TARGETS planning_server
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -361,12 +361,6 @@ install(TARGETS octomap_collision_main
     )
 
 install(TARGETS point_cloud_test
-    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    )
-
-install(TARGETS goal_generation_node
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
