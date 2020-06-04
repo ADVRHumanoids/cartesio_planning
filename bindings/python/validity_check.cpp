@@ -22,6 +22,7 @@ auto add_box = [](PlanningSceneWrapper& self,
 {
     moveit_msgs::CollisionObject co;
     co.id = id;
+    co.header.frame_id = "/world";
 
     shape_msgs::SolidPrimitive solid;
     solid.type = solid.BOX;
