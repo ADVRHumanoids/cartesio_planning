@@ -119,6 +119,7 @@ private:
     std::shared_ptr<ompl::base::ProblemDefinition> _pdef;
     std::shared_ptr<ompl::base::Planner> _planner;
     ompl::base::PlannerStatus _solved;
+    std::string _planner_type;
 
     std::shared_ptr<ompl::base::StateSpace> _space;
 
