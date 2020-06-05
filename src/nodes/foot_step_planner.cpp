@@ -705,6 +705,19 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         std::reverse(_q_vect.begin(), _q_vect.end());
         std::reverse(_state_vect.begin(), _state_vect.end());
         
+        std::vector<Eigen::VectorXd> q_fail;
+        for (auto i : _q_vect)
+        {
+            _model->setJointPosition(i);
+            _model->update();
+            
+            if (!_vc_context.vc_aggregate.check("collisions"))
+            {
+                q_fail.push_back(i);
+            }
+        }
+
+        std::cout << "_q_vect failed size: " << q_fail.size() << std::endl;
         interpolate();
         
         auto t = ros::Duration(0.);
@@ -736,23 +749,23 @@ void FootStepPlanner::interpolate()
     _model->getJointPosition(jmap);
     std::vector<Eigen::VectorXd> q_fail;
     
-    for (int i = 1; i < _q_vect.size(); i++)
+    for (int i = 0; i < _q_vect.size()-1; i++)
     {   
         
         for (int j = 0; j < _state_vect[i].size(); j += 2)
         {
             double theta;
-            if (_state_vect[i][j] == _state_vect[i-1][j] && _state_vect[i][j+1] > _state_vect[i-1][j+1])
+            if (_state_vect[i+1][j] == _state_vect[i][j] && _state_vect[i+1][j+1] > _state_vect[i][j+1])
                 theta = boost::math::constants::pi<double>()/2;
             
-            else if (_state_vect[i][j] == _state_vect[i-1][j] && _state_vect[i][j+1] < _state_vect[i-1][j+1])
+            else if (_state_vect[i+1][j] == _state_vect[i][j] && _state_vect[i+1][j+1] < _state_vect[i][j+1])
                 theta = -boost::math::constants::pi<double>()/2;
               
-            else if (_state_vect[i][j] == _state_vect[i-1][j] && _state_vect[i][j+1] == _state_vect[i-1][j+1])
+            else if (_state_vect[i+1][j] == _state_vect[i][j] && _state_vect[i+1][j+1] == _state_vect[i][j+1])
                 theta = 0;
             
             else
-                theta = std::atan((_state_vect[i][j+1] - _state_vect[i-1][j+1])/(_state_vect[i][j] - _state_vect[i-1][j]));
+                theta = std::atan((_state_vect[i+1][j+1] - _state_vect[i][j+1])/(_state_vect[i+1][j] - _state_vect[i][j]));
             
             dtheta.push_back(theta);
         }
@@ -780,9 +793,9 @@ void FootStepPlanner::interpolate()
             {              
                 double a0, a1, a3;
                 
-                a3 = _q_vect[i-1](j);
-                a0 = (2*_q_vect[i-1](j) - 2*_q_vect[i](j))/Tmax/Tmax/Tmax;
-                a1 = -a0*Tmax + _q_vect[i](j)/Tmax/Tmax - _q_vect[i-1](j)/Tmax/Tmax;
+                a3 = _q_vect[i](j);
+                a0 = (2*_q_vect[i](j) - 2*_q_vect[i+1](j))/Tmax/Tmax/Tmax;
+                a1 = -a0*Tmax + _q_vect[i+1](j)/Tmax/Tmax - _q_vect[i](j)/Tmax/Tmax;
                 
                 double q = a0*T*T*T + a1*T*T + a3;
                 tmp(j) = q;             
@@ -794,32 +807,33 @@ void FootStepPlanner::interpolate()
             jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"];
             
             // Rotate wheels
-            std::vector<double> rot(4), drot(4);
-            for (int j = 0; j < _q_vect[i].size(); j += 3)
-            {                  
-                double distance = sqrt((_state_vect[i][j+1] - _state_vect[i][j+1])*(_state_vect[i-1][j] - _state_vect[i-1][j]));
-                rot.push_back(distance/0.07);
-            }   
-            jmap["j_wheel_1"] = rot[0] / (Tmax / dt);
-            jmap["j_wheel_2"] = rot[1] / (Tmax / dt);
-            jmap["j_wheel_3"] = rot[2] / (Tmax / dt);
-            jmap["j_wheel_4"] = rot[3] / (Tmax / dt);
+//             std::vector<double> rot(4), drot(4);
+//             for (int j = 0; j < _q_vect[i].size(); j += 3)
+//             {                  
+//                 double distance = sqrt((_state_vect[i][j+1] - _state_vect[i][j+1])*(_state_vect[i-1][j] - _state_vect[i-1][j]));
+//                 rot.push_back(distance/0.07);
+//             }   
+//             jmap["j_wheel_1"] = rot[0] / (Tmax / dt);
+//             jmap["j_wheel_2"] = rot[1] / (Tmax / dt);
+//             jmap["j_wheel_3"] = rot[2] / (Tmax / dt);
+//             jmap["j_wheel_4"] = rot[3] / (Tmax / dt);
             
             _model->mapToEigen(jmap, tmp);
             
             _model->setJointPosition(tmp);
             _model->update();
-            if (!_vc_context.vc_aggregate.check("collisions"))
+            int count = 0;
+            if (!_vc_context.vc_aggregate.check("collisions") && count == 0)
             {
-                q_fail.push_back(_q_vect[i-1]);
                 q_fail.push_back(_q_vect[i]);
+                q_fail.push_back(_q_vect[i+1]);
+                count ++;
             }
          
             _q_traj.push_back(tmp);
             T += dt;
         }  
-        _model->setJointPosition(tmp);
-        _model->update();
+
         dtheta.clear();
     }
     std::cout << "Collision occured while interpolating between " << q_fail.size() << " states" << std::endl;
