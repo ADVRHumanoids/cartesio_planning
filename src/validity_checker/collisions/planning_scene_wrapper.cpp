@@ -252,6 +252,8 @@ bool PlanningSceneWrapper::getPlanningScene(moveit_msgs::GetPlanningScene::Reque
     all_components.components = UINT_MAX;  // Return all scene components if nothing is specified.
     ps->getPlanningSceneMsg(res.scene, req.components.components ? req.components : all_components);
 
+    return true;
+
 }
 
 
