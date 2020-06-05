@@ -41,7 +41,7 @@ bool GoalSampler2::sample ( double timeout )
         
         auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
 
-        if (iter % 15 == 0)
+        if (iter % 10 == 0)
         {
             _ik_solver->getModel()->eigenToMap(x, joint_map);
             random_map = generateRandomVelocities(colliding_chains);          
