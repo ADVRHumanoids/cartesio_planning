@@ -143,7 +143,7 @@ private:
     ros::ServiceServer _apply_planning_scene_srv;
     
     ros::Publisher _postural_pub;    
-    ros::Publisher _trj_publisher;
+    ros::Publisher _trj_publisher, _discrete_trj_publisher;
     
     sensor_msgs::JointState _msg;
     

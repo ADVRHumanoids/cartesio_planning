@@ -27,6 +27,7 @@
     </node>
     
     <node pkg="cartesio_planning" type="previewer" name="previewer" output="screen"/>
+    <node pkg="cartesio_planning" type="previewer_discrete" name="previewer_discrete" output="screen"/>
     
     <!-- This is needed to connect robot_start marker with "world" frame -->
     <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_start"
@@ -40,6 +41,8 @@
     <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_world"
         args="0 0 0. 0 0 0 world planner/world 30"/>
     
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_discrete_world"
+          args="0 0 0. 0 0 0 world planner/discrete/world 30"/>
     <!-- single short and wide obstacle -->
     <!-- mesh_viz for obstacle generation -->
     <!--<node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">

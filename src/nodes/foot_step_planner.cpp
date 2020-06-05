@@ -659,7 +659,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         Eigen::Affine3d T;
         std::vector<Eigen::VectorXd> ee(_ee_number);
         
-        trajectory_msgs::JointTrajectory trj;
+        trajectory_msgs::JointTrajectory trj, trj_discrete;
        
         auto last_state = _path->as<ompl::geometric::PathGeometric>()->getState(_path->as<ompl::geometric::PathGeometric>()->getStateCount()-1);
         auto start_state = _path->as<ompl::geometric::PathGeometric>()->getState(0);
@@ -720,18 +720,36 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         std::cout << "_q_vect failed size: " << q_fail.size() << std::endl;
         interpolate();
         
-        auto t = ros::Duration(0.);
+//         auto t = ros::Duration(0.);
+//         
+//         for(auto x : _q_traj)
+//         {
+//             trajectory_msgs::JointTrajectoryPoint point;
+//             point.positions.assign(x.data(), x.data() + x.size());
+//             point.time_from_start = t;
+//             trj.points.push_back(point);
+//             t += ros::Duration(0.1);
+//         }
+//          
+//         _trj_publisher.publish(trj);
+//         
+        auto t_disc = ros::Duration(0.);
+//         
+//         _q_vect.erase(_q_vect.begin());
+//         _q_vect.erase(_q_vect.begin());
         
-        for(auto x : _q_traj)
+        for(auto x : _q_vect)
         {
             trajectory_msgs::JointTrajectoryPoint point;
             point.positions.assign(x.data(), x.data() + x.size());
-            point.time_from_start = t;
-            trj.points.push_back(point);
-            t += ros::Duration(0.1);
+            point.time_from_start = t_disc;
+            trj_discrete.points.push_back(point);
+            t_disc += ros::Duration(1.0);
         }
          
-        _trj_publisher.publish(trj);
+        _discrete_trj_publisher.publish(trj_discrete);
+        
+        
     }
 }
 
@@ -843,6 +861,7 @@ void FootStepPlanner::interpolate()
 void FootStepPlanner::init_trajectory_publisher() 
 {
     _trj_publisher = _nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 1, true);
+    _discrete_trj_publisher = _nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory_discrete", 1, true);
 }
 
 int FootStepPlanner::callPlanner(const double time,

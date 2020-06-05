@@ -218,11 +218,11 @@ target_link_libraries(previewer
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
     
-add_executable(previewer_fp
-    src/nodes/previewer_fp.cpp
+add_executable(previewer_discrete
+    src/nodes/trajectory_viewer_discrete.cpp
     )
 
-target_link_libraries(previewer_fp
+target_link_libraries(previewer_discrete
     trajectory_interpolation
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
@@ -313,7 +313,7 @@ install(TARGETS previewer
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
     
-install(TARGETS previewer_fp
+install(TARGETS previewer_discrete
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
