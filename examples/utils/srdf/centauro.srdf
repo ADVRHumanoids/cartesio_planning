@@ -1025,15 +1025,15 @@
     <disable_collisions link1="LElb" link2="hip1_3" reason="Never" />
     <disable_collisions link1="LElb" link2="hip1_4" reason="Never" />
     <disable_collisions link1="LElb" link2="l_wrist" reason="Never" />
-    <disable_collisions link1="LElb" link2="pelvis" reason="Default" />
+<!--     <disable_collisions link1="LElb" link2="pelvis" reason="Default" /> -->
     <disable_collisions link1="LForearm" link2="LShp" reason="Never" />
     <disable_collisions link1="LForearm" link2="LWrMot2" reason="Adjacent" />
     <disable_collisions link1="LForearm" link2="LWrMot3" reason="Never" />
     <disable_collisions link1="LForearm" link2="ee1" reason="Never" />
-    <disable_collisions link1="LForearm" link2="hip1_1" reason="Default" />
-    <disable_collisions link1="LForearm" link2="hip2_1" reason="Default" />
+<!--     <disable_collisions link1="LForearm" link2="hip1_1" reason="Default" /> -->
+<!--     <disable_collisions link1="LForearm" link2="hip2_1" reason="Default" /> -->
     <disable_collisions link1="LForearm" link2="l_wrist" reason="Never" />
-    <disable_collisions link1="LForearm" link2="pelvis" reason="Default" />
+<!--     <disable_collisions link1="LForearm" link2="pelvis" reason="Default" /> -->
     <disable_collisions link1="LShp" link2="LShr" reason="Adjacent" />
     <disable_collisions link1="LShp" link2="LShy" reason="Never" />
     <disable_collisions link1="LShp" link2="LWrMot3" reason="Never" />
@@ -1076,7 +1076,7 @@
     <disable_collisions link1="LShr" link2="hip2_4" reason="Never" />
     <disable_collisions link1="LShr" link2="neck_1" reason="Never" />
     <disable_collisions link1="LShr" link2="neck_3" reason="Never" />
-    <disable_collisions link1="LShr" link2="torso_2" reason="Default" />
+<!--     <disable_collisions link1="LShr" link2="torso_2" reason="Default" /> -->
     <disable_collisions link1="LShr" link2="velodyne_calib" reason="Never" />
     <disable_collisions link1="LShr" link2="velodyne_calib_base_link" reason="Never" />
     <disable_collisions link1="LShy" link2="LWrMot2" reason="Never" />
@@ -1090,15 +1090,15 @@
     <disable_collisions link1="LShy" link2="hip1_4" reason="Never" />
     <disable_collisions link1="LShy" link2="l_wrist" reason="Never" />
     <disable_collisions link1="LShy" link2="neck_1" reason="Never" />
-    <disable_collisions link1="LShy" link2="pelvis" reason="Default" />
+<!--     <disable_collisions link1="LShy" link2="pelvis" reason="Default" /> -->
     <disable_collisions link1="LShy" link2="velodyne_calib" reason="Never" />
     <disable_collisions link1="LShy" link2="velodyne_calib_base_link" reason="Never" />
     <disable_collisions link1="LWrMot2" link2="LWrMot3" reason="Adjacent" />
-    <disable_collisions link1="LWrMot2" link2="ee1" reason="Default" />
+<!--     <disable_collisions link1="LWrMot2" link2="ee1" reason="Default" /> -->
     <disable_collisions link1="LWrMot2" link2="hip2_1" reason="Default" />
     <disable_collisions link1="LWrMot2" link2="l_wrist" reason="Never" />
     <disable_collisions link1="LWrMot3" link2="ee1" reason="Adjacent" />
-    <disable_collisions link1="LWrMot3" link2="hip2_1" reason="Default" />
+<!--     <disable_collisions link1="LWrMot3" link2="hip2_1" reason="Default" /> -->
     <disable_collisions link1="LWrMot3" link2="l_wrist" reason="Adjacent" />
     <disable_collisions link1="RElb" link2="RForearm" reason="Adjacent" />
     <disable_collisions link1="RElb" link2="RShp" reason="Never" />
@@ -1111,15 +1111,15 @@
     <disable_collisions link1="RElb" link2="hip1_2" reason="Never" />
     <disable_collisions link1="RElb" link2="hip1_3" reason="Never" />
     <disable_collisions link1="RElb" link2="hip1_4" reason="Never" />
-    <disable_collisions link1="RElb" link2="pelvis" reason="Default" />
+<!--     <disable_collisions link1="RElb" link2="pelvis" reason="Default" /> -->
     <disable_collisions link1="RElb" link2="r_wrist" reason="Never" />
     <disable_collisions link1="RForearm" link2="RShp" reason="Never" />
     <disable_collisions link1="RForearm" link2="RWrMot2" reason="Adjacent" />
     <disable_collisions link1="RForearm" link2="RWrMot3" reason="Never" />
     <disable_collisions link1="RForearm" link2="ee2" reason="Never" />
-    <disable_collisions link1="RForearm" link2="hip1_2" reason="Default" />
-    <disable_collisions link1="RForearm" link2="hip2_2" reason="Default" />
-    <disable_collisions link1="RForearm" link2="pelvis" reason="Default" />
+<!--     <disable_collisions link1="RForearm" link2="hip1_2" reason="Default" /> -->
+<!--     <disable_collisions link1="RForearm" link2="hip2_2" reason="Default" /> -->
+<!--     <disable_collisions link1="RForearm" link2="pelvis" reason="Default" /> -->
     <disable_collisions link1="RForearm" link2="r_wrist" reason="Never" />
     <disable_collisions link1="RShp" link2="RShr" reason="Adjacent" />
     <disable_collisions link1="RShp" link2="RShy" reason="Never" />
@@ -1153,7 +1153,7 @@
     <disable_collisions link1="RShr" link2="hip2_4" reason="Never" />
     <disable_collisions link1="RShr" link2="neck_1" reason="Never" />
     <disable_collisions link1="RShr" link2="neck_3" reason="Never" />
-    <disable_collisions link1="RShr" link2="torso_2" reason="Default" />
+<!--     <disable_collisions link1="RShr" link2="torso_2" reason="Default" /> -->
     <disable_collisions link1="RShr" link2="velodyne_calib" reason="Never" />
     <disable_collisions link1="RShr" link2="velodyne_calib_base_link" reason="Never" />
     <disable_collisions link1="RShy" link2="RWrMot2" reason="Never" />
@@ -1164,16 +1164,16 @@
     <disable_collisions link1="RShy" link2="hip1_3" reason="Never" />
     <disable_collisions link1="RShy" link2="hip1_4" reason="Never" />
     <disable_collisions link1="RShy" link2="neck_1" reason="Never" />
-    <disable_collisions link1="RShy" link2="pelvis" reason="Default" />
+<!--     <disable_collisions link1="RShy" link2="pelvis" reason="Default" /> -->
     <disable_collisions link1="RShy" link2="r_wrist" reason="Never" />
     <disable_collisions link1="RShy" link2="velodyne_calib" reason="Never" />
     <disable_collisions link1="RShy" link2="velodyne_calib_base_link" reason="Never" />
     <disable_collisions link1="RWrMot2" link2="RWrMot3" reason="Adjacent" />
-    <disable_collisions link1="RWrMot2" link2="ee2" reason="Default" />
-    <disable_collisions link1="RWrMot2" link2="hip2_2" reason="Default" />
+<!--     <disable_collisions link1="RWrMot2" link2="ee2" reason="Default" /> -->
+<!--     <disable_collisions link1="RWrMot2" link2="hip2_2" reason="Default" /> -->
     <disable_collisions link1="RWrMot2" link2="r_wrist" reason="Never" />
     <disable_collisions link1="RWrMot3" link2="ee2" reason="Adjacent" />
-    <disable_collisions link1="RWrMot3" link2="hip2_2" reason="Default" />
+<!--     <disable_collisions link1="RWrMot3" link2="hip2_2" reason="Default" /> -->
     <disable_collisions link1="RWrMot3" link2="r_wrist" reason="Adjacent" />
     <disable_collisions link1="ankle1_1" link2="ankle2_1" reason="Adjacent" />
     <disable_collisions link1="ankle1_1" link2="hip1_1" reason="Never" />
@@ -1203,6 +1203,10 @@
     <disable_collisions link1="ankle1_3" link2="velodyne_calib_base_link" reason="Never" />
     <disable_collisions link1="ankle1_3" link2="wheel_3" reason="Never" />
     <disable_collisions link1="ankle1_4" link2="ankle2_4" reason="Adjacent" />
+    <disable_collisions link1="LWrMot2" link2="ee1" reason="Adjacent" />
+    <disable_collisions link1="RWrMot2" link2="ee2" reason="Adjacent" />
+    <disable_collisions link1="l_wrist" link2="ee1" reason="Adjacent" />
+    <disable_collisions link1="r_wrist" link2="ee2" reason="Adjacent" />
     <disable_collisions link1="ankle1_4" link2="hip1_4" reason="Never" />
     <disable_collisions link1="ankle1_4" link2="knee_4" reason="Adjacent" />
     <disable_collisions link1="ankle1_4" link2="neck_1" reason="Never" />
@@ -1234,12 +1238,12 @@
     <disable_collisions link1="ankle2_4" link2="velodyne_calib" reason="Never" />
     <disable_collisions link1="ankle2_4" link2="velodyne_calib_base_link" reason="Never" />
     <disable_collisions link1="ankle2_4" link2="wheel_4" reason="Adjacent" />
-    <disable_collisions link1="ee1" link2="hip2_1" reason="Default" />
-    <disable_collisions link1="ee1" link2="knee_1" reason="Default" />
-    <disable_collisions link1="ee1" link2="l_wrist" reason="Default" />
-    <disable_collisions link1="ee2" link2="hip2_2" reason="Default" />
-    <disable_collisions link1="ee2" link2="knee_2" reason="Default" />
-    <disable_collisions link1="ee2" link2="r_wrist" reason="Default" />
+<!--     <disable_collisions link1="ee1" link2="hip2_1" reason="Default" /> -->
+<!--     <disable_collisions link1="ee1" link2="knee_1" reason="Default" /> -->
+<!--     <disable_collisions link1="ee1" link2="l_wrist" reason="Default" /> -->
+<!--     <disable_collisions link1="ee2" link2="hip2_2" reason="Default" /> -->
+<!--     <disable_collisions link1="ee2" link2="knee_2" reason="Default" /> -->
+<!--     <disable_collisions link1="ee2" link2="r_wrist" reason="Default" /> -->
     <disable_collisions link1="hip1_1" link2="hip1_2" reason="Never" />
     <disable_collisions link1="hip1_1" link2="hip1_3" reason="Never" />
     <disable_collisions link1="hip1_1" link2="hip1_4" reason="Never" />
@@ -1291,7 +1295,7 @@
     <disable_collisions link1="hip1_4" link2="velodyne_calib" reason="Never" />
     <disable_collisions link1="hip1_4" link2="velodyne_calib_base_link" reason="Never" />
     <disable_collisions link1="hip2_1" link2="knee_1" reason="Adjacent" />
-    <disable_collisions link1="hip2_1" link2="l_wrist" reason="Default" />
+<!--     <disable_collisions link1="hip2_1" link2="l_wrist" reason="Default" /> -->
     <disable_collisions link1="hip2_1" link2="neck_1" reason="Never" />
     <disable_collisions link1="hip2_1" link2="neck_2" reason="Never" />
     <disable_collisions link1="hip2_1" link2="neck_3" reason="Never" />
@@ -1302,7 +1306,7 @@
     <disable_collisions link1="hip2_2" link2="neck_1" reason="Never" />
     <disable_collisions link1="hip2_2" link2="neck_2" reason="Never" />
     <disable_collisions link1="hip2_2" link2="neck_3" reason="Never" />
-    <disable_collisions link1="hip2_2" link2="r_wrist" reason="Default" />
+<!--     <disable_collisions link1="hip2_2" link2="r_wrist" reason="Default" /> -->
     <disable_collisions link1="hip2_2" link2="torso_2" reason="Never" />
     <disable_collisions link1="hip2_2" link2="velodyne_calib" reason="Never" />
     <disable_collisions link1="hip2_2" link2="velodyne_calib_base_link" reason="Never" />
