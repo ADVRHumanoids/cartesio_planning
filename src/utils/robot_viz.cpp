@@ -28,6 +28,13 @@ void XBot::Cartesian::Planning::RobotViz::setRGBA(const color& rgba)
 
 void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time, const std::vector<std::string> & red_links)
 {
+
+#if ROS_VERSION_MINOR <= 12
+#define STATIC_POINTER_CAST boost::static_pointer_cast
+#else
+#define STATIC_POINTER_CAST std::static_pointer_cast
+#endif
+
     visualization_msgs::MarkerArray markers;
 
     std::string bl = "world"; // _model->getFloatingBaseLink(bl);
@@ -82,8 +89,8 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
             {
                 marker.type = visualization_msgs::Marker::CUBE;
 
-                boost::shared_ptr<urdf::Box> mesh =
-                        boost::static_pointer_cast<urdf::Box>(link->collision->geometry);
+                auto mesh =
+                        STATIC_POINTER_CAST<urdf::Box>(link->collision->geometry);
 
                 marker.scale.x = mesh->dim.x;
                 marker.scale.y = mesh->dim.y;
@@ -93,8 +100,8 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
             {
                 marker.type = visualization_msgs::Marker::CYLINDER;
 
-                boost::shared_ptr<urdf::Cylinder> mesh =
-                        boost::static_pointer_cast<urdf::Cylinder>(link->collision->geometry);
+                auto mesh =
+                        STATIC_POINTER_CAST<urdf::Cylinder>(link->collision->geometry);
 
                 marker.scale.x = marker.scale.y = mesh->radius;
                 marker.scale.z = mesh->length;
@@ -103,8 +110,8 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
             {
                 marker.type = visualization_msgs::Marker::SPHERE;
 
-                boost::shared_ptr<urdf::Sphere> mesh =
-                        boost::static_pointer_cast<urdf::Sphere>(link->collision->geometry);
+                auto mesh =
+                        STATIC_POINTER_CAST<urdf::Sphere>(link->collision->geometry);
 
                 marker.scale.x = marker.scale.y = marker.scale.z = 2.*mesh->radius;
             }
@@ -113,8 +120,8 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
                 marker.type = visualization_msgs::Marker::MESH_RESOURCE;
 
 
-                boost::shared_ptr<urdf::Mesh> mesh =
-                        boost::static_pointer_cast<urdf::Mesh>(link->collision->geometry);
+                auto mesh =
+                        STATIC_POINTER_CAST<urdf::Mesh>(link->collision->geometry);
 
                 marker.mesh_resource = mesh->filename;
                 marker.scale.x = mesh->scale.x;
@@ -163,8 +170,8 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
             {
                 marker.type = visualization_msgs::Marker::CUBE;
 
-                boost::shared_ptr<urdf::Box> mesh =
-                        boost::static_pointer_cast<urdf::Box>(link->visual->geometry);
+                auto mesh =
+                        STATIC_POINTER_CAST<urdf::Box>(link->visual->geometry);
 
                 marker.scale.x = mesh->dim.x;
                 marker.scale.y = mesh->dim.y;
@@ -174,8 +181,8 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
             {
                 marker.type = visualization_msgs::Marker::CYLINDER;
 
-                boost::shared_ptr<urdf::Cylinder> mesh =
-                        boost::static_pointer_cast<urdf::Cylinder>(link->visual->geometry);
+                auto mesh =
+                        STATIC_POINTER_CAST<urdf::Cylinder>(link->visual->geometry);
 
                 marker.scale.x = marker.scale.y = mesh->radius;
                 marker.scale.z = mesh->length;
@@ -184,8 +191,8 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
             {
                 marker.type = visualization_msgs::Marker::SPHERE;
 
-                boost::shared_ptr<urdf::Sphere> mesh =
-                        boost::static_pointer_cast<urdf::Sphere>(link->visual->geometry);
+                auto mesh =
+                        STATIC_POINTER_CAST<urdf::Sphere>(link->visual->geometry);
 
                 marker.scale.x = marker.scale.y = marker.scale.z = 2.*mesh->radius;
             }
@@ -194,8 +201,8 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
                 marker.type = visualization_msgs::Marker::MESH_RESOURCE;
 
 
-                boost::shared_ptr<urdf::Mesh> mesh =
-                        boost::static_pointer_cast<urdf::Mesh>(link->visual->geometry);
+                auto mesh =
+                        STATIC_POINTER_CAST<urdf::Mesh>(link->visual->geometry);
 
                 marker.mesh_resource = mesh->filename;
                 marker.scale.x = mesh->scale.x;
