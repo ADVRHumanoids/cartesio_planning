@@ -720,36 +720,18 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         std::cout << "_q_vect failed size: " << q_fail.size() << std::endl;
         interpolate();
         
-//         auto t = ros::Duration(0.);
-//         
-//         for(auto x : _q_traj)
-//         {
-//             trajectory_msgs::JointTrajectoryPoint point;
-//             point.positions.assign(x.data(), x.data() + x.size());
-//             point.time_from_start = t;
-//             trj.points.push_back(point);
-//             t += ros::Duration(0.1);
-//         }
-//          
-//         _trj_publisher.publish(trj);
-//         
-        auto t_disc = ros::Duration(0.);
-//         
-//         _q_vect.erase(_q_vect.begin());
-//         _q_vect.erase(_q_vect.begin());
+        auto t = ros::Duration(0.);
         
-        for(auto x : _q_vect)
+        for(auto x : _q_traj)
         {
             trajectory_msgs::JointTrajectoryPoint point;
             point.positions.assign(x.data(), x.data() + x.size());
-            point.time_from_start = t_disc;
-            trj_discrete.points.push_back(point);
-            t_disc += ros::Duration(1.0);
+            point.time_from_start = t;
+            trj.points.push_back(point);
+            t += ros::Duration(0.1);
         }
          
-        _discrete_trj_publisher.publish(trj_discrete);
-        
-        
+        _trj_publisher.publish(trj);              
     }
 }
 
@@ -769,7 +751,8 @@ void FootStepPlanner::interpolate()
     
     for (int i = 0; i < _q_vect.size()-1; i++)
     {   
-        
+        bool inv_rot = false;
+
         for (int j = 0; j < _state_vect[i].size(); j += 2)
         {
             double theta;
@@ -784,6 +767,17 @@ void FootStepPlanner::interpolate()
             
             else
                 theta = std::atan((_state_vect[i+1][j+1] - _state_vect[i][j+1])/(_state_vect[i+1][j] - _state_vect[i][j]));
+            
+            if (theta > 2.5)
+            {
+                theta -= boost::math::constants::pi<double>()*2;
+                inv_rot = true;
+            }
+            else if (theta < 2.5)
+            {
+                theta += boost::math::constants::pi<double>()*2;
+                inv_rot = true;
+            }
             
             dtheta.push_back(theta);
         }
@@ -825,16 +819,28 @@ void FootStepPlanner::interpolate()
             jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"];
             
             // Rotate wheels
-//             std::vector<double> rot(4), drot(4);
-//             for (int j = 0; j < _q_vect[i].size(); j += 3)
-//             {                  
-//                 double distance = sqrt((_state_vect[i][j+1] - _state_vect[i][j+1])*(_state_vect[i-1][j] - _state_vect[i-1][j]));
-//                 rot.push_back(distance/0.07);
-//             }   
-//             jmap["j_wheel_1"] = rot[0] / (Tmax / dt);
-//             jmap["j_wheel_2"] = rot[1] / (Tmax / dt);
-//             jmap["j_wheel_3"] = rot[2] / (Tmax / dt);
-//             jmap["j_wheel_4"] = rot[3] / (Tmax / dt);
+            std::vector<double> rot;
+            for (int j = 0; j < _state_vect[i].size(); j += 2)
+            {                  
+                double distance = sqrt((_state_vect[i+1][j+1] - _state_vect[i][j+1])*(_state_vect[i+1][j+1] - _state_vect[i][j+1]) + (_state_vect[i+1][j] - _state_vect[i][j])*(_state_vect[i+1][j] - _state_vect[i][j]));
+                if (inv_rot)
+                    rot.push_back(-distance/0.07);
+                else
+                    rot.push_back(distance/0.07);
+            }   
+            std::cout << rot << std::endl;
+            std::cout << std::endl;
+            jmap["j_wheel_1"] = wheel_pos[0] - rot[0] / (Tmax / dt);
+            jmap["j_wheel_2"] = wheel_pos[1] + rot[1] / (Tmax / dt);
+            jmap["j_wheel_3"] = wheel_pos[2] - rot[2] / (Tmax / dt);
+            jmap["j_wheel_4"] = wheel_pos[3] + rot[3] / (Tmax / dt);
+            
+            rot.clear();
+             
+            wheel_pos[0] = jmap["j_wheel_1"];
+            wheel_pos[1] = jmap["j_wheel_2"];
+            wheel_pos[2] = jmap["j_wheel_3"];
+            wheel_pos[3] = jmap["j_wheel_4"];
             
             _model->mapToEigen(jmap, tmp);
             
@@ -850,7 +856,8 @@ void FootStepPlanner::interpolate()
          
             _q_traj.push_back(tmp);
             T += dt;
-        }  
+        } 
+        
 
         dtheta.clear();
     }
@@ -861,7 +868,6 @@ void FootStepPlanner::interpolate()
 void FootStepPlanner::init_trajectory_publisher() 
 {
     _trj_publisher = _nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 1, true);
-    _discrete_trj_publisher = _nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory_discrete", 1, true);
 }
 
 int FootStepPlanner::callPlanner(const double time,
