@@ -83,17 +83,6 @@
 	<group name="left_arm"/>
         <group name="right_arm"/>
     </group>
-    
-    <group name="HeriHand">
-       <!--<joint name="110"/>-->
-       <!--<joint name="111"/>-->
-    </group>
-
-    <group name="hands">
-      <!--<joint name="j_arm1_8"/>-->
-      <!--<joint name="j_arm2_8"/>-->
-    </group>
-
 
    <group name="legs">
       <group name="front_left_leg"/>
@@ -101,12 +90,6 @@
       <group name="rear_right_leg"/>
       <group name="rear_left_leg"/>
    </group>
-
-
-    <group name="force_torque_sensors">
-      <!--<joint name="j_ft_arm1"/>-->
-      <!--<joint name="j_ft_arm2"/>-->
-    </group>
 
     <group name="imu_sensors">
        <link name="imu_link"/>

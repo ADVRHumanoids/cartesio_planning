@@ -1,0 +1,37 @@
+XBotCore:
+  config_path: "configs/CentauroConfig/configs/centauro.yaml"
+
+XBotInterface:
+  urdf_path: "$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/centauro_generated.urdf"
+  srdf_path: "$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/centauro_generated.srdf"
+  joint_map_path: "configs/CentauroConfig/joint_map/centauro_joint_map.yaml"
+
+RobotInterface:
+  framework_name: "ROS"
+
+ModelInterface:
+  model_type: "RBDL"
+  is_model_floating_base: "true"
+
+RobotInterfaceROS:
+  publish_tf: true
+  
+MasterCommunicationInterface:
+  framework_name: "ROS"
+
+XBotRTPlugins:
+  plugins: ["HomingExample"]
+  io_plugins: []
+  
+NRTPlugins:
+  plugins: []
+  
+WebServer:
+  enable: "true"
+  address: "127.0.0.1"
+  port: "8081"
+
+SimulationOptions:
+  verbose_mode: "false"    
+
+
