@@ -172,7 +172,7 @@ add_library(cartesio_planning SHARED
 target_link_libraries(cartesio_planning
     PUBLIC
     ${OMPL_LIBRARIES}
-    cartesian_interface::CartesianInterface
+    ${cartesian_interface_LIBRARIES}
     ${catkin_LIBRARIES}
     yaml-cpp
     matlogger2::matlogger2
@@ -203,7 +203,7 @@ add_executable(previewer
     )
 
 target_link_libraries(previewer
-    cartesian_interface::CartesianInterface
+    ${cartesian_interface_LIBRARIES}
     trajectory_interpolation
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
