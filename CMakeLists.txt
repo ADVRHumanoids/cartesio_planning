@@ -10,7 +10,6 @@ option(COMPILE_TESTS "Compile internal tests" FALSE)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-    cartesian_interface
     roscpp
     rosconsole
     std_msgs
@@ -32,7 +31,7 @@ find_package(Eigen3 REQUIRED)
 
 find_package(ompl 1.5.0 REQUIRED)
 
-find_package(XBotInterface REQUIRED)
+find_package(cartesian_interface REQUIRED)
 
 find_package(matlogger2 REQUIRED)
 
@@ -132,8 +131,8 @@ generate_messages(
 catkin_package(
     #INCLUDE_DIRS include
     LIBRARIES cartesio_planning
-    CATKIN_DEPENDS cartesian_interface roscpp message_runtime
-    #DEPENDS system_lib
+    CATKIN_DEPENDS roscpp message_runtime
+    DEPENDS
     )
 
 ###########
@@ -173,7 +172,7 @@ add_library(cartesio_planning SHARED
 target_link_libraries(cartesio_planning
     PUBLIC
     ${OMPL_LIBRARIES}
-    ${cartesian_interface_LIBRARIES}
+    cartesian_interface::CartesianInterface
     ${catkin_LIBRARIES}
     yaml-cpp
     matlogger2::matlogger2
@@ -204,6 +203,7 @@ add_executable(previewer
     )
 
 target_link_libraries(previewer
+    cartesian_interface::CartesianInterface
     trajectory_interpolation
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
@@ -398,8 +398,8 @@ add_subdirectory(examples/)
 add_subdirectory(bindings/python/)
 
 # compilation flags
-option(COMPILE_TESTS "Compile internal tests" FALSE)
-if(COMPILE_TESTS)
+option(CARTESIO_PLANNING_COMPILE_TESTS "Compile internal tests" FALSE)
+if(${CARTESIO_PLANNING_COMPILE_TESTS})
     enable_testing()
     add_subdirectory(tests)
 endif()

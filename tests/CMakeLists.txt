@@ -8,7 +8,6 @@ project(cartesio_planning_tests C CXX)
 find_package(GTest)
 find_package(Threads)
 find_package(Boost COMPONENTS system REQUIRED)
-find_package(ReflexxesTypeII REQUIRED)
 find_package(matlogger2 REQUIRED)
 
 if(NOT GTEST_FOUND)
