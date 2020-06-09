@@ -218,6 +218,15 @@ target_link_libraries(previewer
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
     
+add_executable(publisher
+    src/nodes/trajectory_publisher.cpp
+    )
+
+target_link_libraries(publisher   
+    ${XBotInterface_LIBRARIES}
+    ${catkin_LIBRARIES}
+    )
+    
 add_executable(previewer_discrete
     src/nodes/trajectory_viewer_discrete.cpp
     )

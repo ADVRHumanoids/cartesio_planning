@@ -730,7 +730,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
             trj.points.push_back(point);
             t += ros::Duration(0.1);
         }
-         
+        
         _trj_publisher.publish(trj);              
     }
 }
