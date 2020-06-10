@@ -728,8 +728,10 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
             point.positions.assign(x.data(), x.data() + x.size());
             point.time_from_start = t;
             trj.points.push_back(point);
-            t += ros::Duration(0.1);
+            t += ros::Duration(0.01);
         }
+        
+        trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
         
         _trj_publisher.publish(trj);              
     }
@@ -740,13 +742,14 @@ void FootStepPlanner::interpolate()
     // First, re-orient wheels in order to move to next state
     double T = 0.;
     double Tmax = 0.5;
-    double dt = 0.1;
-    std::vector<double> wheel_pos(4,0);
-    std::vector<double> dtheta;
+    double dt = 0.01;
+    
+    std::vector<double> dtheta, yaw(4);
     _model->setJointPosition(_qhome);
     _model->update();
     XBot::JointNameMap jmap;
     _model->getJointPosition(jmap);
+    std::vector<double> wheel_pos = {jmap["j_wheel_1"], jmap["j_wheel_2"], jmap["j_wheel_3"], jmap["j_wheel_4"]};
     std::vector<Eigen::VectorXd> q_fail;
     
     for (int i = 0; i < _q_vect.size()-1; i++)
@@ -763,31 +766,39 @@ void FootStepPlanner::interpolate()
                 theta = -boost::math::constants::pi<double>()/2;
               
             else if (_state_vect[i+1][j] == _state_vect[i][j] && _state_vect[i+1][j+1] == _state_vect[i][j+1])
-                theta = 0;
+                theta = boost::math::constants::pi<double>()/2;
             
             else
-                theta = std::atan((_state_vect[i+1][j+1] - _state_vect[i][j+1])/(_state_vect[i+1][j] - _state_vect[i][j]));
+                theta = std::atan2((_state_vect[i+1][j+1] - _state_vect[i][j+1]), (_state_vect[i+1][j] - _state_vect[i][j]));
             
-            if (theta > 2.5)
-            {
-                theta -= boost::math::constants::pi<double>()*2;
-                inv_rot = true;
-            }
-            else if (theta < 2.5)
-            {
-                theta += boost::math::constants::pi<double>()*2;
-                inv_rot = true;
-            }
             
-            dtheta.push_back(theta);
+            dtheta.push_back(theta);           
         }
+        yaw[0] = -dtheta[0] - jmap["hip_yaw_1"];
+        yaw[1] = -dtheta[1] - jmap["hip_yaw_2"];
+        yaw[2] = -dtheta[2] - jmap["hip_yaw_3"];
+        yaw[3] = -dtheta[3] - jmap["hip_yaw_4"];
+        std::for_each(yaw.begin(), yaw.end(), [&inv_rot](double i)
+            {
+                if (i < -2.5)
+                {
+                    i += boost::math::constants::pi<double>()*2;
+                    inv_rot = true;
+                }
+                else if (i > 2.5)
+                {
+                    i -= boost::math::constants::pi<double>()*2; 
+                    inv_rot = true;
+                }
+            });
         T = 0.;
         while (T < Tmax)
-        {          
-            jmap["ankle_yaw_1"] += ((-dtheta[0] - jmap["hip_yaw_1"])-jmap["ankle_yaw_1"])/(Tmax/dt);
-            jmap["ankle_yaw_2"] += ((-dtheta[1] - jmap["hip_yaw_2"])-jmap["ankle_yaw_2"])/(Tmax/dt);
-            jmap["ankle_yaw_3"] += ((-dtheta[2] - jmap["hip_yaw_3"])-jmap["ankle_yaw_3"])/(Tmax/dt);
-            jmap["ankle_yaw_4"] += ((-dtheta[3] - jmap["hip_yaw_4"])-jmap["ankle_yaw_4"])/(Tmax/dt);
+        {   
+            
+            jmap["ankle_yaw_1"] += (yaw[0] - jmap["ankle_yaw_1"])/(Tmax/dt);
+            jmap["ankle_yaw_2"] += (yaw[1] - jmap["ankle_yaw_2"])/(Tmax/dt);
+            jmap["ankle_yaw_3"] += (yaw[2] - jmap["ankle_yaw_3"])/(Tmax/dt);
+            jmap["ankle_yaw_4"] += (yaw[3] - jmap["ankle_yaw_4"])/(Tmax/dt);
             
             Eigen::VectorXd tmp(_model->getJointNum());
             _model->mapToEigen(jmap, tmp);
@@ -828,12 +839,17 @@ void FootStepPlanner::interpolate()
                 else
                     rot.push_back(distance/0.07);
             }   
-            std::cout << rot << std::endl;
-            std::cout << std::endl;
-            jmap["j_wheel_1"] = wheel_pos[0] - rot[0] / (Tmax / dt);
-            jmap["j_wheel_2"] = wheel_pos[1] + rot[1] / (Tmax / dt);
-            jmap["j_wheel_3"] = wheel_pos[2] - rot[2] / (Tmax / dt);
-            jmap["j_wheel_4"] = wheel_pos[3] + rot[3] / (Tmax / dt);
+            jmap["j_wheel_1"] = wheel_pos[0] + rot[0] / (Tmax / dt);
+            jmap["j_wheel_2"] = wheel_pos[1] - rot[1] / (Tmax / dt);
+            jmap["j_wheel_3"] = wheel_pos[2] + rot[2] / (Tmax / dt);
+            jmap["j_wheel_4"] = wheel_pos[3] - rot[3] / (Tmax / dt);
+            
+            std::vector <double> wheel_vel(4);
+            wheel_vel[0] = (jmap["j_wheel_1"] - wheel_pos[0])/dt;
+            wheel_vel[1] = (jmap["j_wheel_2"] - wheel_pos[1])/dt;
+            wheel_vel[2] = (jmap["j_wheel_3"] - wheel_pos[2])/dt;
+            wheel_vel[3] = (jmap["j_wheel_4"] - wheel_pos[3])/dt;
+            
             
             rot.clear();
              

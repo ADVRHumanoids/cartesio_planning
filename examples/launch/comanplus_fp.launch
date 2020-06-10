@@ -27,7 +27,7 @@
     </node>
     
     <node pkg="cartesio_planning" type="previewer" name="previewer" output="screen"/>
-    <node pkg="cartesio_planning" type="previewer_discrete" name="previewer_discrete" output="screen"/>
+    <node pkg="cartesio_planning" type="publisher" name="publisher" output="screen"/>
     
     <!-- This is needed to connect robot_start marker with "world" frame -->
     <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_start"
@@ -111,6 +111,27 @@
         <param name="show_control_axis" type="bool" value="True"/>
         <remap from="mesh_viz_floor1/floor1" to="planner/collision_objects"/>
     </node>-->
+    
+    <node pkg="PCL_Perception" type="pass_through" name="pass_through_filter" output="screen"
+          args = "-0.9 0.9 y true">
+        <remap from="/cloud_in" to="/velodyne_points"/>
+    </node>
+    
+     <!-- Include octomap if required -->
+    <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
+        <param name="resolution" value="0.05" />
+        <!-- fixed map frame (set to 'map' if SLAM or localization running!) -->
+        <param name="frame_id" type="string" value="world" />
+        <!-- maximum range to integrate (speedup!) -->
+        <param name="sensor_model/max_range" value="5.0" />
+        <!-- data source to integrate (PointCloud2) -->
+        <remap from="cloud_in" to="/filtered_cloud" />
+        <param name="filter_ground" type="bool" value="true"/>
+        <param name="base_frame_id" type="string" value="world"/>
+        <param name="ground_filter/distance" value="0.15"/>
+        <param name="ground_filter/plane_distance" value="0.25"/>
+        <param name="ground_filter/plane_distance" value="0.6"/>
+    </node>
     
     <!-- Octomap converter -->
     <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_converter" output="screen"/>

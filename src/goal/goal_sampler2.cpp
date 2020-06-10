@@ -22,12 +22,15 @@ bool GoalSampler2::sample ( double timeout )
     // BE SURE THAT _ik_solver AND _vc_context HAS THE SAME MODEL
     Eigen::VectorXd x, dqlimits;
     XBot::JointNameMap chain_map, joint_map, velocity_map, random_map;
+    
+    // Start initializing joint_map
     _ik_solver->getCI()->getReferencePosture(joint_map);
     
     _ik_solver->getModel()->getVelocityLimits(dqlimits);
     
     _ik_solver->getModel()->getJointPosition(x);
     
+    // Fill velocity_map with the velocity limits
     _ik_solver->getModel()->eigenToMap(x, velocity_map);
     _ik_solver->getModel()->eigenToMap(dqlimits, velocity_map);
     
@@ -39,14 +42,17 @@ bool GoalSampler2::sample ( double timeout )
     {
         auto tic = std::chrono::high_resolution_clock::now();
         
+        // Acquire colliding chains
         auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
-
+        
+        // Generate a random velocity vector for colliding chains' joints only every n iterations
         if (iter % 10 == 0)
         {
             _ik_solver->getModel()->eigenToMap(x, joint_map);
             random_map = generateRandomVelocities(colliding_chains);          
         }
-            
+                
+        // Update joint_map with integrated random velocities
         for (auto i : random_map)
             joint_map[i.first] += i.second * dt;
         
