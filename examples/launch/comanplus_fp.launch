@@ -131,6 +131,7 @@
         <param name="ground_filter/distance" value="0.15"/>
         <param name="ground_filter/plane_distance" value="0.25"/>
         <param name="ground_filter/plane_distance" value="0.6"/>
+        <param name="latch" type="bool" value="false"/>
     </node>
     
     <!-- Octomap converter -->

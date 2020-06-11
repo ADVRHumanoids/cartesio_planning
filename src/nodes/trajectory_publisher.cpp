@@ -49,29 +49,43 @@ int main(int argc, char** argv)
                 jcom.name.assign(jname.begin() + 6, jname.end());
                 jcom.position.assign(vect.begin() + 6, vect.end());
                 jcom.velocity.assign(traj[j].size()-6, 0);
+                jcom.damping.assign(traj[j].size()-6, 0);
+                jcom.stiffness.assign(traj[j].size()-6, 0);
                 vect.clear();
                 jcom.ctrl_mode.assign(traj[j].size()-6, 1);
                 jcom.header.stamp = ros::Time::now();
                 
-//                 std::vector<std::string>::iterator it = std::find(jname.begin(), jname.end(), "j_wheel_1");
-//                 unsigned int index = it - jname.begin();
-//                 jcom.velocity[index] = -(traj[j+1](index) - traj[j][index])/(dt);
-//                 jcom.ctrl_mode[index] = 2;
-//                 
-//                 it = std::find(jname.begin(), jname.end(), "j_wheel_2");
-//                 index = it - jname.begin();
-//                 jcom.velocity[index] = -(traj[j+1](index) - traj[j][index])/(dt);
-//                 jcom.ctrl_mode[index] = 2;
-//                 
-//                 it = std::find(jname.begin(), jname.end(), "j_wheel_3");
-//                 index = it - jname.begin();
-//                 jcom.velocity[index] = -(traj[j+1](index) - traj[j][index])/(dt);
-//                 jcom.ctrl_mode[index] = 2;
-//                 
-//                 it = std::find(jname.begin(), jname.end(), "j_wheel_4");
-//                 index = it - jname.begin();
-//                 jcom.velocity[index] = -(traj[j+1](index) - traj[j][index])/(dt);
-//                 jcom.ctrl_mode[index] = 2;
+                std::vector<std::string>::iterator it;
+                it = std::find(jname.begin(), jname.end(), "j_wheel_1");
+                unsigned int index = it - jname.begin() - 6;
+//                 jcom.velocity[index] = (traj[j+1](index) - traj[j][index])/(dt);
+                jcom.velocity[index] = traj[j](index+6);
+                jcom.ctrl_mode[index] = 2;
+                
+                it = std::find(jname.begin(), jname.end(), "j_wheel_2");
+                index = it - jname.begin() - 6;
+//                 jcom.velocity[index] = (traj[j+1](index) - traj[j][index])/(dt);
+                jcom.velocity[index] = traj[j](index+6);
+                jcom.ctrl_mode[index] = 2;
+                
+                it = std::find(jname.begin(), jname.end(), "j_wheel_3");
+                index = it - jname.begin() - 6;
+//                 jcom.velocity[index] = (traj[j+1](index) - traj[j][index])/(dt);
+                jcom.velocity[index] = traj[j](index+6);
+                jcom.ctrl_mode[index] = 2;
+                
+                it = std::find(jname.begin(), jname.end(), "j_wheel_4");
+                index = it - jname.begin() - 6;
+//                 jcom.velocity[index] = (traj[j+1](index) - traj[j][index])/(dt);
+                jcom.velocity[index] = traj[j](index+6);
+                jcom.ctrl_mode[index] = 2;
+                
+                it = std::find(jname.begin(), jname.end(), "neck_velodyne");
+                index = it - jname.begin() - 6;
+                jcom.velocity[index] = -2;
+                jcom.damping[index] = 10;
+                jcom.stiffness[index] = 0;
+                jcom.ctrl_mode[index] = 26;
                 
                 pub.publish(jcom);
                 
@@ -81,6 +95,14 @@ int main(int argc, char** argv)
         }
         else
         {
+//             jcom.name = {"neck_velodyne"};
+//             jcom.velocity = {-2};
+//             jcom.stiffness = {0};
+//             jcom.damping = {10};
+//             jcom.ctrl_mode = {26};
+//             
+//             pub.publish(jcom);
+            
             fixed_rate.sleep();
             ros::spinOnce();
         }

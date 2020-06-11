@@ -754,7 +754,7 @@ void FootStepPlanner::interpolate()
     
     for (int i = 0; i < _q_vect.size()-1; i++)
     {   
-        bool inv_rot = false;
+        std::vector<bool> inv_rot = {false, false, false, false};
 
         for (int j = 0; j < _state_vect[i].size(); j += 2)
         {
@@ -778,17 +778,21 @@ void FootStepPlanner::interpolate()
         yaw[1] = -dtheta[1] - jmap["hip_yaw_2"];
         yaw[2] = -dtheta[2] - jmap["hip_yaw_3"];
         yaw[3] = -dtheta[3] - jmap["hip_yaw_4"];
-        std::for_each(yaw.begin(), yaw.end(), [&inv_rot](double i)
+        std::for_each(yaw.begin(), yaw.end(), [&inv_rot, &yaw](double i)
             {
                 if (i < -2.5)
                 {
-                    i += boost::math::constants::pi<double>()*2;
-                    inv_rot = true;
+                    std::vector<double>::iterator it = std::find(yaw.begin(), yaw.end(), i);
+                    unsigned int index = it - yaw.begin();
+                    i += boost::math::constants::pi<double>();
+                    inv_rot[index] = true;
                 }
                 else if (i > 2.5)
                 {
-                    i -= boost::math::constants::pi<double>()*2; 
-                    inv_rot = true;
+                    std::vector<double>::iterator it = std::find(yaw.begin(), yaw.end(), i);
+                    unsigned int index = it - yaw.begin();
+                    i -= boost::math::constants::pi<double>();
+                    inv_rot[index] = true;
                 }
             });
         T = 0.;
@@ -834,29 +838,43 @@ void FootStepPlanner::interpolate()
             for (int j = 0; j < _state_vect[i].size(); j += 2)
             {                  
                 double distance = sqrt((_state_vect[i+1][j+1] - _state_vect[i][j+1])*(_state_vect[i+1][j+1] - _state_vect[i][j+1]) + (_state_vect[i+1][j] - _state_vect[i][j])*(_state_vect[i+1][j] - _state_vect[i][j]));
-                if (inv_rot)
-                    rot.push_back(-distance/0.07);
-                else
+//                 if (inv_rot)
+//                     rot.push_back(-distance/0.07);
+//                 else
                     rot.push_back(distance/0.07);
             }   
-            jmap["j_wheel_1"] = wheel_pos[0] + rot[0] / (Tmax / dt);
-            jmap["j_wheel_2"] = wheel_pos[1] - rot[1] / (Tmax / dt);
-            jmap["j_wheel_3"] = wheel_pos[2] + rot[2] / (Tmax / dt);
-            jmap["j_wheel_4"] = wheel_pos[3] - rot[3] / (Tmax / dt);
+            jmap["j_wheel_1"] = rot[0] / (Tmax / dt);
+            jmap["j_wheel_2"] = rot[1] / (Tmax / dt);
+            jmap["j_wheel_3"] = rot[2] / (Tmax / dt);
+            jmap["j_wheel_4"] = rot[3] / (Tmax / dt);
             
-            std::vector <double> wheel_vel(4);
-            wheel_vel[0] = (jmap["j_wheel_1"] - wheel_pos[0])/dt;
-            wheel_vel[1] = (jmap["j_wheel_2"] - wheel_pos[1])/dt;
-            wheel_vel[2] = (jmap["j_wheel_3"] - wheel_pos[2])/dt;
-            wheel_vel[3] = (jmap["j_wheel_4"] - wheel_pos[3])/dt;
+            std::vector<double> wheel_vel(4);
+            wheel_vel[0] = (jmap["j_wheel_1"])/dt;
+            wheel_vel[1] = (jmap["j_wheel_2"])/dt;
+            wheel_vel[2] = (jmap["j_wheel_3"])/dt;
+            wheel_vel[3] = (jmap["j_wheel_4"])/dt;
+            
+            if (inv_rot[0])
+                wheel_vel[0] *= -1;
+            if (inv_rot[1])
+                wheel_vel[1] *= -1;
+            if (inv_rot[2])
+                wheel_vel[2] *= -1;
+            if (inv_rot[3])
+                wheel_vel[3] *= -1;
+            
+            jmap["j_wheel_1"] = +wheel_vel[0];
+            jmap["j_wheel_2"] = -wheel_vel[1];
+            jmap["j_wheel_3"] = +wheel_vel[2];
+            jmap["j_wheel_4"] = -wheel_vel[3];
             
             
             rot.clear();
              
-            wheel_pos[0] = jmap["j_wheel_1"];
-            wheel_pos[1] = jmap["j_wheel_2"];
-            wheel_pos[2] = jmap["j_wheel_3"];
-            wheel_pos[3] = jmap["j_wheel_4"];
+//             wheel_pos[0] = jmap["j_wheel_1"];
+//             wheel_pos[1] = jmap["j_wheel_2"];
+//             wheel_pos[2] = jmap["j_wheel_3"];
+//             wheel_pos[3] = jmap["j_wheel_4"];
             
             _model->mapToEigen(jmap, tmp);
             
