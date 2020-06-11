@@ -742,7 +742,7 @@ void FootStepPlanner::interpolate()
 {
     // First, re-orient wheels in order to move to next state
     double T = 0.;
-    double Tmax = 0.5;
+    double Tmax = 1.0;
     double dt = 0.01;
     
     std::vector<double> dtheta, yaw(4);
@@ -797,14 +797,17 @@ void FootStepPlanner::interpolate()
                 }
             });
         T = 0.;
+        double dangle1 = yaw[0] - jmap["ankle_yaw_1"];
+        double dangle2 = yaw[1] - jmap["ankle_yaw_2"];
+        double dangle3 = yaw[2] - jmap["ankle_yaw_3"];
+        double dangle4 = yaw[3] - jmap["ankle_yaw_4"];
         while (T < Tmax)
-        {   
-            
-            jmap["ankle_yaw_1"] += (yaw[0] - jmap["ankle_yaw_1"])/(Tmax/dt);
-            jmap["ankle_yaw_2"] += (yaw[1] - jmap["ankle_yaw_2"])/(Tmax/dt);
-            jmap["ankle_yaw_3"] += (yaw[2] - jmap["ankle_yaw_3"])/(Tmax/dt);
-            jmap["ankle_yaw_4"] += (yaw[3] - jmap["ankle_yaw_4"])/(Tmax/dt);
-            
+        {            
+            jmap["ankle_yaw_1"] += dangle1/(Tmax/dt);
+            jmap["ankle_yaw_2"] += dangle2/(Tmax/dt);
+            jmap["ankle_yaw_3"] += dangle3/(Tmax/dt);
+            jmap["ankle_yaw_4"] += dangle4/(Tmax/dt);
+                         
             Eigen::VectorXd tmp(_model->getJointNum());
             _model->mapToEigen(jmap, tmp);
            
@@ -815,6 +818,7 @@ void FootStepPlanner::interpolate()
         // Move the whole robot
         T = 0.;
         Eigen::VectorXd tmp(_model->getJointNum());
+        wheel_pos = {jmap["j_wheel_1"], jmap["j_wheel_2"], jmap["j_wheel_3"], jmap["j_wheel_4"]};
         while (T < Tmax)
         {            
             for (int j = 0; j < _q_vect[i].size(); j++)
@@ -839,11 +843,24 @@ void FootStepPlanner::interpolate()
             for (int j = 0; j < _state_vect[i].size(); j += 2)
             {                  
                 double distance = sqrt((_state_vect[i+1][j+1] - _state_vect[i][j+1])*(_state_vect[i+1][j+1] - _state_vect[i][j+1]) + (_state_vect[i+1][j] - _state_vect[i][j])*(_state_vect[i+1][j] - _state_vect[i][j]));
-//                 if (inv_rot)
-//                     rot.push_back(-distance/0.07);
-//                 else
-                    rot.push_back(distance/0.07);
+                rot.push_back(distance/0.07);
             }   
+            
+            for (int j = 0; j < rot.size(); j++)
+            {
+                double a0, a1, a3;
+                
+                a3 = wheel_pos[j];
+                a0 = (2*wheel_pos[j] - 2*rot[j])/Tmax/Tmax/Tmax;
+                a1 = -a0*Tmax + rot[j]/Tmax/Tmax - wheel_pos[j]/Tmax/Tmax;
+                
+                std::string num = std::to_string(j+1);
+                if (j % 2 == 0)
+                    jmap["j_wheel_" + num] = 3*a0*T*T + 2*a1*T;
+                else
+                    jmap["j_wheel_" + num] = -(3*a0*T*T + 2*a1*T);
+            }
+            /*
             jmap["j_wheel_1"] = rot[0] / (Tmax / dt);
             jmap["j_wheel_2"] = rot[1] / (Tmax / dt);
             jmap["j_wheel_3"] = rot[2] / (Tmax / dt);
@@ -867,15 +884,18 @@ void FootStepPlanner::interpolate()
             jmap["j_wheel_1"] = +wheel_vel[0];
             jmap["j_wheel_2"] = -wheel_vel[1];
             jmap["j_wheel_3"] = +wheel_vel[2];
-            jmap["j_wheel_4"] = -wheel_vel[3];
+            jmap["j_wheel_4"] = -wheel_vel[3];*/
             
-            
+            if (inv_rot[0])
+                jmap["j_wheel_1"] *= -1;
+            if (inv_rot[1])
+                jmap["j_wheel_2"] *= -1;
+            if (inv_rot[2])
+                jmap["j_wheel_3"] *= -1;
+            if (inv_rot[3])
+                jmap["j_wheel_4"] *= -1;
+                     
             rot.clear();
-             
-//             wheel_pos[0] = jmap["j_wheel_1"];
-//             wheel_pos[1] = jmap["j_wheel_2"];
-//             wheel_pos[2] = jmap["j_wheel_3"];
-//             wheel_pos[3] = jmap["j_wheel_4"];
             
             _model->mapToEigen(jmap, tmp);
             
@@ -892,7 +912,11 @@ void FootStepPlanner::interpolate()
             _q_traj.push_back(tmp);
             T += dt;
         } 
-        
+       
+        wheel_pos[0] = jmap["j_wheel_1"]; 
+        wheel_pos[1] = jmap["j_wheel_2"];
+        wheel_pos[2] = jmap["j_wheel_3"];
+        wheel_pos[3] = jmap["j_wheel_4"];
 
         dtheta.clear();
     }

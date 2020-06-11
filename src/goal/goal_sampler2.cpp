@@ -44,9 +44,6 @@ bool GoalSampler2::sample ( double timeout )
         
         // Acquire colliding chains
         auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
-        std::cout << "COLLIDING CHAINS: " << std::endl;
-        for (auto i : colliding_chains)
-            std::cout << "- " << i.getChainName() << std::endl;
         
         // Generate a random velocity vector for colliding chains' joints only every n iterations
         if (iter % 10 == 0)
@@ -54,10 +51,6 @@ bool GoalSampler2::sample ( double timeout )
             _ik_solver->getModel()->eigenToMap(x, joint_map);
             random_map = generateRandomVelocities(colliding_chains);          
         }
-        
-        std::cout << "MOVING JOINTS: " << std::endl;
-        for (auto i : random_map)
-            std::cout << "- " << i.first << std::endl;
                 
         // Update joint_map with integrated random velocities
         for (auto i : random_map)
