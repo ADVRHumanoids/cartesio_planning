@@ -4,7 +4,7 @@ solver_options:
 
 stack:
     - ["Wheel1", "Wheel2", "Wheel3", "Wheel4","Ankle1", "Ankle2", "Ankle3", "Ankle4"]
-    - ["Postural", "Com"]
+    - ["Postural"]
 
 constraints: ["JointLimits"]
 

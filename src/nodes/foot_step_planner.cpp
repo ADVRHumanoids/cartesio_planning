@@ -37,6 +37,7 @@ FootStepPlanner::FootStepPlanner ():
     init_subscribe_start_goal();
     init_planner_srv();
     init_trajectory_publisher();
+    init_xbotcore_publisher();
     
 }
 
@@ -659,7 +660,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         Eigen::Affine3d T;
         std::vector<Eigen::VectorXd> ee(_ee_number);
         
-        trajectory_msgs::JointTrajectory trj, trj_discrete;
+        trajectory_msgs::JointTrajectory trj;
        
         auto last_state = _path->as<ompl::geometric::PathGeometric>()->getState(_path->as<ompl::geometric::PathGeometric>()->getStateCount()-1);
         auto start_state = _path->as<ompl::geometric::PathGeometric>()->getState(0);
@@ -902,6 +903,7 @@ void FootStepPlanner::interpolate()
 void FootStepPlanner::init_trajectory_publisher() 
 {
     _trj_publisher = _nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 1, true);
+    _xbotcore_trj_publisher = _nh.advertise<trajectory_msgs::JointTrajectory>("xbotcore_joint_trajectory", 1, true);
 }
 
 int FootStepPlanner::callPlanner(const double time,
@@ -1116,6 +1118,31 @@ void FootStepPlanner::on_goal_state_recv(const sensor_msgs::JointStateConstPtr &
     _goal_model->setJointPosition(q);
     _goal_model->update();
 }
+
+void FootStepPlanner::init_xbotcore_publisher()
+{
+    _publish_srv = _nh.advertiseService("publish_trajectory", &FootStepPlanner::publish_trajectory_service, this);
+}
+
+bool FootStepPlanner::publish_trajectory_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+    trajectory_msgs::JointTrajectory trj;
+    auto t = ros::Duration(0.);
+        
+        for(auto x : _q_traj)
+        {
+            trajectory_msgs::JointTrajectoryPoint point;
+            point.positions.assign(x.data(), x.data() + x.size());
+            point.time_from_start = t;
+            trj.points.push_back(point);
+            t += ros::Duration(0.01);
+        }
+        
+        trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
+        
+        _xbotcore_trj_publisher.publish(trj); 
+}
+
 
 
 

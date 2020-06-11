@@ -113,6 +113,7 @@ private:
     void init_subscribe_start_goal();
     void init_planner_srv();
     void init_trajectory_publisher();
+    void init_xbotcore_publisher();
     
     void publish_tf(ros::Time T);
         
@@ -123,6 +124,8 @@ private:
                                     moveit_msgs::GetPlanningScene::Response& res);
     bool apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request& req,
                                       moveit_msgs::ApplyPlanningScene::Response& res);
+    
+    bool publish_trajectory_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
     
     void on_start_state_recv(const sensor_msgs::JointStateConstPtr& msg);
     void on_goal_state_recv(const sensor_msgs::JointStateConstPtr& msg);
@@ -141,9 +144,10 @@ private:
     ros::ServiceServer _planner_srv;
     ros::ServiceServer _get_planning_scene_srv;
     ros::ServiceServer _apply_planning_scene_srv;
+    ros::ServiceServer _publish_srv;
     
     ros::Publisher _postural_pub;    
-    ros::Publisher _trj_publisher, _discrete_trj_publisher;
+    ros::Publisher _trj_publisher, _xbotcore_trj_publisher;
     
     sensor_msgs::JointState _msg;
     

@@ -34,7 +34,7 @@ int main(int argc, char** argv)
         dt = msg->points[1].time_from_start.nsec/1e9;
     };
     
-    ros::Subscriber sub = nh.subscribe<trajectory_msgs::JointTrajectory>("planner/joint_trajectory", 1000, callback);
+    ros::Subscriber sub = nh.subscribe<trajectory_msgs::JointTrajectory>("planner/xbotcore_joint_trajectory", 1000, callback);
     
     ros::Rate fixed_rate(100.);
     while (ros::ok())

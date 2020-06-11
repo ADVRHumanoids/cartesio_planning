@@ -112,7 +112,8 @@
     <origin xyz="0.2 0.0 0.256"/>
     <child link="torso_2"/>
     <axis xyz="0 0 1"/>
-    <limit effort="147" lower="-2.618" upper="2.618" velocity="5.7"/>
+    <!--<limit effort="147" lower="-2.618" upper="2.618" velocity="5.7"/>-->
+    <limit effort="147" lower="-1.5" upper="1.5" velocity="5.7"/>
     <!-- TODO -->
   </joint>
   <!-- /torso joints -->
