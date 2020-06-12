@@ -64,7 +64,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/pelvis.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/pelvis.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -101,7 +101,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/link1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/link1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -147,7 +147,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/neck_yaw.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/neck_yaw.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -166,7 +166,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/neck_pitch.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/neck_pitch.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -185,7 +185,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/velodyne.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/velodyne.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -977,7 +977,7 @@
     <collision>
       <origin rpy="0.0 0.0 4.15579005089" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/hip-yaw.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/hip-yaw.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -998,7 +998,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/hip-pitch.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/hip-pitch.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1020,7 +1020,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/knee.stl" scale="0.0011 0.0011 0.0011"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/knee.stl" scale="0.0011 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -1041,7 +1041,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/ankle-pitch.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/ankle-pitch.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1062,7 +1062,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/ankle-yaw.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/ankle-yaw.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1083,7 +1083,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/wheel.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/wheel.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1214,7 +1214,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/hip-yaw.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/hip-yaw.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1235,7 +1235,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/hip-pitch.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/hip-pitch.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1257,7 +1257,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/knee.stl" scale="0.0011 0.0011 0.0011"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/knee.stl" scale="0.0011 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -1278,7 +1278,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/ankle-pitch.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/ankle-pitch.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1299,7 +1299,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/ankle-yaw.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/ankle-yaw.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1320,7 +1320,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/wheel.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/wheel.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1451,7 +1451,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/hip-yaw.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/hip-yaw.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1472,7 +1472,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/hip-pitch.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/hip-pitch.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1494,7 +1494,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/knee.stl" scale="0.0011 0.0011 0.0011"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/knee.stl" scale="0.0011 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -1515,7 +1515,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/ankle-pitch.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/ankle-pitch.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1536,7 +1536,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/ankle-yaw.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/ankle-yaw.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1557,7 +1557,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/wheel.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/wheel.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1688,7 +1688,7 @@
     <collision>
       <origin rpy="0.0 0.0 4.15579005089" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/hip-yaw.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/hip-yaw.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1709,7 +1709,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/hip-pitch.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/hip-pitch.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1731,7 +1731,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/knee.stl" scale="0.0011 0.0011 0.0011"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/knee.stl" scale="0.0011 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -1752,7 +1752,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/ankle-pitch.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/ankle-pitch.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1773,7 +1773,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/ankle-yaw.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/ankle-yaw.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1794,7 +1794,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/wheel.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/simplified/wheel.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>

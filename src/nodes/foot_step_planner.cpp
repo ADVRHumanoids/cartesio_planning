@@ -78,7 +78,7 @@ void FootStepPlanner::init_load_model ()
     _model->update();
     
     // UNCOMMENT THIS WHEN PLANNING WITH CENTAURO: computes initial z-axis position 
-    // of the wheel that will be used during the whole plannerù
+    // of the wheel that will be used during the whole planner
     if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
     {
         Eigen::Affine3d T;
@@ -386,7 +386,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         for (int i = 0; i < _ee_number; i++)
         {
             // TODO set size as parameter from config
-            if (_map->checkForCollision(ee[i], 0.2))
+            if (_map->checkForCollision(ee[i], 0.25))
             {
                 return false;
             }
@@ -721,6 +721,12 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         std::cout << "_q_vect failed size: " << q_fail.size() << std::endl;
         interpolate();
         
+        auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/my_log");
+        logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+        
+        for (auto i : _q_traj)
+            logger->add("q_traj", i);
+        
         auto t = ros::Duration(0.);
         
         for(auto x : _q_traj)
@@ -753,6 +759,8 @@ void FootStepPlanner::interpolate()
     std::vector<double> wheel_pos = {jmap["j_wheel_1"], jmap["j_wheel_2"], jmap["j_wheel_3"], jmap["j_wheel_4"]};
     std::vector<Eigen::VectorXd> q_fail;
     
+    
+    
     for (int i = 0; i < _q_vect.size()-1; i++)
     {   
         std::vector<bool> inv_rot = {false, false, false, false};
@@ -783,16 +791,20 @@ void FootStepPlanner::interpolate()
             {
                 if (i < -2.5)
                 {
+                    std::cout << "Angle " << i;
                     std::vector<double>::iterator it = std::find(yaw.begin(), yaw.end(), i);
                     unsigned int index = it - yaw.begin();
                     i += boost::math::constants::pi<double>();
+                    std::cout << " modified in " << i << std::endl;
                     inv_rot[index] = true;
                 }
                 else if (i > 2.5)
                 {
+                    std::cout << "Angle " << i;
                     std::vector<double>::iterator it = std::find(yaw.begin(), yaw.end(), i);
                     unsigned int index = it - yaw.begin();
                     i -= boost::math::constants::pi<double>();
+                    std::cout << " modified in " << i << std::endl;
                     inv_rot[index] = true;
                 }
             });
@@ -860,31 +872,6 @@ void FootStepPlanner::interpolate()
                 else
                     jmap["j_wheel_" + num] = -(3*a0*T*T + 2*a1*T);
             }
-            /*
-            jmap["j_wheel_1"] = rot[0] / (Tmax / dt);
-            jmap["j_wheel_2"] = rot[1] / (Tmax / dt);
-            jmap["j_wheel_3"] = rot[2] / (Tmax / dt);
-            jmap["j_wheel_4"] = rot[3] / (Tmax / dt);
-            
-            std::vector<double> wheel_vel(4);
-            wheel_vel[0] = (jmap["j_wheel_1"])/dt;
-            wheel_vel[1] = (jmap["j_wheel_2"])/dt;
-            wheel_vel[2] = (jmap["j_wheel_3"])/dt;
-            wheel_vel[3] = (jmap["j_wheel_4"])/dt;
-            
-            if (inv_rot[0])
-                wheel_vel[0] *= -1;
-            if (inv_rot[1])
-                wheel_vel[1] *= -1;
-            if (inv_rot[2])
-                wheel_vel[2] *= -1;
-            if (inv_rot[3])
-                wheel_vel[3] *= -1;
-            
-            jmap["j_wheel_1"] = +wheel_vel[0];
-            jmap["j_wheel_2"] = -wheel_vel[1];
-            jmap["j_wheel_3"] = +wheel_vel[2];
-            jmap["j_wheel_4"] = -wheel_vel[3];*/
             
             if (inv_rot[0])
                 jmap["j_wheel_1"] *= -1;
@@ -896,18 +883,11 @@ void FootStepPlanner::interpolate()
                 jmap["j_wheel_4"] *= -1;
                      
             rot.clear();
-            
+
             _model->mapToEigen(jmap, tmp);
             
             _model->setJointPosition(tmp);
             _model->update();
-            int count = 0;
-            if (!_vc_context.vc_aggregate.check("collisions") && count == 0)
-            {
-                q_fail.push_back(_q_vect[i]);
-                q_fail.push_back(_q_vect[i+1]);
-                count ++;
-            }
          
             _q_traj.push_back(tmp);
             T += dt;
@@ -920,7 +900,30 @@ void FootStepPlanner::interpolate()
 
         dtheta.clear();
     }
-    std::cout << "Collision occured while interpolating between " << q_fail.size() << " states" << std::endl;
+    
+    // Check for collisions during interpolation
+    auto config = XBot::ConfigOptionsFromParamServer();
+    std::string urdf;
+    if (!_nhpr.getParam("urdf", urdf))
+        std::runtime_error("Mandatory private parameter 'urdf' missing!");
+    config.set_urdf(urdf);
+    _model = XBot::ModelInterface::getModel(config);
+     
+    _vc_context = Planning::ValidityCheckContext(_planner_config,
+                                                 _model, _nh);
+    
+    _vc_context.planning_scene->startMonitor();
+    _vc_context.planning_scene->startMonitor();
+    
+    std::vector<Eigen::VectorXd> q_fail;
+    for (auto i : _q_traj)
+    {
+        _model->setJointPosition(i);
+        _model->update();
+        if(!_vc_context.vc_aggregate.check("collisions"))
+            q_fail.push_back(i);
+    }
+    std::cout << "collisions after urdf change: " << q_fail.size() << std::endl;
 }
 
 

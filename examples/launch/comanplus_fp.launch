@@ -9,6 +9,7 @@
         
     <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/centauro.urdf"/> -->
     <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/centauro.srdf"/>  
+      
     
     <param name="planner/problem_description"
             textfile="$(find cartesio_planning)/configs/problem/centauro_fp_stack.yaml"/>  
@@ -24,6 +25,7 @@
         <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
         <param name="planner_config"
             textfile="$(find cartesio_planning)/configs/problem/centauro_fp_config.yaml"/>
+        <param name="urdf" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/centauro_vc.urdf"/>
     </node>
     
     <node pkg="cartesio_planning" type="previewer" name="previewer" output="screen"/>
