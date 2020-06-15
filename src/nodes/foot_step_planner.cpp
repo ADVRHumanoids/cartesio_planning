@@ -915,7 +915,6 @@ void FootStepPlanner::interpolate()
     _vc_context.planning_scene->startMonitor();
     _vc_context.planning_scene->startMonitor();
     
-    std::vector<Eigen::VectorXd> q_fail;
     for (auto i : _q_traj)
     {
         _model->setJointPosition(i);
