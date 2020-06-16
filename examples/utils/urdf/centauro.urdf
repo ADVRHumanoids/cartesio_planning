@@ -64,7 +64,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/pelvis.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/pelvis.stl" scale="0.0011 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -381,7 +381,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="RShp_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/ShoulderPitch.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/ShoulderPitch.STL" scale="0.0011 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -401,7 +401,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="RShr_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/ShoulderRoll.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/ShoulderRoll.STL" scale="0.0011 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -421,7 +421,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="RShy_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/ShoulderYaw.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/ShoulderYaw.STL" scale="0.0011 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -441,7 +441,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="RElb_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/Elbow.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/Elbow.STL" scale="0.001 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -461,7 +461,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="RForearm_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/Forearm.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/Forearm.STL" scale="0.0011 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -481,7 +481,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="RWrMot2_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/ForearmPitch.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/ForearmPitch.STL" scale="0.0011 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -501,7 +501,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="RWrMot3_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/ForearmYaw.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/ForearmYaw.STL" scale="0.0011 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -521,7 +521,7 @@
     <collision>
       <origin rpy="3.14159265359 0 0" xyz="0 0 0"/>
       <geometry name="RShp_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/Wrist.STL" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/Wrist.STL" scale="0.0011 0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -603,7 +603,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="LShp_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/ShoulderPitch.STL" scale="0.001 -0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/ShoulderPitch.STL" scale="0.0011 -0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -623,7 +623,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="LShr_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/ShoulderRoll.STL" scale="0.001 -0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/ShoulderRoll.STL" scale="0.0011 -0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -643,7 +643,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="LShy_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/ShoulderYaw.STL" scale="0.001 -0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/ShoulderYaw.STL" scale="0.0011 -0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -663,7 +663,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="LElb_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/Elbow.STL" scale="0.001 -0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/Elbow.STL" scale="0.0011 -0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -683,7 +683,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="LForearm_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/Forearm.STL" scale="0.001 -0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/Forearm.STL" scale="0.0011 -0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -703,7 +703,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="LWrMot2_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/ForearmPitch.STL" scale="0.001 -0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/ForearmPitch.STL" scale="0.0011 -0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -723,7 +723,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry name="LWrMot3_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/ForearmYaw.STL" scale="0.001 -0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/ForearmYaw.STL" scale="0.0011 -0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -743,7 +743,7 @@
     <collision>
       <origin rpy="3.14159265359 0 0" xyz="0 0 0"/>
       <geometry name="LShp_collision">
-        <mesh filename="package://cogimon_urdf/meshes/simple/Wrist.STL" scale="0.001 -0.001 0.001"/>
+        <mesh filename="package://cogimon_urdf/meshes/simple/Wrist.STL" scale="0.0011 -0.0011 0.0011"/>
       </geometry>
     </collision>
   </link>
@@ -931,6 +931,12 @@
       </geometry>
       <material name="dark_grey"/>
     </visual>
+    <collision>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+      <geometry>
+        <sphere radius="0.08"/> 
+      </geometry>
+    </collision>
    </link>
   
 
@@ -953,6 +959,12 @@
       </geometry>
       <material name="dark_grey"/>
     </visual>
+    <collision>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+      <geometry>
+        <sphere radius="0.08"/> 
+      </geometry>
+    </collision>
   </link>
 
   
@@ -1020,7 +1032,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/knee.stl" scale="0.0011 0.0011 0.0011"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/knee.stl" scale="0.0012 0.0012 0.0012"/>
       </geometry>
     </collision>
   </link>
@@ -1257,7 +1269,7 @@
     <collision>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/knee.stl" scale="0.0011 0.0011 0.0011"/>
+        <mesh filename="package://centauro/centauro_urdf/meshes/convex_hull/knee.stl" scale="0.0012 0.0012 0.0012"/>
       </geometry>
     </collision>
   </link>

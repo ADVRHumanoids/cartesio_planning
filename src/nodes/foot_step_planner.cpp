@@ -724,7 +724,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/my_log");
         logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
         
-        for (auto i : _q_traj)
+        /*for (auto i : _q_traj)
             logger->add("q_traj", i);
         
         auto t = ros::Duration(0.);
@@ -740,7 +740,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         
         trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
         
-        _trj_publisher.publish(trj);              
+        _trj_publisher.publish(trj);        */      
     }
 }
 
@@ -923,6 +923,23 @@ void FootStepPlanner::interpolate()
             q_fail.push_back(i);
     }
     std::cout << "collisions after urdf change: " << q_fail.size() << std::endl;
+    
+    trajectory_msgs::JointTrajectory trj;
+        
+        auto t = ros::Duration(0.);
+        
+        for(auto x : q_fail)
+        {
+            trajectory_msgs::JointTrajectoryPoint point;
+            point.positions.assign(x.data(), x.data() + x.size());
+            point.time_from_start = t;
+            trj.points.push_back(point);
+            t += ros::Duration(0.01);
+        }
+        
+        trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
+        
+        _trj_publisher.publish(trj);         
 }
 
 
