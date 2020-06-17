@@ -775,7 +775,10 @@ void FootStepPlanner::interpolate()
                 theta = -boost::math::constants::pi<double>()/2;
               
             else if (_state_vect[i+1][j] == _state_vect[i][j] && _state_vect[i+1][j+1] == _state_vect[i][j+1])
+            {
                 theta = boost::math::constants::pi<double>()/2;
+                inv_rot[j/2] = true;
+            }
             
             else
                 theta = std::atan2((_state_vect[i+1][j+1] - _state_vect[i][j+1]), (_state_vect[i+1][j] - _state_vect[i][j]));
@@ -783,10 +786,11 @@ void FootStepPlanner::interpolate()
             
             dtheta.push_back(theta);           
         }
-        yaw[0] = -dtheta[0] - jmap["hip_yaw_1"] - jmap["VIRTUALJOINT_6"];
-        yaw[1] = -dtheta[1] - jmap["hip_yaw_2"] - jmap["VIRTUALJOINT_6"];
-        yaw[2] = -dtheta[2] - jmap["hip_yaw_3"] - jmap["VIRTUALJOINT_6"];
-        yaw[3] = -dtheta[3] - jmap["hip_yaw_4"] - jmap["VIRTUALJOINT_6"];
+        std::cout << inv_rot << std::endl;
+        yaw[0] = -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"];
+        yaw[1] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"];
+        yaw[2] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"];
+        yaw[3] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"];
         std::for_each(yaw.begin(), yaw.end(), [&inv_rot, &yaw](double i)
             {
                 if (i < -2.5)
@@ -796,7 +800,7 @@ void FootStepPlanner::interpolate()
                     unsigned int index = it - yaw.begin();
                     i += boost::math::constants::pi<double>();
                     std::cout << " modified in " << i << std::endl;
-                    inv_rot[index] = true;
+//                     inv_rot[index] = true;
                 }
                 else if (i > 2.5)
                 {
@@ -805,7 +809,7 @@ void FootStepPlanner::interpolate()
                     unsigned int index = it - yaw.begin();
                     i -= boost::math::constants::pi<double>();
                     std::cout << " modified in " << i << std::endl;
-                    inv_rot[index] = true;
+//                     inv_rot[index] = true;
                 }
             });
         T = 0.;
@@ -845,10 +849,10 @@ void FootStepPlanner::interpolate()
                 tmp(j) = q;             
             }
             _model->eigenToMap(tmp, jmap);
-            jmap["ankle_yaw_1"] = -dtheta[0] - jmap["hip_yaw_1"] - jmap["VIRTUALJOINT_6"];
-            jmap["ankle_yaw_2"] = -dtheta[1] - jmap["hip_yaw_2"] - jmap["VIRTUALJOINT_6"];
-            jmap["ankle_yaw_3"] = -dtheta[2] - jmap["hip_yaw_3"] - jmap["VIRTUALJOINT_6"];
-            jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] - jmap["VIRTUALJOINT_6"];
+            jmap["ankle_yaw_1"] = -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"];
+            jmap["ankle_yaw_2"] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"];
+            jmap["ankle_yaw_3"] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"];
+            jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"];
             
             // Rotate wheels
             std::vector<double> rot;
@@ -873,14 +877,14 @@ void FootStepPlanner::interpolate()
                     jmap["j_wheel_" + num] = -(3*a0*T*T + 2*a1*T);
             }
             
-            if (inv_rot[0])
-                jmap["j_wheel_1"] *= -1;
-            if (inv_rot[1])
-                jmap["j_wheel_2"] *= -1;
-            if (inv_rot[2])
-                jmap["j_wheel_3"] *= -1;
-            if (inv_rot[3])
-                jmap["j_wheel_4"] *= -1;
+            if (inv_rot[0] == true)
+                jmap["j_wheel_1"] = 0;
+            if (inv_rot[1] == true)
+                jmap["j_wheel_2"] = 0;
+            if (inv_rot[2] == true)
+                jmap["j_wheel_3"] = 0;
+            if (inv_rot[3] == true)
+                jmap["j_wheel_4"] = 0;
                      
             rot.clear();
 
