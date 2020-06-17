@@ -724,7 +724,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/my_log");
         logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
         
-        /*for (auto i : _q_traj)
+        for (auto i : _q_traj)
             logger->add("q_traj", i);
         
         auto t = ros::Duration(0.);
@@ -740,7 +740,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         
         trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
         
-        _trj_publisher.publish(trj);        */      
+        _trj_publisher.publish(trj);              
     }
 }
 
@@ -748,7 +748,7 @@ void FootStepPlanner::interpolate()
 {
     // First, re-orient wheels in order to move to next state
     double T = 0.;
-    double Tmax = 1.0;
+    double Tmax = 5.0;
     double dt = 0.01;
     
     std::vector<double> dtheta, yaw(4);
@@ -783,10 +783,10 @@ void FootStepPlanner::interpolate()
             
             dtheta.push_back(theta);           
         }
-        yaw[0] = -dtheta[0] - jmap["hip_yaw_1"];
-        yaw[1] = -dtheta[1] - jmap["hip_yaw_2"];
-        yaw[2] = -dtheta[2] - jmap["hip_yaw_3"];
-        yaw[3] = -dtheta[3] - jmap["hip_yaw_4"];
+        yaw[0] = -dtheta[0] - jmap["hip_yaw_1"] - jmap["VIRTUALJOINT_6"];
+        yaw[1] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"];
+        yaw[2] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"];
+        yaw[3] = -dtheta[3] - jmap["hip_yaw_4"] - jmap["VIRTUALJOINT_6"];
         std::for_each(yaw.begin(), yaw.end(), [&inv_rot, &yaw](double i)
             {
                 if (i < -2.5)
@@ -924,7 +924,7 @@ void FootStepPlanner::interpolate()
     }
     std::cout << "collisions after urdf change: " << q_fail.size() << std::endl;
     
-    trajectory_msgs::JointTrajectory trj;
+   /* trajectory_msgs::JointTrajectory trj;
         
         auto t = ros::Duration(0.);
         
@@ -939,7 +939,7 @@ void FootStepPlanner::interpolate()
         
         trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
         
-        _trj_publisher.publish(trj);         
+        _trj_publisher.publish(trj); */        
 }
 
 

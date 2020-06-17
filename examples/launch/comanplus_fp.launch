@@ -18,7 +18,7 @@
             textfile="$(find cartesio_planning)/configs/problem/centauro_fp_goal_stack.yaml"/> 
     
         <!-- .bag file containing 2 boxes acquired using octomap -->
-    <node pkg="rosbag" type="play" name="bag_player" args="-l $(env ROBOTOLOGY_ROOT)/external/cartesio_planning/bagfiles/narrow_corridor.bag" output="screen"/>
+    <node pkg="rosbag" type="play" name="bag_player" args="-l $(env ROBOTOLOGY_ROOT)/external/cartesio_planning/bagfiles/short_corridor.bag" output="screen"/>
     
     <node pkg="cartesio_planning" type="foot_step_planner" name="foot_step_planner" output="screen">
         <param name="solver" value=""/>
