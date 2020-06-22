@@ -182,7 +182,7 @@ private:
     Planning::ValidityCheckContext _vc_context;
     
     Eigen::VectorXd _qhome;
-    std::vector<Eigen::VectorXd> _q_vect, _q_traj;
+    std::vector<Eigen::VectorXd> _q_vect, _q_traj, _q_traj_final;
     std::vector<std::vector<double>> _state_vect;
     
     std::vector<sensor_msgs::JointState> _trj;

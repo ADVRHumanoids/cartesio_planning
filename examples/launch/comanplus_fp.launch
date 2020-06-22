@@ -17,8 +17,11 @@
     <param name="planner/problem_goal_description"
             textfile="$(find cartesio_planning)/configs/problem/centauro_fp_goal_stack.yaml"/> 
     
+    <param name="planner/wheel_description"
+            textfile="$(find centauro_cartesio)/configs/centauro_postural_wheeled.yaml"/> 
+    
         <!-- .bag file containing 2 boxes acquired using octomap -->
-    <node pkg="rosbag" type="play" name="bag_player" args="-l $(env ROBOTOLOGY_ROOT)/external/cartesio_planning/bagfiles/short_corridor.bag" output="screen"/>
+<!--     <node pkg="rosbag" type="play" name="bag_player" args="-l $(env ROBOTOLOGY_ROOT)/external/cartesio_planning/bagfiles/short_corridor.bag" output="screen"/> -->
     
     <node pkg="cartesio_planning" type="foot_step_planner" name="foot_step_planner" output="screen">
         <param name="solver" value=""/>
@@ -114,24 +117,31 @@
         <remap from="mesh_viz_floor1/floor1" to="planner/collision_objects"/>
     </node>-->
     
-   <!-- <node pkg="PCL_Perception" type="pass_through" name="pass_through_filter" output="screen"
+    <node pkg="PCL_Perception" type="pass_through" name="pass_through_filter" output="screen"
           args = "-0.9 0.9 y true">
         <remap from="/cloud_in" to="/velodyne_points"/>
-    </node>-->
+        <remap from="/cloud_out" to ="/filtered_cloud1"/>
+    </node>
+    
+    <node pkg="PCL_Perception" type="pass_through" name="pass_through_filter_octomap" output="screen"
+          args = "0.0 1.3 x false">
+        <remap from="/cloud_in" to="/filtered_cloud1"/>
+        <remap from="/cloud_out" to="/filtered_cloud2"/>
+    </node>
     
      <!-- Include octomap if required -->
-    <!--<node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
+    <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
         <param name="resolution" value="0.05" />
         <param name="frame_id" type="string" value="world" />
         <param name="sensor_model/max_range" value="5.0" />
-        <remap from="cloud_in" to="/filtered_cloud" />
-        <param name="filter_ground" type="bool" value="true"/>
+        <remap from="cloud_in" to="/filtered_cloud2" />
+<!--         <param name="filter_ground" type="bool" value="true"/> -->
         <param name="base_frame_id" type="string" value="world"/>
-        <param name="ground_filter/distance" value="0.15"/>
-        <param name="ground_filter/plane_distance" value="0.25"/>
-        <param name="ground_filter/plane_distance" value="0.6"/>
+<!--         <param name="ground_filter/distance" value="0.1"/> -->
+<!--         <param name="ground_filter/plane_distance" value="0.3"/> -->
+<!--         <param name="ground_filter/plane_distance" value="0.6"/> -->
         <param name="latch" type="bool" value="false"/>
-    </node>-->
+    </node>
     
     <!-- Octomap converter -->
     <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_converter" output="screen"/>

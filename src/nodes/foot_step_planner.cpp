@@ -721,10 +721,10 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         std::cout << "_q_vect failed size: " << q_fail.size() << std::endl;
         interpolate();
         
-        auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/my_log");
+        auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/joint_trajectory");
         logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
         
-        for (auto i : _q_traj)
+        for (auto i : _q_traj_final)
             logger->add("q_traj", i);
         
         auto t = ros::Duration(0.);
@@ -748,7 +748,7 @@ void FootStepPlanner::interpolate()
 {
     // First, re-orient wheels in order to move to next state
     double T = 0.;
-    double Tmax = 0.5;
+    double Tmax = 1.0;
     double dt = 0.01;
     
     std::vector<double> dtheta, yaw(4);
@@ -764,6 +764,7 @@ void FootStepPlanner::interpolate()
     for (int i = 0; i < _q_vect.size()-1; i++)
     {   
         std::vector<bool> inv_rot = {false, false, false, false};
+        std::vector<bool> fix_rot = {false, false, false, false};
 
         for (int j = 0; j < _state_vect[i].size(); j += 2)
         {
@@ -777,7 +778,7 @@ void FootStepPlanner::interpolate()
             else if (_state_vect[i+1][j] == _state_vect[i][j] && _state_vect[i+1][j+1] == _state_vect[i][j+1])
             {
                 theta = boost::math::constants::pi<double>()/2;
-                inv_rot[j/2] = true;
+                fix_rot[j/2] = true;
             }
             
             else
@@ -786,30 +787,29 @@ void FootStepPlanner::interpolate()
             
             dtheta.push_back(theta);           
         }
-        std::cout << inv_rot << std::endl;
         yaw[0] = -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"];
         yaw[1] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"];
         yaw[2] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"];
         yaw[3] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"];
         std::for_each(yaw.begin(), yaw.end(), [&inv_rot, &yaw](double i)
             {
-                if (i < -2.5)
+                if (i < -2.3)
                 {
                     std::cout << "Angle " << i;
                     std::vector<double>::iterator it = std::find(yaw.begin(), yaw.end(), i);
                     unsigned int index = it - yaw.begin();
                     i += boost::math::constants::pi<double>();
                     std::cout << " modified in " << i << std::endl;
-//                     inv_rot[index] = true;
+                    inv_rot[index] = true;
                 }
-                else if (i > 2.5)
+                else if (i > 2.3)
                 {
                     std::cout << "Angle " << i;
                     std::vector<double>::iterator it = std::find(yaw.begin(), yaw.end(), i);
                     unsigned int index = it - yaw.begin();
                     i -= boost::math::constants::pi<double>();
                     std::cout << " modified in " << i << std::endl;
-//                     inv_rot[index] = true;
+                    inv_rot[index] = true;
                 }
             });
         T = 0.;
@@ -877,13 +877,22 @@ void FootStepPlanner::interpolate()
                     jmap["j_wheel_" + num] = -(3*a0*T*T + 2*a1*T);
             }
             
-            if (inv_rot[0] == true)
+//             if (inv_rot[0] == true)
+//                 jmap["j_wheel_1"] *= -1;
+//             if (inv_rot[1] == true)
+//                 jmap["j_wheel_2"] *= -1;
+//             if (inv_rot[2] == true)
+//                 jmap["j_wheel_3"] *= -1;
+//             if (inv_rot[3] == true)
+//                 jmap["j_wheel_4"] *= -1;
+            
+            if (fix_rot[0] == true)
                 jmap["j_wheel_1"] = 0;
-            if (inv_rot[1] == true)
+            if (fix_rot[1] == true)
                 jmap["j_wheel_2"] = 0;
-            if (inv_rot[2] == true)
+            if (fix_rot[2] == true)
                 jmap["j_wheel_3"] = 0;
-            if (inv_rot[3] == true)
+            if (fix_rot[3] == true)
                 jmap["j_wheel_4"] = 0;
                      
             rot.clear();
@@ -927,6 +936,51 @@ void FootStepPlanner::interpolate()
             q_fail.push_back(i);
     }
     std::cout << "collisions after urdf change: " << q_fail.size() << std::endl;
+    
+    _vc_context.planning_scene->stopMonitor();
+    
+
+   /* std::string wheel_description;
+    _nh.getParam("wheel_description", wheel_description);
+    auto ik_yaml_goal = YAML::Load(wheel_description);
+    
+    double ci_period = 0.01;
+    auto ci_ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<XBot::Cartesian::Parameters>(ci_period), _model);
+    auto ik_prob = XBot::Cartesian::ProblemDescription(ik_yaml_goal, ci_ctx);
+
+    auto ci = XBot::Cartesian::CartesianInterfaceImpl::MakeInstance("OpenSot",
+                                                        ik_prob, ci_ctx);  */  
+    
+//     double time = 0;
+//     for (auto q_ref:_q_traj)
+//     {
+//         XBot::JointNameMap j_map;
+//         Eigen::VectorXd q, dq;
+//      
+//         _model->getJointPosition(q);
+//         
+//         _model->eigenToMap(q_ref,j_map);
+//         
+//         ci->setReferencePosture(j_map);
+//         _model->setJointPosition(q_ref);
+//         _model->update();
+//         Eigen::Affine3d T;
+//         _model->getPose("pelvis", T);
+//         ci->setPoseReference("pelvis", T);
+//         
+//         _model->setJointPosition(q);
+//         _model->update();
+//         ci->update(time, ci_period);
+//         
+//         _model->getJointVelocity(dq);
+//         q += dq*ci_period;
+//         
+//         _model->setJointPosition(q);
+//         _model->update();
+//         
+//         _q_traj_final.push_back(q);
+//         time += ci_period;
+//     }
     
    /* trajectory_msgs::JointTrajectory trj;
         
@@ -1188,6 +1242,7 @@ bool FootStepPlanner::publish_trajectory_service(std_srvs::Empty::Request& req, 
         trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
         
         _xbotcore_trj_publisher.publish(trj); 
+        _trj_publisher.publish(trj);
 }
 
 

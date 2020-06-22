@@ -1369,6 +1369,10 @@
     <disable_collisions link1="hip2_2" link2="pelvis" reason="Never" />
     <disable_collisions link1="hip2_3" link2="pelvis" reason="Never" />
     <disable_collisions link1="hip2_4" link2="pelvis" reason="Never" />
+    <disable_collisions link1="knee_1" link2="ankle2_1" reason="Never" />
+    <disable_collisions link1="knee_2" link2="ankle2_2" reason="Never" />
+    <disable_collisions link1="knee_3" link2="ankle2_3" reason="Never" />
+    <disable_collisions link1="knee_4" link2="ankle2_4" reason="Never" />
     
 
 </robot>
