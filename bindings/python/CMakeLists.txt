@@ -8,7 +8,7 @@ if(${pybind11_FOUND})
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
     pybind11_add_module(planning cartesio_planning.cpp)
-    target_link_libraries(planning PRIVATE cartesio_planning)
+    target_link_libraries(planning PRIVATE cartesio_planning trajectory_interpolation)
     install(TARGETS planning
         DESTINATION ${CATKIN_PACKAGE_PYTHON_DESTINATION})
 

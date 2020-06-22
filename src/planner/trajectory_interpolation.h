@@ -39,7 +39,9 @@ class TrajectoryInterpolation
 public:
     typedef std::shared_ptr<TrajectoryInterpolation> Ptr;
 
-    TrajectoryInterpolation(int q_size);
+    TrajectoryInterpolation(int q_size,
+                            int segment_size = 20,
+                            int overlap = 10);
 
     double compute(const std::vector<Eigen::VectorXd>& trajectory,
                    std::vector<double> * time_point_vec = nullptr);
@@ -71,6 +73,9 @@ private:
 
     std::vector<Poly> _spline;
     Eigen::ArrayXd _qdot_max, _qddot_max;
+    mutable Eigen::VectorXd _tmp;
+    int _segment_size;
+    int _overlap;
 
 
 };

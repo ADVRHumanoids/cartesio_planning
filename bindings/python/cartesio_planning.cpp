@@ -5,6 +5,7 @@
 
 #include "planner/cartesio_ompl_planner.h"
 #include "goal/goal_sampler.h"
+#include "planner/trajectory_interpolation.h"
 
 namespace py = pybind11;
 
@@ -84,6 +85,25 @@ auto ik_jacob = [](PositionCartesianSolver& self)
     return J;
 };
 
+auto trj_eval = [](TrajectoryInterpolation& ti, double t)
+{
+    Eigen::VectorXd q, dq;
+    ti.evaluate(t, q, dq);
+    return std::make_pair(q, dq);
+};
+
+auto trj_setlims = [](TrajectoryInterpolation& ti,
+                      double qdot_max, double qddot_max)
+{
+    ti.setLimits(qdot_max, qddot_max);
+};
+
+auto trj_compute = [](TrajectoryInterpolation& ti,
+                      const std::vector<Eigen::VectorXd>& trj)
+{
+    return ti.compute(trj);
+};
+
 PYBIND11_MODULE(planning, m)
 {
 
@@ -123,6 +143,18 @@ PYBIND11_MODULE(planning, m)
             .def("solve", &PositionCartesianSolver::solve)
             .def("setDesiredPose", &PositionCartesianSolver::setDesiredPose)
             .def("reset", &PositionCartesianSolver::reset);
+
+    py::class_<TrajectoryInterpolation>(m, "TrajectoryInterpolation")
+        .def(py::init<int, int, int>(),
+             py::arg("q_size"),
+             py::arg("segment_size") = 20,
+             py::arg("overlap") = 10)
+        .def("compute", trj_compute)
+        .def("isValid", &TrajectoryInterpolation::isValid)
+        .def("getTrajectoryEndTime", &TrajectoryInterpolation::getTrajectoryEndTime)
+        .def("evaluate", trj_eval)
+        .def("setLimits", trj_setlims)
+        ;
 
 }
 

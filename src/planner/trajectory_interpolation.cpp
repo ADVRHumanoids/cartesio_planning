@@ -28,11 +28,20 @@ std::ostream& print(std::ostream& os, const std::vector<T>& v)
 }
 
 
-TrajectoryInterpolation::TrajectoryInterpolation(int _q_size):
-    q_size(_q_size)
+TrajectoryInterpolation::TrajectoryInterpolation(int _q_size,
+                                                 int segment_size,
+                                                 int overlap):
+    q_size(_q_size),
+    _segment_size(segment_size),
+    _overlap(overlap)
 {
     _qdot_max.setConstant(q_size, 1.0);
     _qddot_max.setConstant(q_size, 5.0);
+
+    if(overlap >= segment_size)
+    {
+        throw std::invalid_argument("overlap should be < segment_size");
+    }
 }
 
 double TrajectoryInterpolation::compute(const std::vector<Eigen::VectorXd>& trajectory,
