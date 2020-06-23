@@ -550,10 +550,10 @@ void FootStepPlanner::setStartAndGoalState()
     {
         ompl::base::ScopedState<> goal(_space);
         goal = start;
-        goal[0] += 3.0;
-        goal[2] += 3.0;
-        goal[4] += 3.0;
-        goal[6] += 3.0;
+        goal[0] += 2.5;
+        goal[2] += 2.5;
+        goal[4] += 2.5;
+        goal[6] += 2.5;
         
         T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
         T.translation() << goal[0], goal[1], _z_wheel;
@@ -724,7 +724,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/joint_trajectory");
         logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
         
-        for (auto i : _q_traj_final)
+        for (auto i : _q_traj)
             logger->add("q_traj", i);
         
         auto t = ros::Duration(0.);
@@ -793,20 +793,22 @@ void FootStepPlanner::interpolate()
         yaw[3] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"];
         std::for_each(yaw.begin(), yaw.end(), [&inv_rot, &yaw](double i)
             {
-                if (i < -2.3)
+                if (i < -2.0)
                 {
-                    std::cout << "Angle " << i;
                     std::vector<double>::iterator it = std::find(yaw.begin(), yaw.end(), i);
                     unsigned int index = it - yaw.begin();
+                    std::cout << "ankle_yaw_" << index << ": ";
+                    std::cout << "angle " << i;
                     i += boost::math::constants::pi<double>();
                     std::cout << " modified in " << i << std::endl;
                     inv_rot[index] = true;
                 }
-                else if (i > 2.3)
+                else if (i > 2.0)
                 {
-                    std::cout << "Angle " << i;
                     std::vector<double>::iterator it = std::find(yaw.begin(), yaw.end(), i);
                     unsigned int index = it - yaw.begin();
+                    std::cout << "ankle_yaw_" << index << ": ";
+                    std::cout << "angle " << i;
                     i -= boost::math::constants::pi<double>();
                     std::cout << " modified in " << i << std::endl;
                     inv_rot[index] = true;
@@ -859,7 +861,7 @@ void FootStepPlanner::interpolate()
             for (int j = 0; j < _state_vect[i].size(); j += 2)
             {                  
                 double distance = sqrt((_state_vect[i+1][j+1] - _state_vect[i][j+1])*(_state_vect[i+1][j+1] - _state_vect[i][j+1]) + (_state_vect[i+1][j] - _state_vect[i][j])*(_state_vect[i+1][j] - _state_vect[i][j]));
-                rot.push_back(distance/0.07);
+                rot.push_back(distance/0.078);
             }   
             
             for (int j = 0; j < rot.size(); j++)
@@ -936,9 +938,7 @@ void FootStepPlanner::interpolate()
             q_fail.push_back(i);
     }
     std::cout << "collisions after urdf change: " << q_fail.size() << std::endl;
-    
-    _vc_context.planning_scene->stopMonitor();
-    
+        
 
    /* std::string wheel_description;
     _nh.getParam("wheel_description", wheel_description);

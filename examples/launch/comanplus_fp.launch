@@ -131,7 +131,7 @@
     
      <!-- Include octomap if required -->
     <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
-        <param name="resolution" value="0.05" />
+        <param name="resolution" value="0.03" />
         <param name="frame_id" type="string" value="world" />
         <param name="sensor_model/max_range" value="5.0" />
         <remap from="cloud_in" to="/filtered_cloud2" />
@@ -140,7 +140,7 @@
 <!--         <param name="ground_filter/distance" value="0.1"/> -->
 <!--         <param name="ground_filter/plane_distance" value="0.3"/> -->
 <!--         <param name="ground_filter/plane_distance" value="0.6"/> -->
-        <param name="latch" type="bool" value="false"/>
+        <param name="latch" type="bool" value="true"/>
     </node>
     
     <!-- Octomap converter -->
