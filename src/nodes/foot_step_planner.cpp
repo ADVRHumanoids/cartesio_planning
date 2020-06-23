@@ -386,7 +386,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         for (int i = 0; i < _ee_number; i++)
         {
             // TODO set size as parameter from config
-            if (_map->checkForCollision(ee[i], 0.25))
+            if (_map->checkForCollision(ee[i], 0.2))
             {
                 return false;
             }
@@ -550,10 +550,10 @@ void FootStepPlanner::setStartAndGoalState()
     {
         ompl::base::ScopedState<> goal(_space);
         goal = start;
-        goal[0] += 2.5;
-        goal[2] += 2.5;
-        goal[4] += 2.5;
-        goal[6] += 2.5;
+        goal[0] += 3.0;
+        goal[2] += 3.0;
+        goal[4] += 3.0;
+        goal[6] += 3.0;
         
         T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
         T.translation() << goal[0], goal[1], _z_wheel;
@@ -727,6 +727,22 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         for (auto i : _q_traj)
             logger->add("q_traj", i);
         
+        for (int i = 0; i < data.numVertices(); i++)
+        {
+            Eigen::VectorXd foot;
+            Eigen::VectorXd state(8);
+            for (int j = 0; j < _ee_number; j++)
+            {
+                if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+                {
+                    _sw->getState(data.getVertex(i).getState()->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(j), foot);
+                    state(2*j) = foot(0);
+                    state(2*j + 1) = foot(1);
+                }
+            }
+            logger->add("state", state);
+        }
+        
         auto t = ros::Duration(0.);
         
         for(auto x : _q_traj)
@@ -879,15 +895,6 @@ void FootStepPlanner::interpolate()
                     jmap["j_wheel_" + num] = -(3*a0*T*T + 2*a1*T);
             }
             
-//             if (inv_rot[0] == true)
-//                 jmap["j_wheel_1"] *= -1;
-//             if (inv_rot[1] == true)
-//                 jmap["j_wheel_2"] *= -1;
-//             if (inv_rot[2] == true)
-//                 jmap["j_wheel_3"] *= -1;
-//             if (inv_rot[3] == true)
-//                 jmap["j_wheel_4"] *= -1;
-            
             if (fix_rot[0] == true)
                 jmap["j_wheel_1"] = 0;
             if (fix_rot[1] == true)
@@ -940,64 +947,7 @@ void FootStepPlanner::interpolate()
     std::cout << "collisions after urdf change: " << q_fail.size() << std::endl;
         
 
-   /* std::string wheel_description;
-    _nh.getParam("wheel_description", wheel_description);
-    auto ik_yaml_goal = YAML::Load(wheel_description);
-    
-    double ci_period = 0.01;
-    auto ci_ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<XBot::Cartesian::Parameters>(ci_period), _model);
-    auto ik_prob = XBot::Cartesian::ProblemDescription(ik_yaml_goal, ci_ctx);
-
-    auto ci = XBot::Cartesian::CartesianInterfaceImpl::MakeInstance("OpenSot",
-                                                        ik_prob, ci_ctx);  */  
-    
-//     double time = 0;
-//     for (auto q_ref:_q_traj)
-//     {
-//         XBot::JointNameMap j_map;
-//         Eigen::VectorXd q, dq;
-//      
-//         _model->getJointPosition(q);
-//         
-//         _model->eigenToMap(q_ref,j_map);
-//         
-//         ci->setReferencePosture(j_map);
-//         _model->setJointPosition(q_ref);
-//         _model->update();
-//         Eigen::Affine3d T;
-//         _model->getPose("pelvis", T);
-//         ci->setPoseReference("pelvis", T);
-//         
-//         _model->setJointPosition(q);
-//         _model->update();
-//         ci->update(time, ci_period);
-//         
-//         _model->getJointVelocity(dq);
-//         q += dq*ci_period;
-//         
-//         _model->setJointPosition(q);
-//         _model->update();
-//         
-//         _q_traj_final.push_back(q);
-//         time += ci_period;
-//     }
-    
-   /* trajectory_msgs::JointTrajectory trj;
-        
-        auto t = ros::Duration(0.);
-        
-        for(auto x : q_fail)
-        {
-            trajectory_msgs::JointTrajectoryPoint point;
-            point.positions.assign(x.data(), x.data() + x.size());
-            point.time_from_start = t;
-            trj.points.push_back(point);
-            t += ros::Duration(0.01);
-        }
-        
-        trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
-        
-        _trj_publisher.publish(trj); */        
+   
 }
 
 
