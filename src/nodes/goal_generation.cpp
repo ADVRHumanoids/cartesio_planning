@@ -28,3 +28,9 @@ bool GoalGenerator::sample(Eigen::VectorXd& q, double time_out)
 {
     return _goal_sampler->sampleGoal(q, time_out);
 }
+
+bool GoalGenerator::samplePostural(Eigen::VectorXd& q, double time_out)
+{
+    return _goal_sampler->sampleGoalPostural(q, time_out);
+}
+

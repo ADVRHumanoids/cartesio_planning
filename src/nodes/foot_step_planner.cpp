@@ -99,6 +99,8 @@ void FootStepPlanner::init_load_model ()
     _solver_model->update();
     
     _map = std::make_shared<XBot::Converter::MapConverter>(_n, "projected_map");
+    
+    
 }
 
 void FootStepPlanner::init_load_position_cartesian_solver() 
@@ -256,6 +258,8 @@ void FootStepPlanner::init_load_validity_checker()
     };
 
     setStateValidityPredicate(validity_predicate);
+    
+    _goal_generator = std::make_shared<GoalGenerator>(_ci, _vc_context);
 }
 
 void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
@@ -448,14 +452,23 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         if (_solver->solve())
         {
             _solver->getModel()->getJointPosition(x);
+//             if (!svp(x))
+//             {
+//                 XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
+//                 _goalSampler_counter ++;
+//                 goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
+//                 if (goal_sampler->sample(5.0))
+//                     _solver->getModel()->getJointPosition(x);
+//                 else
+//                 {
+//                     _counter++;
+//                     return false;
+//                 }
+//             }
             if (!svp(x))
             {
-                XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
                 _goalSampler_counter ++;
-                goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
-                if (goal_sampler->sample(5.0))
-                    _solver->getModel()->getJointPosition(x);
-                else
+                if (!_goal_generator->samplePostural(x, 5.0))
                 {
                     _counter++;
                     return false;

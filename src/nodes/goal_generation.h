@@ -19,6 +19,8 @@ public:
     void update();
 
     bool sample(Eigen::VectorXd& q, double time_out);
+    
+    bool samplePostural(Eigen::VectorXd& q, double time_out);
 
     bool setErrorTolerance(const double error_tolerance)
     {

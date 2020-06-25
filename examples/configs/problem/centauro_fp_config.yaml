@@ -4,6 +4,9 @@ state_space:
     bounds_y: [-2.0, 2.0]
     end_effector: ["wheel_1", "wheel_2", "wheel_3", "wheel_4"]
     
+goalSampler:
+    type: "old"
+    
 control_space:
     step_size_max: 0.1
     min_control_duration: 1

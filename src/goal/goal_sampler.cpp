@@ -103,6 +103,45 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q, const unsigned int time_out
     return true;
 }
 
+bool GoalSamplerBase::sampleGoalPostural(Eigen::VectorXd &q, const unsigned int time_out_sec) const
+{
+    auto model = _ik_solver->getModel();
+    
+    bool goal_found = false;
+    
+    double T = 0.0;
+    XBot::JointNameMap jmap;
+    _ik_solver->getCI()->getReferencePosture(jmap);
+    
+    double neck_velodyne = jmap["neck_velodyne"];
+    while (!goal_found)
+    {
+        auto tic = std::chrono::high_resolution_clock::now();
+        
+        // generate random configuration
+        auto qrand = generateRandomSeed();
+        
+        // set it as postural;
+        model->eigenToMap(qrand, jmap);
+        jmap["neck_velodyne"] = neck_velodyne;
+        _ik_solver->getCI()->setReferencePosture(jmap);
+        
+        goal_found = _ik_solver->solve();
+        
+        if (_validity_check)
+            goal_found = goal_found && _validity_check();
+        
+        model->getJointPosition(q);
+
+        auto toc = std::chrono::high_resolution_clock::now();
+
+        std::chrono::duration<float> fsec = toc-tic;
+        T += fsec.count();
+        if(T >= time_out_sec)
+            return false;
+    }
+}
+
 PositionCartesianSolver::Ptr GoalSamplerBase::getIkSolver()
 {
     return _ik_solver;

@@ -25,6 +25,8 @@ public:
 
     bool sampleGoal(Eigen::VectorXd& q, const unsigned int time_out_sec) const;
     
+    bool sampleGoalPostural(Eigen::VectorXd& q, const unsigned int time_out_sec) const;
+    
     PositionCartesianSolver::Ptr getIkSolver();
 
 protected:
