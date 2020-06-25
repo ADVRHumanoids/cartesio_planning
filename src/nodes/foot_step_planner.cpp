@@ -910,7 +910,17 @@ void FootStepPlanner::interpolate()
             
             _model->setJointPosition(tmp);
             _model->update();
-         
+            
+//             if (!_vc_context.vc_aggregate.check("collisions"))
+//             {
+//                 std::vector<Eigen::VectorXd>::iterator it;
+//                 it = std::find(q_fail.begin(), q_fail.end(), _q_vect[i]);
+//                 if (it == q_fail.end())
+//                     q_fail.push_back(_q_vect[i]);
+//                 it = std::find(q_fail.begin(), q_fail.end(), _q_vect[i+1]);
+//                 if (it == q_fail.end())
+//                     q_fail.push_back(_q_vect[i+1]);
+//             }
             _q_traj.push_back(tmp);
             T += dt;
         } 
