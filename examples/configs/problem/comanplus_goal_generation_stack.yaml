@@ -38,3 +38,10 @@ TorsoRPY:
     lambda: 1.0
     indices: [3,4,5]
 
+JointLimits:
+    type: "JointLimits"
+
+
+VelocityLimits:
+    type: "VelocityLimits"
+
