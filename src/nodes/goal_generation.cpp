@@ -5,13 +5,13 @@ GoalGenerator::GoalGenerator(XBot::Cartesian::CartesianInterfaceImpl::Ptr ci,
     _ci(ci),
     _vc_context(vc_context)
 {
-    _ik = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(_ci, _ci->getIkProblem());
+    _ik = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(_ci);
     _goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSamplerBase>(_ik);
 
     XBot::Cartesian::RosServerClass::Options opt;
     opt.tf_prefix = "planner/goal_sampler";
     opt.ros_namespace = "planner/goal_sampler";
-    _ros_server = std::make_shared<XBot::Cartesian::RosServerClass>(_ci, _ci->getModel(), opt);
+    _ros_server = std::make_shared<XBot::Cartesian::RosServerClass>(_ci, opt);
 
     _goal_sampler->setValidityCheker(
                 std::bind(&XBot::Cartesian::Planning::ValidityPredicateAggregate::checkAll, &_vc_context.vc_aggregate, nullptr));

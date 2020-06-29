@@ -207,17 +207,17 @@ target_link_libraries(centroidal_statics_test centroidal_statics ${XBotInterface
 
 
 # Test executable
-add_executable(ompl_test
-    src/ompl_test.cpp
-    )
+#add_executable(ompl_test
+#    src/ompl_test.cpp
+#    )
 
-target_link_libraries(ompl_test ${OMPL_LIBRARIES}
-    yaml-cpp
-    dl
-    cartesio_planning
-    ${XBotInterface_LIBRARIES}
-    ${catkin_LIBRARIES}
-    matlogger2::matlogger2)
+#target_link_libraries(ompl_test ${OMPL_LIBRARIES}
+#    yaml-cpp
+#    dl
+#    cartesio_planning
+#    ${XBotInterface_LIBRARIES}
+#    ${catkin_LIBRARIES}
+#    matlogger2::matlogger2)
 
 # Previewer node
 add_executable(previewer
@@ -311,11 +311,11 @@ install(TARGETS centroidal_statics
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
-install(TARGETS ompl_test
-    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    )
+#install(TARGETS ompl_test
+#    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#    )
 
 install(TARGETS previewer
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

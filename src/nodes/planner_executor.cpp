@@ -291,10 +291,14 @@ void PlannerExecutor::init_goal_generator()
             throw std::runtime_error("planner/problem_description_goal not provided!");
         }
 
-        auto ik_yaml_constraint = YAML::Load(problem_description_string);
+        auto ik_yaml_goal = YAML::Load(problem_description_string);
 
+                double ci_period = 1.0;
+                auto ci_ctx = std::make_shared<Context>(
+                            std::make_shared<Parameters>(ci_period),
+                            _model);
 
-        auto ik_prob = ProblemDescription(ik_yaml_constraint, _model);
+                auto ik_prob = ProblemDescription(ik_yaml_goal, ci_ctx);
 
         CartesianInterfaceImpl::Ptr ci = Utils::LoadObject<CartesianInterfaceImpl>("libCartesianOpenSot.so",
                                                                                    "create_instance",
@@ -358,16 +362,19 @@ Planning::CartesianConstraint::Ptr PlannerExecutor::make_manifold(std::string pr
 
     auto ik_yaml_constraint = YAML::Load(problem_description_string);
 
-    auto ik_prob_constraint = ProblemDescription(ik_yaml_constraint, _model);
+    double ci_period = 1.0;
+    auto ci_ctx = std::make_shared<Context>(
+                std::make_shared<Parameters>(ci_period),
+                _model);
 
-    CartesianInterfaceImpl::Ptr constraint_ci = Utils::LoadObject<CartesianInterfaceImpl>("libCartesianOpenSot.so",
-                                                                                          "create_instance",
-                                                                                          _model,
-                                                                                          ik_prob_constraint);
+    auto ik_prob_constraint = ProblemDescription(ik_yaml_constraint, ci_ctx);
+
+    auto constraint_ci = CartesianInterfaceImpl::MakeInstance("OpenSot",
+                                                              ik_prob_constraint,
+                                                              ci_ctx);
 
 
-    auto ik_solver = std::make_shared<Planning::PositionCartesianSolver>(constraint_ci,
-                                                                         ik_prob_constraint);
+    auto ik_solver = std::make_shared<Planning::PositionCartesianSolver>(constraint_ci);
 
     return std::make_shared<Planning::CartesianConstraint>(ik_solver);
 }

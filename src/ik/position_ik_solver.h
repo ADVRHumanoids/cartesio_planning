@@ -36,8 +36,7 @@ public:
      * @param ci
      * @param constrained_ee
      */
-    PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci,
-                            ProblemDescription ik_problem);
+    PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci);
 
     /**
      * @brief setDesiredPose

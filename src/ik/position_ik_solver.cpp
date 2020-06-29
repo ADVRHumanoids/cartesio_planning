@@ -5,8 +5,7 @@ using namespace XBot::Cartesian::Planning;
 const double PositionCartesianSolver::DEFAULT_ERR_TOL = 1e-4;
 const int PositionCartesianSolver::DEFAULT_MAX_ITER = 1000;//60;
 
-PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci,
-                                                 ProblemDescription ik_problem):
+PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci):
     _n_task(0),
     _ci(ci),
     _model(ci->getModel()),
@@ -14,21 +13,20 @@ PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci,
     _err_tol(DEFAULT_ERR_TOL),
     _iter_callback([](){})
 {
-    for(auto t : ik_problem.getTask(0))
+    for(auto t : ci->getIkProblem().getTask(0))
     {
-        if(t->type == "Cartesian")
+        if(auto cart = std::dynamic_pointer_cast<Cartesian::CartesianTask>(t))
         {
-            auto cart_data = GetAsCartesian(t);
-            auto tdata = std::make_shared<CartesianTaskData>(cart_data->distal_link,
-                                                             cart_data->base_link,
-                                                             cart_data->indices);
+            auto tdata = std::make_shared<CartesianTaskData>(cart->getDistalLink(),
+                                                             cart->getBaseLink(),
+                                                             cart->getIndices());
             _n_task += tdata->size;
 
-            _task_map[cart_data->distal_link] = tdata;
+            _task_map[cart->getDistalLink()] = tdata;
 
             printf("[PositionCartesianSolver] adding cartesian task '%s' to '%s', size is %d \n",
-                   cart_data->base_link.c_str(),
-                   cart_data->distal_link.c_str(),
+                   cart->getBaseLink().c_str(),
+                   cart->getDistalLink().c_str(),
                    tdata->size);
         }
     }
@@ -187,8 +185,8 @@ void PositionCartesianSolver::CartesianTaskData::update(XBot::Cartesian::Cartesi
     error.setZero(size);
 
     /* If task was disabled, error and jacobian are zero */
-    auto ctrl_mode = ci->getControlMode(distal_link);
-    if(ctrl_mode == ControlType::Disabled)
+    auto active = ci->getActivationState(distal_link);
+    if(active == ActivationState::Disabled)
     {
         return;
     }
