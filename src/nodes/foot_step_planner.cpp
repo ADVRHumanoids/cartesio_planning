@@ -259,7 +259,7 @@ void FootStepPlanner::init_load_validity_checker()
 
     setStateValidityPredicate(validity_predicate);
     
-    _goal_generator = std::make_shared<GoalGenerator>(_ci, _vc_context);
+//     _goal_generator = std::make_shared<GoalGenerator>(_ci, _vc_context);
 }
 
 void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
@@ -452,28 +452,28 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         if (_solver->solve())
         {
             _solver->getModel()->getJointPosition(x);
-//             if (!svp(x))
-//             {
-//                 XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
-//                 _goalSampler_counter ++;
-//                 goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
-//                 if (goal_sampler->sample(5.0))
-//                     _solver->getModel()->getJointPosition(x);
-//                 else
-//                 {
-//                     _counter++;
-//                     return false;
-//                 }
-//             }
             if (!svp(x))
             {
+                XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
                 _goalSampler_counter ++;
-                if (!_goal_generator->samplePostural(x, 5.0))
+                goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
+                if (goal_sampler->sample(5.0))
+                    _solver->getModel()->getJointPosition(x);
+                else
                 {
                     _counter++;
                     return false;
                 }
             }
+//             if (!svp(x))
+//             {
+//                 _goalSampler_counter ++;
+//                 if (!_goal_generator->samplePostural(x, 5.0))
+//                 {
+//                     _counter++;
+//                     return false;
+//                 }
+//             }
                       
             // Add the new postural to the std::map together with the start state
             Eigen::VectorXd diff = x - _qhome;
@@ -820,9 +820,9 @@ void FootStepPlanner::interpolate()
         yaw[1] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"];
         yaw[2] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"];
         yaw[3] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"];
-        std::for_each(yaw.begin(), yaw.end(), [&inv_rot, &yaw](double i)
+        std::for_each(yaw.begin(), yaw.end(), [&inv_rot, &yaw](double& i)
             {
-                if (i < -2.0)
+                if (i < -2.3)
                 {
                     std::vector<double>::iterator it = std::find(yaw.begin(), yaw.end(), i);
                     unsigned int index = it - yaw.begin();
@@ -832,7 +832,7 @@ void FootStepPlanner::interpolate()
                     std::cout << " modified in " << i << std::endl;
                     inv_rot[index] = true;
                 }
-                else if (i > 2.0)
+                else if (i > 2.3)
                 {
                     std::vector<double>::iterator it = std::find(yaw.begin(), yaw.end(), i);
                     unsigned int index = it - yaw.begin();
@@ -880,10 +880,36 @@ void FootStepPlanner::interpolate()
                 tmp(j) = q;             
             }
             _model->eigenToMap(tmp, jmap);
-            jmap["ankle_yaw_1"] = -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"];
-            jmap["ankle_yaw_2"] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"];
-            jmap["ankle_yaw_3"] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"];
-            jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"];
+            if (inv_rot[0] && -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"] > 2.3)
+                jmap["ankle_yaw_1"] = -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"] - boost::math::constants::pi<double>();
+            else if (inv_rot[0] && -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"] < -2.3)
+                jmap["ankle_yaw_1"] = -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"] + boost::math::constants::pi<double>();
+            else 
+                jmap["ankle_yaw_1"] = -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"];
+            
+            if (inv_rot[1] && -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"] > 2.3)
+                jmap["ankle_yaw_2"] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"] - boost::math::constants::pi<double>();
+            else if (inv_rot[1] && -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"] < -2.3)
+                jmap["ankle_yaw_2"] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"] + boost::math::constants::pi<double>();
+            else 
+                jmap["ankle_yaw_2"] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"];
+            
+            if (inv_rot[2] && -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"] > 2.3)
+                jmap["ankle_yaw_3"] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"] - boost::math::constants::pi<double>();
+            else if (inv_rot[2] && -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"] < -2.3)
+                jmap["ankle_yaw_3"] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"] + boost::math::constants::pi<double>();
+            else 
+                jmap["ankle_yaw_3"] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"];
+            
+            if (inv_rot[3] && -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"] > 2.3)
+                jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"] - boost::math::constants::pi<double>();
+            else if (inv_rot[3] && -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"] < -2.3)
+                jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"] + boost::math::constants::pi<double>();
+            else 
+                jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"];
+//             jmap["ankle_yaw_2"] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"];
+//             jmap["ankle_yaw_3"] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"];
+//             jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"];
             
             // Rotate wheels
             std::vector<double> rot;
@@ -916,6 +942,15 @@ void FootStepPlanner::interpolate()
                 jmap["j_wheel_3"] = 0;
             if (fix_rot[3] == true)
                 jmap["j_wheel_4"] = 0;
+            
+            if (inv_rot[0] == true)
+                jmap["j_wheel_1"] *= -1;
+            if (inv_rot[1] == true)
+                jmap["j_wheel_2"] *= -1;
+            if (inv_rot[2] == true)
+                jmap["j_wheel_3"] *= -1;
+            if (inv_rot[3] == true)
+                jmap["j_wheel_4"] *= -1;
                      
             rot.clear();
 
@@ -924,16 +959,6 @@ void FootStepPlanner::interpolate()
             _model->setJointPosition(tmp);
             _model->update();
             
-//             if (!_vc_context.vc_aggregate.check("collisions"))
-//             {
-//                 std::vector<Eigen::VectorXd>::iterator it;
-//                 it = std::find(q_fail.begin(), q_fail.end(), _q_vect[i]);
-//                 if (it == q_fail.end())
-//                     q_fail.push_back(_q_vect[i]);
-//                 it = std::find(q_fail.begin(), q_fail.end(), _q_vect[i+1]);
-//                 if (it == q_fail.end())
-//                     q_fail.push_back(_q_vect[i+1]);
-//             }
             _q_traj.push_back(tmp);
             T += dt;
         } 
@@ -947,19 +972,19 @@ void FootStepPlanner::interpolate()
     }
     
     // Check for collisions during interpolation
-    auto config = XBot::ConfigOptionsFromParamServer();
-    std::string urdf;
-    if (!_nhpr.getParam("urdf", urdf))
-        std::runtime_error("Mandatory private parameter 'urdf' missing!");
-    config.set_urdf(urdf);
-    _model = XBot::ModelInterface::getModel(config);
-     
-    _vc_context = Planning::ValidityCheckContext(_planner_config,
-                                                 _model, _nh);
-    
-    _vc_context.planning_scene->startMonitor();
-    _vc_context.planning_scene->startMonitor();
-    
+//     auto config = XBot::ConfigOptionsFromParamServer();
+//     std::string urdf;
+//     if (!_nhpr.getParam("urdf", urdf))
+//         std::runtime_error("Mandatory private parameter 'urdf' missing!");
+//     config.set_urdf(urdf);
+//     _model = XBot::ModelInterface::getModel(config);
+//      
+//     _vc_context = Planning::ValidityCheckContext(_planner_config,
+//                                                  _model, _nh);
+//     
+//     _vc_context.planning_scene->startMonitor();
+//     _vc_context.planning_scene->startMonitor();
+
     for (auto i : _q_traj)
     {
         _model->setJointPosition(i);

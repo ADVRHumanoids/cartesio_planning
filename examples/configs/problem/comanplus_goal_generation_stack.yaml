@@ -4,7 +4,7 @@ solver_options:
 
 stack:
     - ["LeftFoot", "RightFoot", "LeftHand", "RightHand"]
-#    - ["TorsoRPY"]
+    - ["TorsoRPY"]
 #    - ["Postural"]
     
 constraints: ["JointLimits"] #, "VelocityLimits"]
@@ -42,4 +42,5 @@ TorsoRPY:
     distal_link: "torso"
     lambda: 1.0
     indices: [3,4,5]
+    
 

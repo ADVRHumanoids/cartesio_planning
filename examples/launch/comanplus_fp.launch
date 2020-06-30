@@ -117,7 +117,7 @@
         <remap from="mesh_viz_floor1/floor1" to="planner/collision_objects"/>
     </node>-->
     
-   <!-- <node pkg="PCL_Perception" type="pass_through" name="pass_through_filter" output="screen"
+    <node pkg="PCL_Perception" type="pass_through" name="pass_through_filter" output="screen"
           args = "-0.9 0.9 y true">
         <remap from="/cloud_in" to="/velodyne_points"/>
         <remap from="/cloud_out" to ="/filtered_cloud1"/>
@@ -127,21 +127,21 @@
           args = "0.0 1.3 x false">
         <remap from="/cloud_in" to="/filtered_cloud1"/>
         <remap from="/cloud_out" to="/filtered_cloud2"/>
-    </node>-->
+    </node>
     
      <!-- Include octomap if required -->
-   <!-- <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
-        <param name="resolution" value="0.03" />
+   <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
+        <param name="resolution" value="0.05" />
         <param name="frame_id" type="string" value="world" />
         <param name="sensor_model/max_range" value="5.0" />
         <remap from="cloud_in" to="/filtered_cloud2" />-->
-<!--         <param name="filter_ground" type="bool" value="true"/> -->
+<!--          <param name="filter_ground" type="bool" value="true"/> --> -->
 <!--         <param name="base_frame_id" type="string" value="world"/> -->
 <!--         <param name="ground_filter/distance" value="0.1"/> -->
 <!--         <param name="ground_filter/plane_distance" value="0.3"/> -->
 <!--         <param name="ground_filter/plane_distance" value="0.6"/> -->
-<!--         <param name="latch" type="bool" value="true"/> -->
-<!--     </node> -->
+        <param name="latch" type="bool" value="true"/>
+    </node> 
     
     <!-- Octomap converter -->
     <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_converter" output="screen"/>
