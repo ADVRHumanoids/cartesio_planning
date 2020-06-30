@@ -148,6 +148,7 @@ include_directories( SYSTEM
     ${PCL_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS} # note: must be the last in the include list
+    ${cartesian_interface_INCLUDE_DIRS}
     )
 
 
@@ -181,7 +182,7 @@ target_link_libraries(cartesio_planning
     )
 
 add_library(trajectory_interpolation SHARED src/planner/trajectory_interpolation.cpp)
-target_link_libraries(trajectory_interpolation PRIVATE casadi)
+target_link_libraries( trajectory_interpolation PRIVATE casadi)
 
 add_library(cartesian_trajectory_interpolation SHARED src/planner/cartesian_trajectory_interpolation.cpp)
 target_link_libraries(cartesian_trajectory_interpolation PRIVATE trajectory_interpolation ${XBotInterface_LIBRARIES})
