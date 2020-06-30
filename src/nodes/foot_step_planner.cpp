@@ -63,6 +63,8 @@ void FootStepPlanner::init_load_config()
 
     _planner_config = YAML::Load(planner_config_string);
     
+    _n.getParam("goalSamplerType", _goalSamplerType);
+    
 }
 
 void FootStepPlanner::init_load_model ()
@@ -452,7 +454,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         if (_solver->solve())
         {
             _solver->getModel()->getJointPosition(x);
-            if (!svp(x))
+            if (!svp(x) && _goalSamplerType == "goalSampler2")
             {
                 XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
                 _goalSampler_counter ++;
@@ -465,15 +467,15 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                     return false;
                 }
             }
-//             if (!svp(x))
-//             {
-//                 _goalSampler_counter ++;
-//                 if (!_goal_generator->samplePostural(x, 5.0))
-//                 {
-//                     _counter++;
-//                     return false;
-//                 }
-//             }
+            if (!svp(x) && _goalSamplerType == "goalSampler")
+            {
+                _goalSampler_counter ++;
+                if (!_goal_generator->samplePostural(x, 5.0))
+                {
+                    _counter++;
+                    return false;
+                }
+            }
                       
             // Add the new postural to the std::map together with the start state
             Eigen::VectorXd diff = x - _qhome;
@@ -972,18 +974,17 @@ void FootStepPlanner::interpolate()
     }
     
     // Check for collisions during interpolation
-//     auto config = XBot::ConfigOptionsFromParamServer();
-//     std::string urdf;
-//     if (!_nhpr.getParam("urdf", urdf))
-//         std::runtime_error("Mandatory private parameter 'urdf' missing!");
-//     config.set_urdf(urdf);
-//     _model = XBot::ModelInterface::getModel(config);
-//      
-//     _vc_context = Planning::ValidityCheckContext(_planner_config,
-//                                                  _model, _nh);
-//     
-//     _vc_context.planning_scene->startMonitor();
-//     _vc_context.planning_scene->startMonitor();
+    auto config = XBot::ConfigOptionsFromParamServer();
+    std::string urdf;
+    if (!_nhpr.getParam("urdf", urdf))
+        std::runtime_error("Mandatory private parameter 'urdf' missing!");
+    config.set_urdf(urdf);
+    _model = XBot::ModelInterface::getModel(config);
+     
+    _vc_context = Planning::ValidityCheckContext(_planner_config,
+                                                 _model, _nh);
+    
+    _vc_context.planning_scene->startMonitor();
 
     for (auto i : _q_traj)
     {

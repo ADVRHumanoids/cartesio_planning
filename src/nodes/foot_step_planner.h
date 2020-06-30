@@ -203,7 +203,7 @@ private:
     
     CartesianTrajectoryInterpolation::Ptr _interpolator;
     
-    unsigned int _counter_yaw1, _counter_yaw2, _counter_yaw3, _counter_yaw4;
+    std::string _goalSamplerType;
 };
 
 
