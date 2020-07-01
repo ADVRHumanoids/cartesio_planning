@@ -147,7 +147,8 @@ include_directories( SYSTEM
     ${OMPL_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
-    ${catkin_INCLUDE_DIRS} # note: must be the last in the include list
+    ${catkin_INCLUDE_DIRS}
+    ${cartesian_interface_INCLUDE_DIRS} # note: must be the last in the include list
     )
 
 
