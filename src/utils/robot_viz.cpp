@@ -5,7 +5,7 @@ XBot::Cartesian::Planning::RobotViz::RobotViz(const XBot::ModelInterface::ConstP
     _nh(nh),
     _prefix("")
 {
-    collision_robot_pub = _nh.advertise<visualization_msgs::MarkerArray>( topic_name, 0 );
+    collision_robot_pub = _nh.advertise<visualization_msgs::MarkerArray>( topic_name, 0, true );
 
     if(rgba != _reserved_color)
         _rgba = rgba;
