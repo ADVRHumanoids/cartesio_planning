@@ -204,6 +204,7 @@ private:
     CartesianTrajectoryInterpolation::Ptr _interpolator;
     
     std::string _goalSamplerType;
+    
 };
 
 

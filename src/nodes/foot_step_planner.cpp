@@ -789,14 +789,14 @@ void FootStepPlanner::interpolate()
     _model->getJointPosition(jmap);
     std::vector<double> wheel_pos = {jmap["j_wheel_1"], jmap["j_wheel_2"], jmap["j_wheel_3"], jmap["j_wheel_4"]};
     std::vector<Eigen::VectorXd> q_fail;
-    
+    std::vector<bool> inv_rot_old(4), inv_rot = {false, false, false, false};
     
     
     for (int i = 0; i < _q_vect.size()-1; i++)
     {   
-        std::vector<bool> inv_rot = {false, false, false, false};
         std::vector<bool> fix_rot = {false, false, false, false};
-
+        inv_rot_old = inv_rot;
+        
         for (int j = 0; j < _state_vect[i].size(); j += 2)
         {
             double theta;
@@ -808,7 +808,10 @@ void FootStepPlanner::interpolate()
               
             else if (_state_vect[i+1][j] == _state_vect[i][j] && _state_vect[i+1][j+1] == _state_vect[i][j+1])
             {
-                theta = boost::math::constants::pi<double>()/2;
+                if (j == 0 || j == 6)
+                    theta = -boost::math::constants::pi<double>()/2;
+                else
+                    theta = boost::math::constants::pi<double>()/2;
                 fix_rot[j/2] = true;
             }
             
@@ -843,6 +846,12 @@ void FootStepPlanner::interpolate()
                     i -= boost::math::constants::pi<double>();
                     std::cout << " modified in " << i << std::endl;
                     inv_rot[index] = true;
+                }
+                else 
+                {
+                    std::vector<double>::iterator it = std::find(yaw.begin(), yaw.end(), i);
+                    unsigned int index = it - yaw.begin();
+                    inv_rot[index] = false;
                 }
             });
         T = 0.;
@@ -882,30 +891,30 @@ void FootStepPlanner::interpolate()
                 tmp(j) = q;             
             }
             _model->eigenToMap(tmp, jmap);
-            if (inv_rot[0] && -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"] > 2.3)
+            if (inv_rot_old[0] != inv_rot[0] && -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"] > 2.3)
                 jmap["ankle_yaw_1"] = -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"] - boost::math::constants::pi<double>();
-            else if (inv_rot[0] && -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"] < -2.3)
+            else if (inv_rot_old[0] != inv_rot[0] && -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"] < -2.3)
                 jmap["ankle_yaw_1"] = -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"] + boost::math::constants::pi<double>();
             else 
                 jmap["ankle_yaw_1"] = -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"];
             
-            if (inv_rot[1] && -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"] > 2.3)
+            if (inv_rot_old[1] != inv_rot[1] && -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"] > 2.3)
                 jmap["ankle_yaw_2"] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"] - boost::math::constants::pi<double>();
-            else if (inv_rot[1] && -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"] < -2.3)
+            else if (inv_rot_old[1] != inv_rot[1] && -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"] < -2.3)
                 jmap["ankle_yaw_2"] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"] + boost::math::constants::pi<double>();
             else 
                 jmap["ankle_yaw_2"] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"];
             
-            if (inv_rot[2] && -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"] > 2.3)
+            if (inv_rot_old[2] != inv_rot[2] && -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"] > 2.3)
                 jmap["ankle_yaw_3"] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"] - boost::math::constants::pi<double>();
-            else if (inv_rot[2] && -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"] < -2.3)
+            else if (inv_rot_old[2] != inv_rot[2] && -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"] < -2.3)
                 jmap["ankle_yaw_3"] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"] + boost::math::constants::pi<double>();
             else 
                 jmap["ankle_yaw_3"] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"];
             
-            if (inv_rot[3] && -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"] > 2.3)
+            if (inv_rot_old[3] != inv_rot[3] && -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"] > 2.3)
                 jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"] - boost::math::constants::pi<double>();
-            else if (inv_rot[3] && -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"] < -2.3)
+            else if (inv_rot_old[3] != inv_rot[3] && -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"] < -2.3)
                 jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"] + boost::math::constants::pi<double>();
             else 
                 jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"];
