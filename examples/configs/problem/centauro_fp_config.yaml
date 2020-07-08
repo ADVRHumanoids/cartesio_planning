@@ -36,5 +36,5 @@ distance:
     max_x_distance: 0.3
     max_y_distance: 0.7
     front_rear_x_distance: 0.5
-    left_right_y_distance: 0.35
+    left_right_y_distance: 0.3
     
