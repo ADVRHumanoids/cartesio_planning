@@ -565,10 +565,10 @@ void FootStepPlanner::setStartAndGoalState()
     {
         ompl::base::ScopedState<> goal(_space);
         goal = start;
-        goal[0] += 3.0;
-        goal[2] += 3.0;
-        goal[4] += 3.0;
-        goal[6] += 3.0;
+        goal[0] += 2.5;
+        goal[2] += 2.5;
+        goal[4] += 2.5;
+        goal[6] += 2.5;
         
         T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
         T.translation() << goal[0], goal[1], _z_wheel;
@@ -592,7 +592,7 @@ void FootStepPlanner::setStartAndGoalState()
         _goal_model->update();   
         
         // Set start and goal states
-        _pdef->setStartAndGoalStates(start, goal, 2.0);
+        _pdef->setStartAndGoalStates(start, goal, 1.0);
     }
     // COMANPLUS GOAL
     else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
@@ -984,17 +984,17 @@ void FootStepPlanner::interpolate()
     config.set_urdf(urdf);
     _model = XBot::ModelInterface::getModel(config);
      
-    _vc_context = Planning::ValidityCheckContext(_planner_config,
-                                                 _model, _nh);
+    _vc_context_interp = Planning::ValidityCheckContext(_planner_config,
+                                                        _model, _nh);
     
-    _vc_context.planning_scene->startMonitor();
+    _vc_context_interp.planning_scene->startMonitor();
+    _vc_context_interp.planning_scene->startMonitor();
     
-
     for (auto i : _q_traj)
     {
         _model->setJointPosition(i);
         _model->update();
-        if(!_vc_context.vc_aggregate.check("collisions"))
+        if(!_vc_context_interp.vc_aggregate.check("collisions"))
             q_fail.push_back(i);
     }
     std::cout << "collisions after urdf change: " << q_fail.size() << std::endl;

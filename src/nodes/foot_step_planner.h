@@ -179,7 +179,7 @@ private:
     
     std::shared_ptr<Planning::StateWrapper> _sw;
     
-    Planning::ValidityCheckContext _vc_context;
+    Planning::ValidityCheckContext _vc_context, _vc_context_interp;
     
     Eigen::VectorXd _qhome;
     std::vector<Eigen::VectorXd> _q_vect, _q_traj, _q_traj_final;
