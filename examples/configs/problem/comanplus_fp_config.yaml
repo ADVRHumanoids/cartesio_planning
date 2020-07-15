@@ -1,60 +1,15 @@
-##### COMANPLUS_CONFIG ###
-#state_space:
-    #ee_number: 2
-    #bounds_x: [-1.0, 6.0]
-    #bounds_y: [-3.0, 3.0]
-    #end_effector: ["r_sole", "l_sole"]
-    
-#control_space:
-    #step_size_max: 0.5
-    #min_control_duration: 1
-    #max_control_duration: 50
-    
-#propagator:
-    #type: "stepPropagator"
-    #duration: 0.1
-    
-#state_validity_check:
-    #- collisions
-    #- stability
-
-
-#collisions:
-    #type: "CollisionCheck"
-    #include_environment: true
-    
-#stability:
-    #type: "ConvexHull"
-    #links:
-      #- "l_foot_lower_left_link"
-      #- "l_foot_lower_right_link"
-      #- "l_foot_upper_left_link"
-      #- "l_foot_upper_right_link"
-      #- "r_foot_lower_left_link"
-      #- "r_foot_lower_right_link"
-      #- "r_foot_upper_left_link"
-      #- "r_foot_upper_right_link"
-
-    #stability_margin: 0.03
-    
-#distance:
-    #type: "Distance"
-    #end_effector: ["r_sole", "l_sole"]
-    #max_x_distance: 0.5
-    #max_y_distance: 0.35
- 
- 
-### CENTAURO_CONFIG ###
+#### COMANPLUS_CONFIG ###
 state_space:
-    ee_number: 4
+    ee_number: 2
     bounds_x: [-1.0, 6.0]
     bounds_y: [-3.0, 3.0]
-    end_effector: ["wheel_1", "wheel_2", "wheel_3", "wheel_4"]
+    end_effector: ["r_sole", "l_sole"]
     
 control_space:
     step_size_max: 0.1
     min_control_duration: 1
-    max_control_duration: 20    
+    max_control_duration: 20   
+    
 propagator:
     type: "stepPropagator"
     duration: 0.3
@@ -62,26 +17,27 @@ propagator:
 state_validity_check:
     - collisions
     - stability
-    
-stability:
-    type: "ConvexHull"
-    links:
-      - "wheel_1"
-      - "wheel_2"
-      - "wheel_3" 
-      - "wheel_4"
-
-    stability_margin: 0.03
 
 collisions:
     type: "CollisionCheck"
     include_environment: true
     
+stability:
+    type: "ConvexHull"
+    links:
+      - "l_foot_lower_left_link"
+      - "l_foot_lower_right_link"
+      - "l_foot_upper_left_link"
+      - "l_foot_upper_right_link"
+      - "r_foot_lower_left_link"
+      - "r_foot_lower_right_link"
+      - "r_foot_upper_left_link"
+      - "r_foot_upper_right_link"
+
+    stability_margin: 0.03
+    
 distance:
     type: "Distance"
-    end_effector: ["wheel_1", "wheel_2", "wheel_3", "wheel_4"]
-    max_x_distance: 0.3
-    max_y_distance: 0.7
-    front_rear_x_distance: 0.5
-    left_right_y_distance: 0.3
-    
+    end_effector: ["r_sole", "l_sole"]
+    max_x_distance: 0.5
+    max_y_distance: 0.35

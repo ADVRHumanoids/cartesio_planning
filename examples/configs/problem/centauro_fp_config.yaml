@@ -7,7 +7,8 @@ state_space:
 control_space:
     step_size_max: 0.1
     min_control_duration: 1
-    max_control_duration: 20    
+    max_control_duration: 20   
+    
 propagator:
     type: "stepPropagator"
     duration: 0.3

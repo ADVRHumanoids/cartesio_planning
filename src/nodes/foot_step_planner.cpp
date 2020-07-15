@@ -261,7 +261,7 @@ void FootStepPlanner::init_load_validity_checker()
 
     setStateValidityPredicate(validity_predicate);
     
-//     _goal_generator = std::make_shared<GoalGenerator>(_ci, _vc_context);
+    _goal_generator = std::make_shared<GoalGenerator>(_ci, _vc_context);
 }
 
 void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
@@ -294,7 +294,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             }
                                    
             T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
-            T.rotate( Eigen::AngleAxis<double>( ee[i](2), Eigen::Vector3d(0,0,1) ));         // UNCOMMENT THIS WHEN PLANNING IN SE2
+            T.rotate( Eigen::AngleAxis<double>( ee[i](2), Eigen::Vector3d(0,0,1) ));  
 
             _solver->setDesiredPose(_ee_name[i], T);
         }
@@ -565,10 +565,10 @@ void FootStepPlanner::setStartAndGoalState()
     {
         ompl::base::ScopedState<> goal(_space);
         goal = start;
-        goal[0] += 2.5;
-        goal[2] += 2.5;
-        goal[4] += 2.5;
-        goal[6] += 2.5;
+        goal[0] += 3.0;
+        goal[2] += 3.0;
+        goal[4] += 3.0;
+        goal[6] += 3.0;
         
         T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
         T.translation() << goal[0], goal[1], _z_wheel;
@@ -592,7 +592,7 @@ void FootStepPlanner::setStartAndGoalState()
         _goal_model->update();   
         
         // Set start and goal states
-        _pdef->setStartAndGoalStates(start, goal, 1.0);
+        _pdef->setStartAndGoalStates(start, goal, 2.0);
     }
     // COMANPLUS GOAL
     else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
