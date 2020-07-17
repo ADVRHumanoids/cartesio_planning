@@ -10,7 +10,6 @@ option(COMPILE_TESTS "Compile internal tests" FALSE)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-    cartesian_interface
     roscpp
     rosconsole
     std_msgs
@@ -37,6 +36,8 @@ find_package(ompl 1.5.0 REQUIRED)
 find_package(XBotInterface REQUIRED)
 
 find_package(matlogger2 REQUIRED)
+
+find_package(cartesian_interface REQUIRED)
 
 FIND_PACKAGE(PCL 1.7 QUIET COMPONENTS   common
                                         filters
@@ -138,7 +139,7 @@ generate_messages(
 catkin_package(
     #INCLUDE_DIRS include
     LIBRARIES cartesio_planning
-    CATKIN_DEPENDS cartesian_interface roscpp message_runtime actionlib_msgs
+    CATKIN_DEPENDS roscpp message_runtime actionlib_msgs
     #DEPENDS system_lib
     )
 
@@ -154,6 +155,7 @@ include_directories(
     ${OMPL_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
+    ${cartesian_interface_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS} # note: must be the last in the include list
     )
 
@@ -189,7 +191,7 @@ target_link_libraries(cartesio_planning
     )
 
 add_library(centroidal_statics SHARED src/validity_checker/stability/centroidal_statics.cpp)
-target_link_libraries(centroidal_statics PRIVATE ${OpenSoT_LIBRARIES})
+target_link_libraries(centroidal_statics PRIVATE ${OpenSoT_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
 add_library(trajectory_interpolation SHARED src/planner/trajectory_interpolation.cpp)
 target_link_libraries(trajectory_interpolation PRIVATE casadi)
@@ -199,10 +201,10 @@ target_link_libraries(cartesian_trajectory_interpolation PRIVATE trajectory_inte
 
 
 add_executable(stability_test src/stability_test.cpp)
-target_link_libraries(stability_test cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(stability_test cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
 add_executable(centroidal_statics_test src/centroidal_statics_test.cpp)
-target_link_libraries(centroidal_statics_test centroidal_statics ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(centroidal_statics_test centroidal_statics ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
 
 
@@ -226,7 +228,7 @@ add_executable(previewer
 
 target_link_libraries(previewer
     ${XBotInterface_LIBRARIES}
-    ${catkin_LIBRARIES}
+    ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES}
     matlogger2::matlogger2)
 
 # Self collision robot node
@@ -239,7 +241,7 @@ target_link_libraries(self_collision_robot ${OMPL_LIBRARIES}
     dl
     cartesio_planning
     ${XBotInterface_LIBRARIES}
-    ${catkin_LIBRARIES}
+    ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES}
     matlogger2::matlogger2)
 
 # goal_generation node
@@ -252,7 +254,7 @@ target_link_libraries(goal_generation_node ${OMPL_LIBRARIES}
     dl
     cartesio_planning
     ${XBotInterface_LIBRARIES}
-    ${catkin_LIBRARIES}
+    ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES}
     matlogger2::matlogger2)
 
 # Planning scene test and publisher
@@ -264,7 +266,7 @@ target_link_libraries(planning_scene_publisher ${catkin_LIBRARIES})
 
 # Executor
 add_executable(planning_server src/nodes/planner_executor_main.cpp src/nodes/planner_executor.cpp)
-target_link_libraries(planning_server ${catkin_LIBRARIES} cartesio_planning cartesian_trajectory_interpolation)
+target_link_libraries(planning_server ${cartesian_interface_LIBRARIES} ${catkin_LIBRARIES} cartesio_planning cartesian_trajectory_interpolation)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
