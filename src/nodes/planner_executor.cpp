@@ -7,7 +7,6 @@
 
 #include <RobotInterfaceROS/ConfigFromParam.h>
 
-#include <cartesian_interface/utils/LoadObject.hpp>
 #include <cartesian_interface/utils/LoadConfig.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
 
@@ -293,28 +292,35 @@ void PlannerExecutor::init_goal_generator()
 
         auto ik_yaml_goal = YAML::Load(problem_description_string);
 
-                double ci_period = 1.0;
-                auto ci_ctx = std::make_shared<Context>(
-                            std::make_shared<Parameters>(ci_period),
-                            _model);
+        double ci_period = 1.0;
+        auto ci_ctx = std::make_shared<Context>(
+                    std::make_shared<Parameters>(ci_period),
+                    _model);
 
-                auto ik_prob = ProblemDescription(ik_yaml_goal, ci_ctx);
+        auto ik_prob = ProblemDescription(ik_yaml_goal, ci_ctx);
 
-        CartesianInterfaceImpl::Ptr ci = Utils::LoadObject<CartesianInterfaceImpl>("libCartesianOpenSot.so",
-                                                                                   "create_instance",
-                                                                                   _model,
-                                                                                   ik_prob);
+        auto ci = CartesianInterfaceImpl::MakeInstance("OpenSot",
+                                                       ik_prob, ci_ctx);
 
 
         _goal_generator = std::make_shared<GoalGenerator>(ci, _vc_context);
 
         int max_iterations;
         if(_nhpr.getParam("goal_generator_max_iterations", max_iterations))
+        {
             _goal_generator->setMaxIterations(max_iterations);
+        }
 
         double error_tolerance;
         if(_nhpr.getParam("goal_generator_error_tolerance", error_tolerance))
+        {
             _goal_generator->setErrorTolerance(error_tolerance);
+        }
+        else
+        {
+            if(_manifold)
+                _goal_generator->setErrorTolerance(_manifold->getTolerance());
+        }
 
         _service_goal_sampler = _nh.advertiseService("goal_sampler_service",
                                                      &PlannerExecutor::goal_sampler_service, this);
@@ -322,7 +328,6 @@ void PlannerExecutor::init_goal_generator()
         ROS_WARN("goal generator is going to be used, disabling goal from topic");
     }
 }
-
 void PlannerExecutor::init_interpolator()
 {
     _interpolator = std::make_shared<CartesianTrajectoryInterpolation>();
