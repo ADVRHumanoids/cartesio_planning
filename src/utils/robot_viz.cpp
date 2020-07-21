@@ -103,7 +103,7 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
                 auto mesh =
                         STATIC_POINTER_CAST<urdf::Cylinder>(link->collision->geometry);
 
-                marker.scale.x = marker.scale.y = mesh->radius;
+                marker.scale.x = marker.scale.y = 2.*mesh->radius;
                 marker.scale.z = mesh->length;
             }
             else if(link->collision->geometry->type == urdf::Geometry::SPHERE)
