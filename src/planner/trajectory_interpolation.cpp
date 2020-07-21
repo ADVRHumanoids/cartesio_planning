@@ -278,6 +278,7 @@ void TrajectoryInterpolation::evaluate(double t, Eigen::VectorXd& q, Eigen::Vect
         if(t >= _spline[i].t_start && t <= _spline[i].t_end)
         {
             _spline[i].eval(t, q, qdot);
+            return;
         }
     }
 
