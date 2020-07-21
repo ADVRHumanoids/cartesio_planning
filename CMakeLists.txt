@@ -47,6 +47,8 @@ FIND_PACKAGE(PCL 1.7 QUIET COMPONENTS   common
 
 find_package(OpenSoT REQUIRED)
 
+find_package(cartesio_acceleration_support REQUIRED)
+
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -156,6 +158,7 @@ include_directories(
     ${PCL_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
     ${cartesian_interface_INCLUDE_DIRS}
+    ${cartesio_acceleration_support_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS} # note: must be the last in the include list
     )
 
@@ -191,7 +194,7 @@ target_link_libraries(cartesio_planning
     )
 
 add_library(centroidal_statics SHARED src/validity_checker/stability/centroidal_statics.cpp)
-target_link_libraries(centroidal_statics PRIVATE ${OpenSoT_LIBRARIES} ${cartesian_interface_LIBRARIES})
+target_link_libraries(centroidal_statics PRIVATE ${cartesio_acceleration_support_LIBRARIES} ${OpenSoT_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
 add_library(trajectory_interpolation SHARED src/planner/trajectory_interpolation.cpp)
 target_link_libraries(trajectory_interpolation PRIVATE casadi)
