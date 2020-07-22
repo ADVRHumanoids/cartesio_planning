@@ -36,18 +36,24 @@ int main(int argc, char ** argv)
         model->setJointPosition(q);
         model->update();
 
-        std::map<std::string, Eigen::Matrix3d> links_in_contact =
-                cs.getContacts();
+        if(cs.checkStability(1e-4, true))
+            ROS_INFO("STABLE!");
+        else
+            ROS_WARN("NOT STABLE!");
 
-        for(auto contact : links_in_contact)
-        {
-            Eigen::Affine3d T;
-            model->getPose(contact.first, T);
-            if(!cs.setContactRotationMatrix(contact.first, T.linear()))
-                ROS_ERROR("Can not set rotation for link %s", contact.first);
-        }
 
-        csROS.publish();
+//        std::map<std::string, Eigen::Matrix3d> links_in_contact =
+//                cs.getContacts();
+
+//        for(auto contact : links_in_contact)
+//        {
+//            Eigen::Affine3d T;
+//            model->getPose(contact.first, T);
+//            if(!cs.setContactRotationMatrix(contact.first, T.linear()))
+//                ROS_ERROR("Can not set rotation for link %s", contact.first);
+//        }
+
+//        csROS.publish();
     };
 
     auto js_sub = nh.subscribe<sensor_msgs::JointState>("cartesian/solution", 1, on_js_received);
