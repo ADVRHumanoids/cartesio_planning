@@ -179,7 +179,11 @@ target_link_libraries(cartesio_planning
     matlogger2::matlogger2
     PRIVATE
     ${PCL_LIBRARIES}
+    centroidal_statics
     )
+
+add_library(centroidal_statics SHARED src/validity_checker/stability/centroidal_statics.cpp)
+target_link_libraries(centroidal_statics PRIVATE ${cartesio_acceleration_support_LIBRARIES} ${OpenSoT_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
 add_library(trajectory_interpolation SHARED src/planner/trajectory_interpolation.cpp)
 target_link_libraries( trajectory_interpolation PRIVATE casadi)
@@ -253,6 +257,10 @@ target_link_libraries(octomap_collision_main cartesio_planning ${XBotInterface_L
 add_executable(point_cloud_test src/test_nodes/point_cloud_test.cpp)
 target_link_libraries(point_cloud_test cartesio_planning ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
+# Centroidal Statics test
+add_executable(centroidal_statics_test src/test_nodes/centroidal_statics_test.cpp)
+target_link_libraries(centroidal_statics_test centroidal_statics ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
+
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -293,6 +301,12 @@ add_dependencies(cartesio_planning ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_
 # )
 
 ## Mark executables and/or libraries for installation
+install(TARGETS centroidal_statics
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
 install(TARGETS previewer
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -362,6 +376,12 @@ install(TARGETS octomap_collision_main
     )
 
 install(TARGETS point_cloud_test
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+install(TARGETS centroidal_statics_test
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
