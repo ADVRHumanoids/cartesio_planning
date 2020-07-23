@@ -23,8 +23,11 @@ int main(int argc, char ** argv)
     std::vector<std::string> links_in_contact;
     links_in_contact.push_back("l_sole");
     links_in_contact.push_back("r_sole");
-    double mu = 0.5;
-    CentroidalStatics cs(model, links_in_contact, mu, true);
+    double mu = 1.;
+    Eigen::Vector2d xlims, ylims;
+    xlims[0] = -0.05; xlims[1] = 0.1;
+    ylims[0] = -0.05; ylims[1] = 0.05;
+    CentroidalStatics cs(model, links_in_contact, mu, true, xlims, ylims);
     CentroidalStaticsROS csROS(model, cs, nhp);
 
     auto on_js_received = [&csROS, &cs, model](const sensor_msgs::JointStateConstPtr& msg)
@@ -36,24 +39,23 @@ int main(int argc, char ** argv)
         model->setJointPosition(q);
         model->update();
 
-        if(cs.checkStability(1e-4, true))
-            ROS_INFO("STABLE!");
-        else
-            ROS_WARN("NOT STABLE!");
+//        if(cs.checkStability(1e-3))
+//            ROS_INFO("STABLE!");
+//        else
+//            ROS_WARN("NOT STABLE!");
 
 
-//        std::map<std::string, Eigen::Matrix3d> links_in_contact =
-//                cs.getContacts();
+        std::map<std::string, Eigen::Vector6d> links_in_contact = cs.getForces();
 
-//        for(auto contact : links_in_contact)
-//        {
-//            Eigen::Affine3d T;
-//            model->getPose(contact.first, T);
-//            if(!cs.setContactRotationMatrix(contact.first, T.linear()))
-//                ROS_ERROR("Can not set rotation for link %s", contact.first);
-//        }
+        for(auto contact : links_in_contact)
+        {
+            Eigen::Affine3d T;
+            model->getPose(contact.first, T);
+            if(!cs.setContactRotationMatrix(contact.first, T.linear()))
+                ROS_ERROR("Can not set rotation for link %s", contact.first);
+        }
 
-//        csROS.publish();
+        csROS.publish();
     };
 
     auto js_sub = nh.subscribe<sensor_msgs::JointState>("cartesian/solution", 1, on_js_received);
