@@ -174,7 +174,8 @@ public:
         _cs(cs),
         _model(*model),
         _nh(nh),
-        _tf_prefix("")
+        _tf_prefix(""),
+        _eps(1e-3)
     {
         _contact_sub = _nh.subscribe("contacts", 10, &CentroidalStaticsROS::set_contacts, this);
 
@@ -183,6 +184,9 @@ public:
         std::string tmp;
         if(_nh.getParam("tf_prefix", tmp))
             _tf_prefix = tmp;
+        double eps;
+        if(nh.getParam("eps", eps))
+            _eps = eps;
     }
 
 
@@ -192,7 +196,7 @@ public:
 
         if(_fcs.size() > 0)
         {
-            bool check_stability =  _cs.checkStability(1e-4);
+            bool check_stability =  _cs.checkStability(_eps);
 
             std::map<std::string, Eigen::Vector6d> Fcs = _cs.getForces();
 
@@ -427,6 +431,9 @@ private:
     ros::Publisher _vis_pub;
 
     std::string _tf_prefix;
+
+    double _eps;
+
 
 
 };

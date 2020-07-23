@@ -22,6 +22,7 @@
 
     <node name="centroidal_statics_test" pkg="cartesio_planning" type="centroidal_statics_test" output="screen">
         <param name="tf_prefix" value="ci/"/>
+        <param name="eps" value="1e-3"/>
     </node>
 
 </launch>
