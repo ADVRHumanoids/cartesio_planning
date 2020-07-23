@@ -57,18 +57,36 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
 {
     using namespace XBot::Cartesian::Planning;
 
-    YAML_PARSE_OPTION(vc_node, stability_margin, double, 0.0);
+    YAML_PARSE_OPTION(vc_node, stability_margin, double, 1e-3);
     YAML_PARSE_OPTION(vc_node, links, std::vector<std::string>, {});
     YAML_PARSE_OPTION(vc_node, friction_coefficient, double, 0.5);
-    YAML_PARSE_OPTION(vc_node, optimize_torque, bool, true);
+    YAML_PARSE_OPTION(vc_node, optimize_torque, bool, false);
+    YAML_PARSE_OPTION(vc_node, x_lims, std::vector<double>, {});
+    YAML_PARSE_OPTION(vc_node, y_lims, std::vector<double>, {});
 
-    auto cs = std::make_shared<CentroidalStatics>(model, links, friction_coefficient, optimize_torque);
+    Eigen::Vector2d xlims, ylims;
+    if(optimize_torque)
+    {
+        if(x_lims.empty() || x_lims.size() > 2 || y_lims.empty() || y_lims.size() > 2)
+            throw std::runtime_error("If optimize_torque is set to true, x_lims = [xl, xu] and y_lims = [yl, yu] parameters needs to be set! ");
+
+        xlims[0] = x_lims[0];
+        xlims[1] = x_lims[1];
+        ylims[0] = y_lims[0];
+        ylims[1] = y_lims[1];
+    }
+
+    std::shared_ptr<CentroidalStatics> cs;
+    if(optimize_torque)
+        cs = std::make_shared<CentroidalStatics>(model, links, friction_coefficient, optimize_torque, xlims, ylims);
+    else
+        cs = std::make_shared<CentroidalStatics>(model, links, friction_coefficient, optimize_torque);
     auto cs_ros = std::make_shared<CentroidalStaticsROS>(model, *cs, nh);
 
     auto validity_checker = [=]()
     {
         cs_ros->publish();
-        return cs->checkStability(1e-3);
+        return cs->checkStability(stability_margin);
         return true;
     };
 
