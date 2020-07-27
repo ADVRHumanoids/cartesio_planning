@@ -57,6 +57,7 @@
 #include "ik/position_ik_solver.h"
 #include "samplers/stepSampler.h"
 #include "propagators/stepPropagator.h"
+#include "propagators/stepPropagator_biped.h"
 #include "validity_checker/validity_checker_context.h"
 #include "utils/robot_viz.h"
 #include "validity_checker/collisions/planning_scene_wrapper.h"

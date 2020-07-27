@@ -33,8 +33,8 @@ int main(int argc, char ** argv)
         }
 
 
-        rate = std::make_shared<ros::Rate>(1./(msg->points[1].time_from_start.sec + msg->points[1].time_from_start.nsec/1e9)); //We assume constant time along the traj.
-//         rate = std::make_shared<ros::Rate>(1);
+//         rate = std::make_shared<ros::Rate>(1./(msg->points[1].time_from_start.sec + msg->points[1].time_from_start.nsec/1e9)); //We assume constant time along the traj.
+        rate = std::make_shared<ros::Rate>(10);
         k = 0;
     };
 
@@ -53,7 +53,6 @@ int main(int argc, char ** argv)
             rate->sleep();
 
             ros::spinOnce();
-
 
             // evaluate trajectory at time
             auto qi = trj_points[k];

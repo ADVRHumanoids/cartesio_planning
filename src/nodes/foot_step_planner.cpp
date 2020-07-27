@@ -367,7 +367,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             if (x_diff > max_x_distance || y_diff > max_y_distance)
             {
                 return false;
-            }
+            }           
             
             // Check for relative orientation
             double res1 = (ee[0](2) - ee[1](2));
@@ -376,8 +376,8 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             if (std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) > boost::math::constants::pi<double>()/6)
             {
                 return false;
-            }
-                   
+            }           
+             
             // Check for feet crossing
             double xRel_w = ee[0](0) - ee[1](0);
             double yRel_w = ee[0](1) - ee[1](1);
@@ -385,7 +385,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             if (-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > -0.20)                
             {
                 return false;        
-            }
+            }           
         }
 
         // Check whether one of the two feet is in collision with the environment
@@ -415,17 +415,18 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
        
         // Check if the start state has been already explored and pick the relative postural
         // at the beginning, the postural is equal to the home state
-        auto step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator>(_propagator);
+        auto step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator_biped>(_propagator);
         
         // Transform the start state in a std::vector
         auto sstate = step_propagator->getStartState();
         std::vector<double> state_vect;
+                
         for (int i = 0; i < _ee_number; i++)
         {
             Eigen::VectorXd vect;
             if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
                 _sw->getState(sstate->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), vect);
-            if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+            else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
                 _sw->getState(sstate->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), vect);
             for (int j = 0; j < vect.size(); j++)
                 state_vect.push_back(vect(j));
@@ -486,7 +487,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                 Eigen::VectorXd vect;
                 if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
                     _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), vect);
-                if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+                else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
                 _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), vect);
                 for (int j = 0; j < vect.size(); j++)
                     result_vect.push_back(vect(j));
@@ -599,16 +600,22 @@ void FootStepPlanner::setStartAndGoalState()
     {
         ompl::base::ScopedState<> goal(_space);
         goal = start;
-        goal[0] = goal[3] = 2.5;
-        goal[1] = goal[4] = start[1];
+        goal[0] = goal[3] = 3.0;
+        goal[1] = start[1];
+        goal[4] = start[4];
         goal[2] = goal[5] = 0.0;
         
         T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
         T.translation() << goal[0], goal[1], goal[2];
         _goal_solver->setDesiredPose(_ee_name[0], T);
         
-        T.translation() << goal[2], goal[3], goal[4];
+        T.translation() << goal[3], goal[4], goal[5];
         _goal_solver->setDesiredPose(_ee_name[1], T);
+        
+        XBot::JointNameMap jmap;
+        _goal_solver->getCI()->getReferencePosture(jmap);
+        jmap["VIRTUALJOINT_1"] = goal[0];
+        _goal_solver->getCI()->setReferencePosture(jmap);
         
         _goal_solver->solve();
     
@@ -689,7 +696,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
                 _sw->getState(start_state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), start_vect);
                 _sw->getState(last_state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), last_vect);
             }
-            if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+            else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
             {
                 _sw->getState(start_state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), start_vect);
                 _sw->getState(last_state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), last_vect);
@@ -734,13 +741,13 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         }
 
         std::cout << "_q_vect failed size: " << q_fail.size() << std::endl;
-        interpolate();
+//         interpolate();
         
-        auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/joint_trajectory");
-        logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
-        
-        for (auto i : _q_traj)
-            logger->add("q_traj", i);
+//         auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/joint_trajectory");
+//         logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+//         
+//         for (auto i : _q_traj)
+//             logger->add("q_traj", i);
         
         for (int i = 0; i < data.numVertices(); i++)
         {
@@ -755,18 +762,20 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
                     state(2*j + 1) = foot(1);
                 }
             }
-            logger->add("state", state);
+//             logger->add("state", state);
         }
         
         auto t = ros::Duration(0.);
         
-        for(auto x : _q_traj)
+        std::cout << "Final solution has " << _q_vect.size() << " steps!" << std::endl;
+        
+        for(auto x : _q_vect)
         {
             trajectory_msgs::JointTrajectoryPoint point;
             point.positions.assign(x.data(), x.data() + x.size());
             point.time_from_start = t;
             trj.points.push_back(point);
-            t += ros::Duration(0.01);
+            t += ros::Duration(0.1);
         }
         
         trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
@@ -1121,6 +1130,9 @@ ompl::control::StatePropagatorPtr FootStepPlanner::make_propagator ( const std::
 {
     if (propagatorType == "stepPropagator")
         return std::make_shared<Planning::Propagators::stepPropagator>(_space_info, _sw);
+    
+    else if (propagatorType == "stepPropagator_biped")
+        return std::make_shared<Planning::Propagators::stepPropagator_biped>(_space_info, _sw);
 }
 
 ompl::base::PlannerPtr FootStepPlanner::make_planner ( std::__cxx11::string plannerType ) 

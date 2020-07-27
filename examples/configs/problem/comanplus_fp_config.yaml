@@ -2,7 +2,7 @@
 state_space:
     ee_number: 2
     bounds_x: [-1.0, 6.0]
-    bounds_y: [-3.0, 3.0]
+    bounds_y: [-1.5, 1.5]
     end_effector: ["r_sole", "l_sole"]
     
 control_space:
@@ -11,7 +11,7 @@ control_space:
     max_control_duration: 20   
     
 propagator:
-    type: "stepPropagator"
+    type: "stepPropagator_biped"
     duration: 0.3
     
 state_validity_check:

@@ -1,49 +1,9 @@
-#solver_options:
-    #regularization: 1e-2
-    #back_end: "qpoases"
-
-#stack:
-    #- ["LeftFoot", "RightFoot", "Waist"]
-    #- ["Postural"]
-
-#constraints: ["JointLimits"]
-
-#JointLimits:
-    #type: "JointLimits"
-
-#LeftFoot:
-    #type: "Cartesian"
-    #base_link: "world"
-    #distal_link: "l_sole"
-
-#RightFoot:
-    #type: "Cartesian"
-    #base_link: "world"
-    #distal_link: "r_sole"
-    
-#Postural:
-    #type: "Postural"
-    #lambda: 0.5
-    
-#Com:
-    #type: "Com"
-    #indices: [0, 1]
-    #lambda: 0.1
-    
-#Waist:
-    #type: "Cartesian"
-    #distal_link: "base_link"
-    #indices: [0, 1, 3, 4]
-    ##, "Waist"]
-    
-    
 solver_options:
     regularization: 1e-2
     back_end: "qpoases"
 
 stack:
-    - ["Wheel1", "Wheel2", "Wheel3", "Wheel4"]
-    - ["Ankle1", "Ankle2", "Ankle3", "Ankle4"]
+    - ["LeftFoot", "RightFoot"]
     - ["Postural"]
 
 constraints: ["JointLimits"]
@@ -51,57 +11,33 @@ constraints: ["JointLimits"]
 JointLimits:
     type: "JointLimits"
 
-Wheel1:
+LeftFoot:
     type: "Cartesian"
     base_link: "world"
-    distal_link: "wheel_1"
-    indices: [0, 1, 2]
+    distal_link: "l_sole"
 
-Wheel2:
+RightFoot:
     type: "Cartesian"
     base_link: "world"
-    distal_link: "wheel_2"
-    indices: [0, 1, 2]
-    
-Wheel3:
-    type: "Cartesian"
-    base_link: "world"
-    distal_link: "wheel_3"
-    indices: [0, 1, 2]
-    
-Wheel4:
-    type: "Cartesian"
-    base_link: "world"
-    distal_link: "wheel_4"
-    indices: [0, 1, 2]
-    
-Ankle1:
-    type: "Cartesian"
-    base_link: "world"
-    distal_link: "ankle2_1"
-    indices: [3, 4]
-    
-Ankle2:
-    type: "Cartesian"
-    base_link: "world"
-    distal_link: "ankle2_2"
-    indices: [3, 4]
-
-Ankle3:
-    type: "Cartesian"
-    base_link: "world"
-    distal_link: "ankle2_3"
-    indices: [3, 4]
-   
-Ankle4:
-    type: "Cartesian"
-    base_link: "world"
-    distal_link: "ankle2_4"
-    indices: [3, 4]
+    distal_link: "r_sole"
     
 Postural:
     type: "Postural"
+    lambda: 1.
+    
+Com:
+    type: "Com"
+    indices: [0, 1]
     lambda: 0.1
+    
+Waist:
+    type: "Cartesian"
+    distal_link: "base_link"
+    indices: [4]
+    #, "Waist"]
+    
+    
+
     
     
 

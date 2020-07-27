@@ -103,7 +103,8 @@ XBot::JointNameMap GoalSampler2::generateRandomVelocities(std::vector<XBot::Mode
             
             if (i.getChainName() == "right_arm" || i.getChainName() == "left_arm")
             {
-                random_map.insert(std::make_pair("torso_yaw", 2 * generateRandom() * velocityLim_map["torso_yaw"]));
+//                 random_map.insert(std::make_pair("torso_yaw", 2 * generateRandom() * velocityLim_map["torso_yaw"]));  // UNCOMMENT FOR CENTAURO
+                random_map.insert(std::make_pair("WaistYaw", 2 * generateRandom() * velocityLim_map["WaistYaw"]));   // UNCOMMENT THIS FOR COMANPLUS
             }
             
             i.getJointPosition(chain_map);
