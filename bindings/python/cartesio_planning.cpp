@@ -122,7 +122,8 @@ PYBIND11_MODULE(planning, m)
             .def("setMaxIterations", &PositionCartesianSolver::setMaxIterations)
             .def("solve", &PositionCartesianSolver::solve)
             .def("setDesiredPose", &PositionCartesianSolver::setDesiredPose)
-            .def("reset", &PositionCartesianSolver::reset);
+            .def("reset", &PositionCartesianSolver::reset)
+            .def("setErrorTolerance", &PositionCartesianSolver::setErrorTolerance);
 
 }
 
