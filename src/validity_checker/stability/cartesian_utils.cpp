@@ -17,7 +17,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <OpenSoT/utils/cartesian_utils.h>
+#include "cartesian_utils.h"
 #include <boost/shared_ptr.hpp>
 #include <eigen_conversions/eigen_kdl.h>
 
