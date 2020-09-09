@@ -8,6 +8,8 @@ Panels:
         - /TF1/Frames1
         - /RobotModel1
         - /PlanningScene1
+        - /PlanningScene1/Scene Geometry1
+        - /PlanningScene1/Scene Robot1
         - /InteractiveMarkers2
         - /Marker1
         - /RobotModel2
@@ -62,160 +64,12 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        planner/DWYTorso:
-          Value: false
-        planner/LElb:
-          Value: false
-        planner/LForearm:
-          Value: false
-        planner/LShp:
-          Value: false
-        planner/LShr:
-          Value: false
-        planner/LShy:
-          Value: false
-        planner/LWrMot2:
-          Value: false
-        planner/LWrMot3:
-          Value: false
-        planner/RElb:
-          Value: false
-        planner/RForearm:
-          Value: false
-        planner/RShp:
-          Value: false
-        planner/RShr:
-          Value: false
-        planner/RShy:
-          Value: false
-        planner/RWrMot2:
-          Value: false
-        planner/RWrMot3:
-          Value: false
-        planner/ankle1_1:
-          Value: false
-        planner/ankle1_2:
-          Value: false
-        planner/ankle1_3:
-          Value: false
-        planner/ankle1_4:
-          Value: false
-        planner/ankle2_1:
-          Value: false
-        planner/ankle2_2:
-          Value: false
-        planner/ankle2_3:
-          Value: false
-        planner/ankle2_4:
-          Value: false
-        planner/arm1_1:
-          Value: false
-        planner/arm1_2:
-          Value: false
-        planner/arm1_3:
-          Value: false
-        planner/arm1_4:
-          Value: false
-        planner/arm1_5:
-          Value: false
-        planner/arm1_6:
-          Value: false
-        planner/arm1_7:
-          Value: false
-        planner/arm1_8:
-          Value: false
-        planner/arm2_1:
-          Value: false
-        planner/arm2_2:
-          Value: false
-        planner/arm2_3:
-          Value: false
-        planner/arm2_4:
-          Value: false
-        planner/arm2_5:
-          Value: false
-        planner/arm2_6:
-          Value: false
-        planner/arm2_7:
-          Value: false
-        planner/arm2_8:
-          Value: false
-        planner/camera_central:
-          Value: false
-        planner/camera_left:
-          Value: false
-        planner/camera_right:
-          Value: false
         planner/discrete/world:
-          Value: false
-        planner/ee1:
-          Value: false
-        planner/ee2:
           Value: false
         planner/goal/world:
           Value: false
-        planner/hip1_1:
-          Value: false
-        planner/hip1_2:
-          Value: false
-        planner/hip1_3:
-          Value: false
-        planner/hip1_4:
-          Value: false
-        planner/hip2_1:
-          Value: false
-        planner/hip2_2:
-          Value: false
-        planner/hip2_3:
-          Value: false
-        planner/hip2_4:
-          Value: false
-        planner/imu_link:
-          Value: false
-        planner/kinect:
-          Value: false
-        planner/kinect2_rgb_frame:
-          Value: false
-        planner/kinect2_rgb_optical_frame:
-          Value: false
-        planner/knee_1:
-          Value: false
-        planner/knee_2:
-          Value: false
-        planner/knee_3:
-          Value: false
-        planner/knee_4:
-          Value: false
-        planner/l_wrist:
-          Value: false
-        planner/neck_1:
-          Value: false
-        planner/neck_2:
-          Value: false
-        planner/neck_3:
-          Value: false
-        planner/pelvis:
-          Value: false
-        planner/r_wrist:
-          Value: false
         planner/start/world:
           Value: false
-        planner/torso_2:
-          Value: false
-        planner/velodyne_calib:
-          Value: false
-        planner/velodyne_calib_base_link:
-          Value: false
-        planner/velodyne_mount:
-          Value: false
-        planner/wheel_1:
-          Value: true
-        planner/wheel_2:
-          Value: true
-        planner/wheel_3:
-          Value: true
-        planner/wheel_4:
-          Value: true
         planner/world:
           Value: false
         world:
@@ -234,499 +88,48 @@ Visualization Manager:
           planner/start/world:
             {}
           planner/world:
-            planner/pelvis:
-              planner/hip1_1:
-                planner/hip2_1:
-                  planner/knee_1:
-                    planner/ankle1_1:
-                      planner/ankle2_1:
-                        planner/wheel_1:
-                          {}
-              planner/hip1_2:
-                planner/hip2_2:
-                  planner/knee_2:
-                    planner/ankle1_2:
-                      planner/ankle2_2:
-                        planner/wheel_2:
-                          {}
-              planner/hip1_3:
-                planner/hip2_3:
-                  planner/knee_3:
-                    planner/ankle1_3:
-                      planner/ankle2_3:
-                        planner/wheel_3:
-                          {}
-              planner/hip1_4:
-                planner/hip2_4:
-                  planner/knee_4:
-                    planner/ankle1_4:
-                      planner/ankle2_4:
-                        planner/wheel_4:
-                          {}
-              planner/imu_link:
-                {}
-              planner/torso_2:
-                planner/DWYTorso:
-                  planner/LShp:
-                    planner/LShr:
-                      planner/LShy:
-                        planner/LElb:
-                          planner/LForearm:
-                            planner/LWrMot2:
-                              planner/LWrMot3:
-                                planner/arm1_7:
-                                  planner/arm1_8:
-                                    {}
-                                  planner/ee1:
-                                    {}
-                                planner/l_wrist:
-                                  {}
-                              planner/arm1_6:
-                                {}
-                            planner/arm1_5:
-                              {}
-                          planner/arm1_4:
-                            {}
-                        planner/arm1_3:
-                          {}
-                      planner/arm1_2:
-                        {}
-                    planner/arm1_1:
-                      {}
-                  planner/RShp:
-                    planner/RShr:
-                      planner/RShy:
-                        planner/RElb:
-                          planner/RForearm:
-                            planner/RWrMot2:
-                              planner/RWrMot3:
-                                planner/arm2_7:
-                                  planner/arm2_8:
-                                    {}
-                                  planner/ee2:
-                                    {}
-                                planner/r_wrist:
-                                  {}
-                              planner/arm2_6:
-                                {}
-                            planner/arm2_5:
-                              {}
-                          planner/arm2_4:
-                            {}
-                        planner/arm2_3:
-                          {}
-                      planner/arm2_2:
-                        {}
-                    planner/arm2_1:
-                      {}
-                planner/camera_central:
-                  {}
-                planner/camera_left:
-                  {}
-                planner/camera_right:
-                  {}
-                planner/neck_1:
-                  planner/neck_2:
-                    planner/kinect:
-                      planner/kinect2_rgb_frame:
-                        planner/kinect2_rgb_optical_frame:
-                          {}
-                planner/neck_3:
-                  planner/velodyne_calib_base_link:
-                    planner/velodyne_calib:
-                      {}
-                  planner/velodyne_mount:
-                    {}
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
-        DWYTorso:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
-        LElb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LForearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LShp:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LShr:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LShy:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LWrMot2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        LWrMot3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         Link Tree Style: Links in Alphabetic Order
-        RElb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RForearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RShp:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RShr:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RShy:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RWrMot2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        RWrMot3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        ankle1_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        ankle1_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        ankle1_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        ankle1_4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        ankle2_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        ankle2_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        ankle2_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        ankle2_4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        arm1_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm1_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm1_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm1_4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm1_5:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm1_6:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm1_7:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm1_8:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm2_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm2_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm2_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm2_4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm2_5:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm2_6:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm2_7:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        arm2_8:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_central:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_left:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_right:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        ee1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        ee2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        hip1_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        hip1_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        hip1_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        hip1_4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        hip2_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        hip2_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        hip2_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        hip2_4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        imu_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        kinect:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        kinect2_rgb_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        kinect2_rgb_optical_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        knee_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        knee_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        knee_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        knee_4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        l_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        neck_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        neck_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        neck_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pelvis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        r_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        torso_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        velodyne_calib:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        velodyne_calib_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        velodyne_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        wheel_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        wheel_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        wheel_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        wheel_4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        world:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: planner
       Update Interval: 0
-      Value: true
+      Value: false
       Visual Enabled: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /planner/start/robot_markers
       Name: startPose
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /planner/goal/robot_markers
-      Name: goalPose
       Namespaces:
         collision: true
         visual: true
       Queue Size: 100
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: false
+      Marker Topic: /planner/goal/robot_markers
+      Name: goalPose
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
       Enabled: true
       Name: InteractiveMarkers
       Show Axes: false
-      Show Descriptions: true
+      Show Descriptions: false
       Show Visual Aids: false
       Update Topic: /simple_marker_floor/update
       Value: true
@@ -1106,13 +509,13 @@ Visualization Manager:
       Value: true
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
-      Enabled: true
+      Enabled: false
       Name: InteractiveMarkers
       Show Axes: false
       Show Descriptions: true
       Show Visual Aids: false
       Update Topic: /simple_marker_floor1/update
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -1154,13 +557,13 @@ Visualization Manager:
       Use Timestamp: false
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /planner/convex_hull
       Name: Marker
       Namespaces:
-        convex_hull: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
@@ -1202,25 +605,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.03354096
+      Distance: 2.41482234
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.15290314
-        Y: 0.660545945
-        Z: 0.857790947
+        X: 0.173597738
+        Y: 0.364780843
+        Z: 0.861404181
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.434796602
+      Pitch: 0.46979636
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.27357483
+      Yaw: 2.98675895
     Saved: ~
 Window Geometry:
   Displays:
@@ -1238,5 +641,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1855
-  X: 1985
+  X: 65
   Y: 24

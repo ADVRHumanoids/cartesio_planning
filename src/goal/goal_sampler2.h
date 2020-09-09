@@ -28,8 +28,9 @@ namespace XBot { namespace Cartesian { namespace Planning {
         
         bool sample(double timeout);
         
-    private: 
         double generateRandom();
+        
+    private:        
         
         PositionCartesianSolver::Ptr _ik_solver;
         

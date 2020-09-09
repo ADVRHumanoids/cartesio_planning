@@ -116,6 +116,9 @@ private:
     void init_trajectory_publisher();
     void init_xbotcore_publisher();
     
+    ros::ServiceServer _image_srv;
+    bool image_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+    
     void publish_tf(ros::Time T);
         
     bool planner_service(cartesio_planning::FootStepPlanner::Request& req,

@@ -1,22 +1,22 @@
 <launch>
     
     <arg name="is_model_floating_base" default="true"/>
-    <param name="contact_type" type="str" value="surface"/>
-    <param name="goalSamplerType" type="str" value="goalSampler"/>
+    <param name="contact_type" type="str" value="point"/>
+    <param name="goalSamplerType" type="str" value="goalSampler2"/>
     
     <!--  <include file="$(find centauro_gazebo)/launch/centauro_world.launch" />-->
-    <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/cogimon.urdf"/>
-    <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/cogimon.srdf"/> 
+<!--     <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/cogimon.urdf"/> -->
+<!--     <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/cogimon.srdf"/>  -->
         
-<!--     <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/centauro.urdf"/> --> -->
-<!--     <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/centauro.srdf"/>   -->
+    <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/centauro.urdf"/> -->
+    <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/centauro.srdf"/>  
       
     
     <param name="planner/problem_description"
-            textfile="$(find cartesio_planning)/configs/problem/comanplus_fp_stack.yaml"/>  
+            textfile="$(find cartesio_planning)/configs/problem/centauro_fp_stack.yaml"/>  
     
     <param name="planner/problem_goal_description"
-            textfile="$(find cartesio_planning)/configs/problem/comanplus_fp_goal_stack.yaml"/> 
+            textfile="$(find cartesio_planning)/configs/problem/centauro_fp_goal_stack.yaml"/> 
     
     <!--<param name="planner/wheel_description"
             textfile="$(find centauro_cartesio)/configs/centauro_postural_wheeled.yaml"/> -->
@@ -28,7 +28,7 @@
         <param name="solver" value=""/>
         <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
         <param name="planner_config"
-            textfile="$(find cartesio_planning)/configs/problem/comanplus_fp_config.yaml"/>
+            textfile="$(find cartesio_planning)/configs/problem/centauro_fp_config.yaml"/>
         <param name="urdf" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/centauro_vc.urdf"/>
     </node>
     
@@ -56,13 +56,13 @@
     <!--<node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
         <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
         <param name="scale_x" type="double" value="1."/>
-        <param name="scale_y" type="double" value="4.0"/>
-        <param name="scale_z" type="double" value=".2"/>
-        <rosparam param="position"> [1.5, 0.0, 0.1] </rosparam>
+        <param name="scale_y" type="double" value="1.0"/>
+        <param name="scale_z" type="double" value="1"/>
+        <rosparam param="position"> [-0.200486, 0.929254, 0.256119] </rosparam>
         <rosparam param="orientation"> [0.0, 0.0, 0.0, 1.0] </rosparam>
         <param name="frame_id" value="world"/>
         <param name="name_id" value="floor"/>
-        <param name="show_control_axis" type="bool" value="True"/>
+        <param name="show_control_axis" type="bool" value="False"/>
         <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
     </node>-->
     

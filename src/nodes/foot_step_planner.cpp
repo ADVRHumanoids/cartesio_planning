@@ -211,7 +211,7 @@ void FootStepPlanner::init_load_planner()
     // Create an instance to the space information
     _space_info = std::make_shared<ompl::control::SpaceInformation>(_space, _cspace);  
     
-//     _space_info->setDirectedControlSamplerAllocator(getDirectedControlSampler);
+    _space_info->setDirectedControlSamplerAllocator(getDirectedControlSampler);
     
     YAML_PARSE_OPTION(_planner_config["control_space"], min_control_duration, int, 1);
     YAML_PARSE_OPTION(_planner_config["control_space"], max_control_duration, int, 10);
@@ -415,7 +415,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
        
         // Check if the start state has been already explored and pick the relative postural
         // at the beginning, the postural is equal to the home state
-        auto step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator_biped>(_propagator);
+        auto step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator>(_propagator);
         
         // Transform the start state in a std::vector
         auto sstate = step_propagator->getStartState();
@@ -741,7 +741,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         }
 
         std::cout << "_q_vect failed size: " << q_fail.size() << std::endl;
-//         interpolate();
+        interpolate();
         
 //         auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/joint_trajectory");
 //         logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
@@ -769,13 +769,13 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         
         std::cout << "Final solution has " << _q_vect.size() << " steps!" << std::endl;
         
-        for(auto x : _q_vect)
+        for(auto x : _q_traj_final)
         {
             trajectory_msgs::JointTrajectoryPoint point;
             point.positions.assign(x.data(), x.data() + x.size());
             point.time_from_start = t;
             trj.points.push_back(point);
-            t += ros::Duration(0.1);
+            t += ros::Duration(0.5);
         }
         
         trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
@@ -988,16 +988,20 @@ void FootStepPlanner::interpolate()
     // Check for collisions during interpolation
     auto config = XBot::ConfigOptionsFromParamServer();
     std::string urdf;
+    
     if (!_nhpr.getParam("urdf", urdf))
         std::runtime_error("Mandatory private parameter 'urdf' missing!");
+    
     config.set_urdf(urdf);
     _model = XBot::ModelInterface::getModel(config);
-     
-    _vc_context_interp = Planning::ValidityCheckContext(_planner_config,
-                                                        _model, _nh);
+        
+    _vc_context_interp = Planning::ValidityCheckContext(_planner_config, _model, _nh);
     
     _vc_context_interp.planning_scene->startMonitor();
     _vc_context_interp.planning_scene->startMonitor();
+    
+    ros::spinOnce();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     
     for (auto i : _q_traj)
     {
@@ -1005,11 +1009,14 @@ void FootStepPlanner::interpolate()
         _model->update();
         if(!_vc_context_interp.vc_aggregate.check("collisions"))
             q_fail.push_back(i);
-    }
-    std::cout << "collisions after urdf change: " << q_fail.size() << std::endl;
         
-
-   
+        _q_traj_final = q_fail;
+    }
+    std::cout << "collisions after urdf change: " << q_fail.size() << std::endl;  
+    
+    config = XBot::ConfigOptionsFromParamServer();
+    _model = XBot::ModelInterface::getModel(config);
+    
 }
 
 
@@ -1238,6 +1245,7 @@ void FootStepPlanner::on_goal_state_recv(const sensor_msgs::JointStateConstPtr &
 void FootStepPlanner::init_xbotcore_publisher()
 {
     _publish_srv = _nh.advertiseService("publish_trajectory", &FootStepPlanner::publish_trajectory_service, this);
+    _image_srv = _nh.advertiseService("image_service", &FootStepPlanner::image_service, this);
 }
 
 bool FootStepPlanner::publish_trajectory_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
@@ -1259,6 +1267,113 @@ bool FootStepPlanner::publish_trajectory_service(std_srvs::Empty::Request& req, 
         _xbotcore_trj_publisher.publish(trj); 
         _trj_publisher.publish(trj);
 }
+
+bool FootStepPlanner::image_service ( std_srvs::Empty::Request& req, std_srvs::Empty::Response& res )
+{
+    // Reset the home position
+    _start_model->setJointPosition(_qhome);
+    _start_model->update();
+    
+    check_state_valid(_start_model);
+    std::vector<std::string> red_links = _vc_context.planning_scene->getCollidingLinks();
+        
+    _start_viz->publishMarkers(ros::Time::now(), red_links);
+    
+    std::vector<Eigen::VectorXd> vect_vect;
+    Eigen::VectorXd vect;
+    Eigen::VectorXd velocityLim;
+    XBot::JointNameMap velocityLim_map, jmap, velocity_map;
+    
+    int iter = 0;
+    double dt = 0.01;
+    
+    _model->eigenToMap(_qhome, jmap);
+    _ci->setReferencePosture(jmap);
+    velocityLim_map = jmap;
+    velocity_map = jmap;
+    
+    _start_model->getVelocityLimits(velocityLim);
+    _start_model->eigenToMap(velocityLim, velocityLim_map);
+    
+    XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;               
+    goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
+    /*
+    for(int i = 1; i < 8; i++)
+    {
+        std::string str = std::to_string(i);   
+        double random = (double) (std::rand() - RAND_MAX/2) / (RAND_MAX/2);
+        velocity_map["j_arm1_" + str] = random * velocityLim_map["j_arm1_" + str];  
+    }
+    
+    double random = (double) (std::rand() - RAND_MAX/2) / (RAND_MAX/2);
+    
+    velocity_map["torso_yaw"] = random * velocityLim_map["torso_yaw"];*/
+    
+    for(int i = 1; i < 4; i++)
+    {
+        std::string str = std::to_string(i);   
+        double random = (double) (std::rand() - RAND_MAX/2) / (RAND_MAX/2);
+        velocity_map["VIRTUALJOINT_" + str] = random * 100;  
+    }
+    
+    while(!check_state_valid(_start_model) && iter < 10)
+    {
+//         for (int i = 1; i < 8; i++)
+//         {
+//             std::string str = std::to_string(i);
+//             jmap["j_arm1_" + str] += velocity_map["j_arm1_" + str] * dt;
+//         }
+//         jmap["torso_yaw"] += 2 * velocity_map["torso_yaw"] * dt;
+        
+        for (int i = 1; i < 4; i++)
+        {
+            std::string str = std::to_string(i);
+            jmap["VIRTUALJOINT_" + str] += velocity_map["VIRTUALJOINT_" + str] * dt;
+        }
+        
+        _ci->setReferencePosture(jmap);
+        _solver->solve();
+        _model->getJointPosition(vect);
+        _start_model->setJointPosition(vect);
+        _start_model->update();
+        
+        iter ++;
+        
+//         _start_model->mapToEigen(jmap, vect);
+//         _start_model->setJointPosition(vect);
+//         _start_model->update();
+        
+        vect_vect.push_back(vect);
+    }
+    
+    std::cout << "Final vect_vect size: " << vect_vect.size() << std::endl;
+    int i = 0;
+    int counter = 0;
+    
+    while (counter < 1)
+    {
+        _start_model->setJointPosition(vect_vect[i]);
+        _start_model->update();
+        
+        check_state_valid(_start_model);
+        std::vector<std::string> red_links = _vc_context.planning_scene->getCollidingLinks();
+        
+        _start_viz->publishMarkers(ros::Time::now(), red_links);
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(700));
+        i++;
+        
+        if (i == vect_vect.size())
+        {
+            i = 0;
+            counter++;
+        }
+    }
+    
+    return true;
+}
+
+
 
 
 
