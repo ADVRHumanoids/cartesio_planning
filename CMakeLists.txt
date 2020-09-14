@@ -216,6 +216,16 @@ target_link_libraries(previewer
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
+    
+#Publisher node
+add_executable(publisher
+    src/nodes/trajectory_publisher.cpp
+    )
+
+target_link_libraries(publisher   
+    ${XBotInterface_LIBRARIES}
+    ${catkin_LIBRARIES}
+    )
 
 # Self collision robot node
 add_executable(self_collision_robot
@@ -321,6 +331,12 @@ install(TARGETS previewer
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
+install(TARGETS publisher
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+    
 install(TARGETS self_collision_robot
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
