@@ -1,0 +1,41 @@
+state_space:
+    ee_number: 4
+    bounds_x: [-1.0, 6.0]
+    bounds_y: [-2.0, 2.0]
+    end_effector: ["wheel_1", "wheel_2", "wheel_3", "wheel_4"]
+    
+control_space:
+    step_size_max: 0.1
+    min_control_duration: 1
+    max_control_duration: 20   
+    
+propagator:
+    type: "stepPropagator"
+    duration: 0.3
+    
+state_validity_check:
+    - collisions
+    - stability
+    
+stability:
+    type: "ConvexHull"
+    links:
+      - "wheel_1"
+      - "wheel_2"
+      - "wheel_3" 
+      - "wheel_4"
+
+    stability_margin: 0.03
+
+collisions:
+    type: "CollisionCheck"
+    include_environment: true
+    
+distance:
+    type: "Distance"
+    end_effector: ["wheel_1", "wheel_2", "wheel_3", "wheel_4"]
+    max_x_distance: 0.3
+    max_y_distance: 0.7
+    front_rear_x_distance: 0.5
+    left_right_y_distance: 0.3
+    
