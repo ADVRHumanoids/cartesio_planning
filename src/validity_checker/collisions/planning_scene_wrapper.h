@@ -67,6 +67,12 @@ public:
      */
     std::vector<std::string> getCollidingLinks() const;
 
+    /**
+     * @brief getCollidingChains
+     * @return vector of colliding chains (computed from colliding links)
+     */
+    std::vector<XBot::ModelChain> getCollidingChains() const;
+
     void applyPlanningScene(const moveit_msgs::PlanningScene& scene);
 
     bool getPlanningScene(moveit_msgs::GetPlanningScene::Request& req,
@@ -86,6 +92,8 @@ private:
     ros::CallbackQueue _queue;
     ros::AsyncSpinner _async_spinner;
     ros::ServiceServer _get_ps_srv;
+
+    srdf_advr::Model _srdf;
 
 };
 

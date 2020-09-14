@@ -111,6 +111,13 @@ public:
      */
     void setMaxIterations(const int max_iter);
 
+    /**
+     * @brief getCI
+     * @return a pointer to internal CartesianInterface
+     * TODO: should be const???
+     */
+    CartesianInterfaceImpl::Ptr getCI();
+
 private:
 
     struct TaskData

@@ -3,6 +3,7 @@
 
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/SE3StateSpace.h>
+#include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/geometric/SimpleSetup.h>
@@ -23,7 +24,7 @@ class StateWrapper
 
 public:
 
-    enum class StateSpaceType { REALVECTOR, CONSTRAINED };
+    enum class StateSpaceType { REALVECTOR, CONSTRAINED, SE2SPACE};
 
     StateWrapper(StateSpaceType state_space_type,
                  int size);
@@ -33,6 +34,8 @@ public:
 
     void getState(const ompl::base::State * state,
                   Eigen::VectorXd& value) const;
+
+    const StateSpaceType& getStateSpaceType() const;
 
 private:
 

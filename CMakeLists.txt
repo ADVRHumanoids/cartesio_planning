@@ -84,6 +84,7 @@ add_service_files(
     FILES
     CartesioPlanner.srv
     CartesioGoal.srv
+    FootStepPlanner.srv
     )
 
 ## Generate actions in the 'action' folder
@@ -156,10 +157,12 @@ include_directories( SYSTEM
 add_library(cartesio_planning SHARED
     src/constraints/cartesian_constraint.cpp
     src/goal/goal_sampler.cpp
+    src/goal/goal_sampler2.cpp
     src/ik/position_ik_solver.cpp
     src/planner/cartesio_ompl_planner.cpp
     src/state_wrapper.cpp
     src/utils/robot_viz.cpp
+    src/utils/map_converter.cpp
     src/validity_checker/validity_checker_context.cpp
     src/validity_checker/stability/cartesian_utils.cpp
     src/validity_checker/stability/convex_hull_utils.cpp
@@ -240,6 +243,11 @@ target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
     ${XBotInterface_LIBRARIES}
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
+
+# foot-step planner node
+add_executable(foot_step_planner src/nodes/foot_step_planner_main.cpp src/nodes/foot_step_planner.cpp)
+
+target_link_libraries(foot_step_planner ${catkin_LIBRARIES} cartesian_trajectory_interpolation cartesio_planning matlogger2::matlogger2)
 
 # Planning scene publisher
 add_executable(planning_scene_publisher src/planning_scene_publisher.cpp)
@@ -382,6 +390,12 @@ install(TARGETS point_cloud_test
     )
 
 install(TARGETS centroidal_statics_test
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+install(TARGETS foot_step_planner
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

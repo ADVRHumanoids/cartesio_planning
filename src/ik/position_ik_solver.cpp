@@ -246,5 +246,8 @@ void PositionCartesianSolver::CartesianTaskData::compute_orientation_error(const
     L = 0.5 * ( S(Rd.col(0))*S(Re.col(0)) + S(Rd.col(1))*S(Re.col(1)) + S(Rd.col(2))*S(Re.col(2)));
 }
 
-
+Cartesian::CartesianInterfaceImpl::Ptr PositionCartesianSolver::getCI()
+{
+    return _ci;
+}
 
