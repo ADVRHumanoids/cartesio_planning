@@ -28,15 +28,15 @@ int main(int argc, char ** argv)
         {
             auto pi_eigen = Eigen::VectorXd::Map(pi.positions.data(),
                                                  pi.positions.size());
-
+            
             trj_points.push_back(pi_eigen);
         }
 
 
-//         rate = std::make_shared<ros::Rate>(1./(msg->points[1].time_from_start.sec + msg->points[1].time_from_start.nsec/1e9)); //We assume constant time along the traj.
-        rate = std::make_shared<ros::Rate>(10);
+        rate = std::make_shared<ros::Rate>(1./(msg->points[1].time_from_start.sec + msg->points[1].time_from_start.nsec/1e9)); //We assume constant time along the traj.
         k = 0;
     };
+
     // joint trajectory subscriber
     auto sub = nh.subscribe<trajectory_msgs::JointTrajectory>("joint_trajectory", 1, on_trj_received);
 
@@ -52,9 +52,9 @@ int main(int argc, char ** argv)
             rate->sleep();
 
             ros::spinOnce();
-
+            
             // evaluate trajectory at time
-            Eigen::VectorXd qi = trj_points[k];
+            auto qi = trj_points[k];
 
             // set model accordingly
             model->setJointPosition(qi);
@@ -73,6 +73,13 @@ int main(int argc, char ** argv)
         }
         else
         {
+            Eigen::VectorXd qhome(model->getJointNum());
+            model->getRobotState("home", qhome);
+            model->setJointPosition(qhome);
+            model->update();
+            
+            rspub.publishTransforms(ros::Time::now(), "planner")
+            ;
             fixed_rate.sleep();
             ros::spinOnce();
         }

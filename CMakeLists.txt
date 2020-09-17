@@ -219,7 +219,7 @@ target_link_libraries(previewer
     
 #Publisher node
 add_executable(publisher
-    src/nodes/trajectory_publisher.cpp
+    src/nodes/centauro_trajectory_publisher.cpp
     )
 
 target_link_libraries(publisher   

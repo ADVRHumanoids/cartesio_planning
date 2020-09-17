@@ -30,11 +30,11 @@ FootStepPlanner::FootStepPlanner ():
     init_load_model();
     init_load_position_cartesian_solver();
     init_load_planner();
+    init_load_goal_service();
     init_load_state_propagator();
     init_load_validity_checker(); 
     init_load_goal_generator();
     init_load_problem_definition();
-    init_subscribe_start_goal();
     init_planner_srv();
     init_trajectory_publisher();
     init_xbotcore_publisher();
@@ -44,6 +44,8 @@ FootStepPlanner::FootStepPlanner ():
 void FootStepPlanner::run()
 {
     auto time = ros::Time::now();
+    _rsc->run();
+    
     ros::spinOnce();
 
     publish_tf(time);
@@ -96,6 +98,17 @@ void FootStepPlanner::init_load_model ()
     _goal_model->setJointPosition(_qhome);
     _goal_model->update();
     
+    // Mesh_viz
+    _start_viz = std::make_shared<Planning::RobotViz>(_start_model,
+                                                      "start/robot_markers",
+                                                      _nh);
+    _start_viz->setPrefix("planner/start/");
+
+    _goal_viz = std::make_shared<Planning::RobotViz>(_goal_model,
+                                                     "goal/robot_markers",
+                                                     _nh);
+    _goal_viz->setPrefix("planner/goal/");
+    
     // Define an extra model used by the solver
     _solver_model->setJointPosition(_qhome);
     _solver_model->update();
@@ -127,26 +140,18 @@ void FootStepPlanner::init_load_position_cartesian_solver()
     _solver = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(_ci);
         
     // Goal Solver
-    if(!_nh.getParam("problem_goal_description", problem_description))
-    {
-        ROS_ERROR("planner/problem_goal_description!");
-        throw std::runtime_error("planner/problem_goal_description!");
-    }
-
     ik_yaml_goal = YAML::Load(problem_description);
 
     ci_period = 0.1;
-    ci_ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<XBot::Cartesian::Parameters>(ci_period), _solver_model);
+//     ci_ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<XBot::Cartesian::Parameters>(ci_period), _solver_model);
+    ci_ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<XBot::Cartesian::Parameters>(ci_period), _goal_model);
+
     ik_prob = XBot::Cartesian::ProblemDescription(ik_yaml_goal, ci_ctx);
-
-    auto ci = XBot::Cartesian::CartesianInterfaceImpl::MakeInstance("OpenSot",
-                                                        ik_prob, ci_ctx);    
-    _goal_solver = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(ci);
-    
-    // Eventually modify the postural task
-    _postural_pub = _nh.advertise<sensor_msgs::JointState>("goal_sampler/Postural/reference", 10, true);
+    _ci_goal = XBot::Cartesian::CartesianInterfaceImpl::MakeInstance("OpenSot",
+                                                        ik_prob, ci_ctx);
+    _goal_solver = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(_ci_goal);
+    _rsc = std::make_shared<RosServerClass>(_ci_goal);
 }
-
 
 void FootStepPlanner::init_load_planner() 
 {
@@ -219,22 +224,32 @@ void FootStepPlanner::init_load_planner()
     _space_info->setMinMaxControlDuration(min_control_duration, max_control_duration);
 }
 
+void FootStepPlanner::init_load_goal_service() 
+{   
+    _start_goal_srv = _nh.advertiseService("compute_goal", &FootStepPlanner::start_goal_service, this);
+}
+
+
 void FootStepPlanner::init_load_state_propagator()
 {
     if (!_planner_config["propagator"])
         throw std::runtime_error("Mandatory private paramenter 'propagator' missing");
     
-    if (!_planner_config["propagator"]["type"])
-        std::cout << "Propagator type not set, using the default 'stepPropagator'" << std::endl;
-    YAML_PARSE_OPTION(_planner_config["propagator"], type, std::string, "stepPropagator");
-    
     if (!_planner_config["propagator"]["duration"])
         std::cout << "Duration not set, using default value 0.1" << std::endl;
+    
     YAML_PARSE_OPTION(_planner_config["propagator"], duration, double, 0.1);
     
-    _propagator = make_propagator(type);
+    if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+    {
+        _propagator = std::make_shared<Planning::Propagators::stepPropagator_wheel>(_space_info, _sw);
+    }
+    else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+    {
+        _propagator = std::make_shared<Planning::Propagators::stepPropagator_biped>(_space_info, _sw);
+    }  
+      
     _space_info->setStatePropagator(_propagator);
-    
     _space_info->setPropagationStepSize(duration);
 }
 
@@ -299,8 +314,6 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             _solver->setDesiredPose(_ee_name[i], T);
         }
         
-        
-
         // VALIDITY FUNCTIONS FOR CENTAURO
         // Check on relative distance
         if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
@@ -355,8 +368,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             }
             
         }
-
-        
+       
         // VALIDITY FUNCTIONS FOR COMANPLUS          
         // Check for relative distance
         else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
@@ -414,9 +426,15 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         _model->eigenToMap(_qhome, jmap_home);
        
         // Check if the start state has been already explored and pick the relative postural
-        // at the beginning, the postural is equal to the home state
-        auto step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator>(_propagator);
-        
+        // at the beginning, the postural is equal to the home state 
+        if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+        {
+            step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator_wheel>(_propagator);
+        }
+        else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+        {
+            step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator_biped>(_propagator);
+        }    
         // Transform the start state in a std::vector
         auto sstate = step_propagator->getStartState();
         std::vector<double> state_vect;
@@ -523,112 +541,123 @@ void FootStepPlanner::init_load_goal_generator()
 void FootStepPlanner::init_load_problem_definition() 
 {
     _pdef = std::make_shared<ompl::base::ProblemDefinition>(_space_info);
-    
-    setStartAndGoalState();
 }
 
-void FootStepPlanner::init_subscribe_start_goal()
-{   
-    //TODO Wrong topic, modify for each end effector
-    _start_sub = _nh.subscribe("start/joint_states", 1,
-                               &FootStepPlanner::on_start_state_recv, this);
 
-    _goal_sub = _nh.subscribe("goal/joint_states", 1,
-                               &FootStepPlanner::on_goal_state_recv, this);
-
-    _start_viz = std::make_shared<Planning::RobotViz>(_start_model,
-                                                      "start/robot_markers",
-                                                      _nh);
-    _start_viz->setPrefix("planner/start/");
-
-    _goal_viz = std::make_shared<Planning::RobotViz>(_goal_model,
-                                                     "goal/robot_markers",
-                                                     _nh);
-    _goal_viz->setPrefix("planner/goal/");
-}
-
-void FootStepPlanner::setStartAndGoalState() 
+bool FootStepPlanner::start_goal_service ( cartesio_planning::CartesioGoal::Request& req, cartesio_planning::CartesioGoal::Response& res ) 
 {
     Eigen::Affine3d T;
-    ompl::base::ScopedState<> start(_space);
-    int j = 0;
-    
-    for (int i = 0; i < _ee_number; i++)
+    std::vector<double> before, after;
+    double err, tolerance = 1.0;
+    for (int i = 0; i < _ee_name.size(); i++)
     {
-        _start_model->getPose(_ee_name[i], T);
-        start[j] = T.translation().x();
-        start[j+1] = T.translation().y();
-        j += _space->getSubspace(i)->getDimension();
+        _goal_model->getPose(_ee_name[i], T);
+        if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+        {
+            before.resize(_ee_number*2);
+            before[2*i] = T.translation().x() * T.translation().x(); 
+            before[2*1 + 1] = T.translation().y() * T.translation().y();
+        }
+        else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+        {
+            before.resize(_ee_number*3);
+            auto rpy = T.linear().eulerAngles(0, 1, 2);
+            before[3*i] = T.translation().x() * T.translation().x();
+            before[3*1 + 1] = T.translation().y() * T.translation().y();
+            before[3*i + 2] = rpy[2] * rpy[2];
+        }
     }
-   
-    // CENTAURO GOAL
-    if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+    _goal_solver->solve();
+    
+    check_state_valid(_goal_model);
+    std::vector<std::string> red_links = _vc_context.planning_scene->getCollidingLinks();        
+    _goal_viz->publishMarkers(ros::Time::now(), red_links);
+    
+    XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
+    goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
+    if (goal_sampler->sample(req.time))
     {
-        ompl::base::ScopedState<> goal(_space);
-        goal = start;
-        goal[0] += 3.0;
-        goal[2] += 3.0;
-        goal[4] += 3.0;
-        goal[6] += 3.0;
+        double err;
         
-        T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
-        T.translation() << goal[0], goal[1], _z_wheel;
-        _goal_solver->setDesiredPose(_ee_name[0], T);
+        // Set start and goal states        
+        ompl::base::ScopedState<> goal(_space), start(_space);
+        if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+        {
+            
+            for (int i = 0; i < _ee_name.size(); i++)
+            {
+                _goal_model->getPose(_ee_name[i], T);
+                goal[2*i] = T.translation().x();
+                goal[2*i+1] = T.translation().y();
+                _start_model->getPose(_ee_name[i], T); 
+                start[2*i] = T.translation().x();
+                start[2*i+1] = T.translation().y();
+            }
+        }
+        else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+        {
+            for (int i = 0; i < _ee_name.size(); i++)
+            {
+                _goal_model->getPose(_ee_name[i], T);
+                goal[3*i] = T.translation().x();
+                goal[3*i + 1] = T.translation().y();
+                auto rpy = T.linear().eulerAngles(0,1,2);
+                goal[3*i + 2] = rpy[2];
+                _start_model->getPose(_ee_name[i], T);
+                start[3*i] = T.translation().x();
+                start[3*i + 1] = T.translation().y();
+                rpy = T.linear().eulerAngles(0,1,2);
+                start[3*i + 2] = rpy[2];
+            }
+        }
         
-        T.translation() << goal[2], goal[3], _z_wheel;
-        _goal_solver->setDesiredPose(_ee_name[1], T);
+        for (int i = 0; i < _ee_name.size(); i++)
+        {
+            _goal_model->getPose(_ee_name[i], T);
+            if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+            {
+                after.resize(_ee_number*2);
+                after[2*i] = T.translation().x() * T.translation().x(); 
+                after[2*1 + 1] = T.translation().y() * T.translation().y();
+            }
+            else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+            {
+                after.resize(_ee_number*3);
+                auto rpy = T.linear().eulerAngles(0, 1, 2);
+                after[3*i] = T.translation().x() * T.translation().x();
+                after[3*1 + 1] = T.translation().y() * T.translation().y();
+                after[3*i + 2] = rpy[2] * rpy[2];
+            }
+        }
         
-        T.translation() << goal[4], goal[5], _z_wheel;
-        _goal_solver->setDesiredPose(_ee_name[2], T);
+        // Compute error between interactive marker position and computed wheel position 
+        for (int i = 0; i < after.size(); i++)
+        {
+            err += (after[i] - before[i]) * (after[i] - before[i]);
+        }
+        err = sqrt(err);
         
-        T.translation() << goal[6], goal[7], _z_wheel;
-        _goal_solver->setDesiredPose(_ee_name[3], T);
-        
-        _goal_solver->solve();
-    
-        Eigen::VectorXd q;
-    
-        _goal_solver->getModel()->getJointPosition(q);
-        _goal_model->setJointPosition(q);
-        _goal_model->update();   
-        
-        // Set start and goal states
-        _pdef->setStartAndGoalStates(start, goal, 2.0);
+        if (err < tolerance)
+        {
+            res.status.val = cartesio_planning::CartesioPlannerGoalStatus::EXACT_SOLUTION;
+            std::cout << "EXACT SOLUTION FOUND...setting start and goal states!" << std::endl;
+        }
+        else
+        {
+            res.status.val = cartesio_planning::CartesioPlannerGoalStatus::APPROXIMATE_SOLUTION;
+            std::cout << "APPROXIMATE SOLUTION FOUND...setting start and goal states! (error = " << err << ")" << std::endl;
+        }
+        _pdef->setStartAndGoalStates(start, goal);
+        return true;
     }
-    // COMANPLUS GOAL
-    else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+    else
     {
-        ompl::base::ScopedState<> goal(_space);
-        goal = start;
-        goal[0] = goal[3] = 3.0;
-        goal[1] = start[1];
-        goal[4] = start[4];
-        goal[2] = goal[5] = 0.0;
-        
-        T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
-        T.translation() << goal[0], goal[1], goal[2];
-        _goal_solver->setDesiredPose(_ee_name[0], T);
-        
-        T.translation() << goal[3], goal[4], goal[5];
-        _goal_solver->setDesiredPose(_ee_name[1], T);
-        
-        XBot::JointNameMap jmap;
-        _goal_solver->getCI()->getReferencePosture(jmap);
-        jmap["VIRTUALJOINT_1"] = goal[0];
-        _goal_solver->getCI()->setReferencePosture(jmap);
-        
-        _goal_solver->solve();
-    
-        Eigen::VectorXd q;
-    
-        _goal_solver->getModel()->getJointPosition(q);
-        _goal_model->setJointPosition(q);
-        _goal_model->update();
-              
-        // Set start and goal states
-        _pdef->setStartAndGoalStates(start, goal, 2.0);
-    }
+        res.status.val = cartesio_planning::CartesioPlannerGoalStatus::TIMEOUT;
+        std::cout << "TIMEOUT REACHED...run service again or change goal state!" << std::endl;
+        return false;
+    }   
 }
+
 
 void FootStepPlanner::init_planner_srv()
 {
@@ -743,12 +772,6 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         std::cout << "_q_vect failed size: " << q_fail.size() << std::endl;
         interpolate();
         
-//         auto logger = XBot::MatLogger2::MakeLogger("/home/luca/my_log/joint_trajectory");
-//         logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
-//         
-//         for (auto i : _q_traj)
-//             logger->add("q_traj", i);
-        
         for (int i = 0; i < data.numVertices(); i++)
         {
             Eigen::VectorXd foot;
@@ -762,20 +785,19 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
                     state(2*j + 1) = foot(1);
                 }
             }
-//             logger->add("state", state);
         }
         
         auto t = ros::Duration(0.);
         
         std::cout << "Final solution has " << _q_vect.size() << " steps!" << std::endl;
         
-        for(auto x : _q_traj_final)
+        for(auto x : _q_traj)
         {
             trajectory_msgs::JointTrajectoryPoint point;
             point.positions.assign(x.data(), x.data() + x.size());
             point.time_from_start = t;
             trj.points.push_back(point);
-            t += ros::Duration(0.5);
+            t += ros::Duration(0.01);
         }
         
         trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
@@ -921,9 +943,6 @@ void FootStepPlanner::interpolate()
                 jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"] + boost::math::constants::pi<double>();
             else 
                 jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"];
-//             jmap["ankle_yaw_2"] = -dtheta[1] - jmap["hip_yaw_2"] + jmap["VIRTUALJOINT_6"];
-//             jmap["ankle_yaw_3"] = -dtheta[2] - jmap["hip_yaw_3"] + jmap["VIRTUALJOINT_6"];
-//             jmap["ankle_yaw_4"] = -dtheta[3] - jmap["hip_yaw_4"] + jmap["VIRTUALJOINT_6"];
             
             // Rotate wheels
             std::vector<double> rot;
@@ -1001,17 +1020,7 @@ void FootStepPlanner::interpolate()
     _vc_context_interp.planning_scene->startMonitor();
     
     ros::spinOnce();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     
-    for (auto i : _q_traj)
-    {
-        _model->setJointPosition(i);
-        _model->update();
-        if(!_vc_context_interp.vc_aggregate.check("collisions"))
-            q_fail.push_back(i);
-        
-        _q_traj_final = q_fail;
-    }
     std::cout << "collisions after urdf change: " << q_fail.size() << std::endl;  
     
     config = XBot::ConfigOptionsFromParamServer();
@@ -1127,20 +1136,12 @@ ompl::control::ControlSamplerPtr FootStepPlanner::getSampler ( const ompl::contr
     return std::make_shared<XBot::Cartesian::Planning::stepSampler>(cspace);
 }
 
+
 ompl::control::DirectedControlSamplerPtr FootStepPlanner::getDirectedControlSampler ( const ompl::control::SpaceInformation* space_info ) 
 {
     return std::make_shared<ompl::control::SimpleDirectedControlSampler>(space_info, 20);
 }
 
-
-ompl::control::StatePropagatorPtr FootStepPlanner::make_propagator ( const std::__cxx11::string propagatorType ) 
-{
-    if (propagatorType == "stepPropagator")
-        return std::make_shared<Planning::Propagators::stepPropagator>(_space_info, _sw);
-    
-    else if (propagatorType == "stepPropagator_biped")
-        return std::make_shared<Planning::Propagators::stepPropagator_biped>(_space_info, _sw);
-}
 
 ompl::base::PlannerPtr FootStepPlanner::make_planner ( std::__cxx11::string plannerType ) 
 {
@@ -1214,33 +1215,33 @@ void FootStepPlanner::publish_tf(ros::Time time)
     
 }
 
-void FootStepPlanner::on_start_state_recv(const sensor_msgs::JointStateConstPtr & msg)
-{
-    // tbd: input checking
+// void FootStepPlanner::on_start_state_recv(const sensor_msgs::JointStateConstPtr & msg)
+// {
+//     // tbd: input checking
+// 
+//     XBot::JointNameMap q;
+//     for(int i = 0; i < msg->name.size(); i++)
+//     {
+//         q[msg->name[i]] = msg->position[i];
+//     }
+// 
+//     _start_model->setJointPosition(q);
+//     _start_model->update();
+// }
 
-    XBot::JointNameMap q;
-    for(int i = 0; i < msg->name.size(); i++)
-    {
-        q[msg->name[i]] = msg->position[i];
-    }
-
-    _start_model->setJointPosition(q);
-    _start_model->update();
-}
-
-void FootStepPlanner::on_goal_state_recv(const sensor_msgs::JointStateConstPtr & msg)
-{
-    // tbd: input checking
-
-    XBot::JointNameMap q;
-    for(int i = 0; i < msg->name.size(); i++)
-    {
-        q[msg->name[i]] = msg->position[i];
-    }
-
-    _goal_model->setJointPosition(q);
-    _goal_model->update();
-}
+// void FootStepPlanner::on_goal_state_recv(const sensor_msgs::JointStateConstPtr & msg)
+// {
+//     // tbd: input checking
+// 
+//     XBot::JointNameMap q;
+//     for(int i = 0; i < msg->name.size(); i++)
+//     {
+//         q[msg->name[i]] = msg->position[i];
+//     }
+// 
+//     _goal_model->setJointPosition(q);
+//     _goal_model->update();
+// }
 
 void FootStepPlanner::init_xbotcore_publisher()
 {

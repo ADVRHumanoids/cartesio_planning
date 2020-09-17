@@ -10,7 +10,6 @@ control_space:
     max_control_duration: 20   
     
 propagator:
-    type: "stepPropagator"
     duration: 0.3
     
 state_validity_check:

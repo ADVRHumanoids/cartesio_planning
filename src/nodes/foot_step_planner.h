@@ -47,6 +47,7 @@
 #include <cartesian_interface/CartesianInterfaceImpl.h>
 #include <cartesian_interface/utils/RobotStatePublisher.h>
 #include <cartesian_interface/markers/CartesianMarker.h>
+#include <cartesian_interface/sdk/problem/Cartesian.h>
 
 #include <ros/ros.h>
 #include <tf/tf.h>
@@ -57,7 +58,6 @@
 #include "ik/position_ik_solver.h"
 #include "samplers/stepSampler.h"
 #include "propagators/stepPropagator.h"
-#include "propagators/stepPropagator_biped.h"
 #include "validity_checker/validity_checker_context.h"
 #include "utils/robot_viz.h"
 #include "validity_checker/collisions/planning_scene_wrapper.h"
@@ -67,8 +67,6 @@
 #include "utils/map_converter.h"
 #include "utils/hash.h"
 #include "planner/cartesian_trajectory_interpolation.h"
-
-
 
 
 namespace XBot { namespace Cartesian { 
@@ -94,7 +92,7 @@ public:
     static ompl::control::ControlSamplerPtr getSampler(const ompl::control::ControlSpace* cspace);
     static ompl::control::DirectedControlSamplerPtr getDirectedControlSampler(const ompl::control::SpaceInformation* space_info);
     
-    ompl::control::StatePropagatorPtr make_propagator(const std::string propagatorType);
+//     ompl::control::StatePropagatorPtr make_propagator(const std::string propagatorType);
     
     void setStateValidityPredicate(StateValidityPredicate);
     
@@ -106,12 +104,12 @@ private:
     void init_load_config();
     void init_load_model();
     void init_load_position_cartesian_solver();
+    void init_load_goal_service();
     void init_load_planner();
     void init_load_state_propagator();
     void init_load_validity_checker();
     void init_load_goal_generator();
     void init_load_problem_definition();
-    void init_subscribe_start_goal();
     void init_planner_srv();
     void init_trajectory_publisher();
     void init_xbotcore_publisher();
@@ -129,10 +127,11 @@ private:
     bool apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request& req,
                                       moveit_msgs::ApplyPlanningScene::Response& res);
     
+    bool start_goal_service(cartesio_planning::CartesioGoal::Request& req,
+                            cartesio_planning::CartesioGoal::Response& res);
+    
     bool publish_trajectory_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
     
-    void on_start_state_recv(const sensor_msgs::JointStateConstPtr& msg);
-    void on_goal_state_recv(const sensor_msgs::JointStateConstPtr& msg);
     
     ompl::base::PlannerPtr make_planner(std::string plannerType);
     
@@ -145,10 +144,13 @@ private:
     
     void interpolate();
     
+    XBot::Cartesian::RosServerClass::Ptr _rsc;
+    
     ros::ServiceServer _planner_srv;
     ros::ServiceServer _get_planning_scene_srv;
     ros::ServiceServer _apply_planning_scene_srv;
     ros::ServiceServer _publish_srv;
+    ros::ServiceServer _start_goal_srv;
     
     ros::Publisher _postural_pub;    
     ros::Publisher _trj_publisher, _xbotcore_trj_publisher;
@@ -173,7 +175,10 @@ private:
     std::shared_ptr<ompl::control::CompoundControlSpace> _cspace;
     std::shared_ptr<ompl::control::SpaceInformation> _space_info;
     std::shared_ptr<ompl::base::ProblemDefinition> _pdef;
+    
     ompl::control::StatePropagatorPtr _propagator;
+    Planning::Propagators::stepPropagator::Ptr step_propagator;
+    
     ompl::base::PlannerPtr _planner;
     ompl::base::PlannerStatus _status;
     std::shared_ptr<ompl::base::Path> _path;
@@ -193,7 +198,7 @@ private:
     
     GoalGenerator::Ptr _goal_generator;
     
-    std::shared_ptr<CartesianInterfaceImpl> _ci;
+    std::shared_ptr<CartesianInterfaceImpl> _ci, _ci_goal;
     
     double _z_wheel;
     

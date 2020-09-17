@@ -195,9 +195,7 @@ void PlannerExecutor::init_load_planner()
         }
 
     }
-
-
-
+    
     if(ompl_constraint)
     {
         ROS_INFO("Constructing a constrained ompl planner");
