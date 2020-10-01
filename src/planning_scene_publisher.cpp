@@ -55,6 +55,7 @@ void attached_collision_object_cb(const moveit_msgs::AttachedCollisionObjectCons
 {
     moveit_msgs::AttachedCollisionObject attached_object;
     attached_object = *msg;
+    attached_object.object.id = "attached_object";
 
     // Add an object into the environment
     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -80,7 +81,7 @@ void collision_object_cb(const moveit_msgs::CollisionObjectConstPtr msg)
 {
     moveit_msgs::CollisionObject collision_object;
     collision_object = *msg;
-    collision_object.id = "francesca";
+    collision_object.id = "object";
     
 
     // Add an object into the environment

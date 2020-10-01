@@ -47,10 +47,6 @@ void FootStepPlanner::run()
     _rsc->run();
     
     ros::spinOnce();
-        
-    _vc_context.planning_scene->acm.setEntry("l_wrist", "francesca", true);
-    _vc_context.planning_scene->acm.setEntry("ee1", "francesca", true);
-    _vc_context.planning_scene->acm.print(std::cout);
     
     publish_tf(time);
 }
@@ -136,7 +132,6 @@ void FootStepPlanner::init_load_position_cartesian_solver()
     ik_yaml_goal = YAML::Load(problem_description);
 
     ci_period = 0.1;
-//     ci_ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<XBot::Cartesian::Parameters>(ci_period), _solver_model);
     ci_ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<XBot::Cartesian::Parameters>(ci_period), _goal_model);
 
     ik_prob = XBot::Cartesian::ProblemDescription(ik_yaml_goal, ci_ctx);
@@ -420,12 +415,12 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             if (!svp(x) && !_vc_context.vc_aggregate.check("distance"))
                 return false;
             
-            if (!svp(x) && _goalSamplerType == "goalSampler2" && !_vc_context.vc_aggregate.check("collisions") && !_vc_context.vc_aggregate.check("stability"))
+            if (!svp(x) && _goalSamplerType == "goalSampler2" && (!_vc_context.vc_aggregate.check("collisions") || !_vc_context.vc_aggregate.check("stability")))
             {
                 XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
                 _goalSampler_counter ++;
                 goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
-                if (goal_sampler->sample(3.0))
+                if (goal_sampler->sample(5.0))
                     _solver->getModel()->getJointPosition(x);
                 else
                 {
@@ -434,10 +429,10 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                 }
             }
             
-            if (!svp(x) && _goalSamplerType == "goalSampler" && !_vc_context.vc_aggregate.check("collisions") && !_vc_context.vc_aggregate.check("stability"))
+            if (!svp(x) && _goalSamplerType == "goalSampler" && (!_vc_context.vc_aggregate.check("collisions") || !_vc_context.vc_aggregate.check("stability")))
             {
                 _goalSampler_counter ++;
-                if (!_goal_generator->samplePostural(x, 0.1))
+                if (!_goal_generator->samplePostural(x, 5.0))
                 {
                     _counter++;
                     return false;

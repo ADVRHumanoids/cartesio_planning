@@ -273,7 +273,7 @@ public:
         _si->getStateSpace()->copyState(result, start);
         
         auto moved_foot = result->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(foot_sel - 1);
-        double scale = 0.5;
+        double scale = 1.0;
         
         if (step_dir == 1)
         {
