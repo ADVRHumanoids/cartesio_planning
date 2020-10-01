@@ -1,0 +1,38 @@
+state_space:
+    ee_number: 3
+    bounds_x: [-1.0, 20.0]
+    bounds_y: [-5.0, 5.0]
+    end_effector: ["EEA_link", "EEB_link", "EEC_link"]
+    
+control_space:
+    step_size_max: 0.1
+    min_control_duration: 1
+    max_control_duration: 100  
+    
+propagator:
+    type: "tripod"
+    duration: 0.3
+    
+state_validity_check:
+    - collisions
+    #- stability
+    - distance
+    
+stability:
+    type: "ConvexHull"
+    links:
+      - "EEA_link"
+      - "EEB_link"
+      - "EEC_link" 
+
+    stability_margin: 0.03
+
+collisions:
+    type: "CollisionCheck"
+    include_environment: true
+    
+distance:
+    type: "DistanceCheck_tripod"
+    min_x_distance: 0.35
+    min_y_distance: 0.35
+    

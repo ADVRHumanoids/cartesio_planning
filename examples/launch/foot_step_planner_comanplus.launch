@@ -1,0 +1,79 @@
+<launch>
+    
+    <arg name="is_model_floating_base" default="true"/>
+    
+    <!-- Types of contact: point, surface -->
+    <param name="contact_type" type="str" value="surface"/>    
+    <param name="goalSamplerType" type="str" value="goalSampler2"/>
+        
+    <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/cogimon.urdf"/>
+    <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/cogimon.srdf"/> 
+        
+      
+    <param name="planner/problem_description"
+            textfile="$(find cartesio_planning)/configs/problem/comanplus_fp_stack.yaml"/>  
+    
+    <param name="planner/problem_goal_description"
+            textfile="$(find cartesio_planning)/configs/problem/comanplus_fp_goal_stack.yaml"/> 
+    
+        <!-- .bag file containing 2 boxes acquired using octomap -->
+<!--     <node pkg="rosbag" type="play" name="bag_player" args="-l $(env ROBOTOLOGY_ROOT)/external/cartesio_planning/bagfiles/narrow_corridor_exp.bag" output="screen"/> -->
+    
+    <node pkg="cartesio_planning" type="foot_step_planner" name="foot_step_planner" output="screen">
+        <param name="solver" value=""/>
+        <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
+        <param name="planner_config"
+            textfile="$(find cartesio_planning)/configs/problem/comanplus_fp_config.yaml"/>
+        <param name="urdf" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/centauro_vc.urdf"/>
+    </node>
+    
+    <!-- Publish interpolated trajectory on rviz -->
+    <node pkg="cartesio_planning" type="previewer" name="previewer" output="screen"/>
+    
+    <!-- Publish interpolated trajectory on XBotCore -->
+    <node pkg="cartesio_planning" type="publisher" name="publisher" output="screen"/>
+    
+    <!-- This is needed to connect robot_start marker with "world" frame -->
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_start"
+        args="0 0 0. 0 0 0 world planner/start/world 30"/>
+    
+    <!-- This is needed to connect robot_goal marker with "world" frame -->
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_goal"
+        args="0 0 0. 0 0 0 world planner/goal/world 30"/>
+    
+    <!-- This is needed to connect "planner/world" with "world" frame -->
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_world"
+        args="0 0 0. 0 0 0 world planner/world 30"/>
+    
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_ci"
+          args="0 0 0. 0 0 0 world ci/world 30"/>
+
+    <!-- single short and wide obstacle -->
+    <!-- mesh_viz for obstacle generation -->
+    <!--<node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+        <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
+        <param name="scale_x" type="double" value="1."/>
+        <param name="scale_y" type="double" value="1.0"/>
+        <param name="scale_z" type="double" value="1"/>
+        <rosparam param="position"> [-0.200486, 0.929254, 0.256119] </rosparam>
+        <rosparam param="orientation"> [0.0, 0.0, 0.0, 1.0] </rosparam>
+        <param name="frame_id" value="world"/>
+        <param name="name_id" value="floor"/>
+        <param name="show_control_axis" type="bool" value="False"/>
+        <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
+    </node>-->
+    
+    <!-- Octomap converter -->
+    <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_converter" output="screen"/>
+    
+    <!-- Planning scene -->
+    <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/> 
+    
+    <!-- Marker spawner -->
+    <node pkg="cartesian_interface" type="marker_spawner" name="marker_spawner" output="screen"/>
+    
+    <!-- rviz -->
+    <node pkg="rviz" type="rviz" name="rviz"
+          args="-d $(find cartesio_planning)/configs/rviz/comanplus_fp.rviz" output="screen"/>
+    
+</launch>

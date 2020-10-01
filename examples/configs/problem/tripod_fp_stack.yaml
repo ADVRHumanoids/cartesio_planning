@@ -1,0 +1,42 @@
+solver_options:
+    regularization: 1e-2
+    back_end: "qpoases"
+
+stack:
+    - ["EEA_link", "EEB_link", "EEC_link"]
+    - ["Base"]
+    - ["Postural"]
+
+constraints: ["JointLimits"]
+
+JointLimits:
+    type: "JointLimits"
+
+EEA_link:
+    type: "Cartesian"
+    base_link: "world"
+    distal_link: "EEA_link"
+    indices: [0, 1, 2, 3, 4]
+
+EEB_link:
+    type: "Cartesian"
+    base_link: "world"
+    distal_link: "EEB_link"
+    indices: [0, 1, 2, 3, 4]
+    
+EEC_link:
+    type: "Cartesian"
+    base_link: "world"
+    distal_link: "EEC_link"
+    indices: [0, 1, 2, 3, 4]
+    
+Base:
+    type: "Cartesian"
+    base_link: "world"
+    distal_link: "base_link"
+    indices: [3, 4]
+    
+Postural:
+    type: "Postural"
+    lambda: 0.1
+    
