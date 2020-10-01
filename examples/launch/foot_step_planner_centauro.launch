@@ -54,7 +54,7 @@
         <param name="scale_x" type="double" value="1."/>
         <param name="scale_y" type="double" value="1.0"/>
         <param name="scale_z" type="double" value="1"/>
-        <rosparam param="position"> [-0.200486, 0.929254, 0.256119] </rosparam>
+        <rosparam param="position"> [1.10053, 0.111296, 1.0] </rosparam>
         <rosparam param="orientation"> [0.0, 0.0, 0.0, 1.0] </rosparam>
         <param name="frame_id" value="world"/>
         <param name="name_id" value="floor"/>
