@@ -15,6 +15,7 @@ propagator:
 state_validity_check:
     - collisions
     - stability
+    - distance
     
 stability:
     type: "ConvexHull"
@@ -31,10 +32,9 @@ collisions:
     include_environment: true
     
 distance:
-    type: "Distance"
-    end_effector: ["wheel_1", "wheel_2", "wheel_3", "wheel_4"]
-    max_x_distance: 0.3
-    max_y_distance: 0.7
-    front_rear_x_distance: 0.5
+    type: "DistanceCheck_centauro"
+    max_x_distance: 1.0
+    max_y_distance: 1.0
+    front_rear_x_distance: 0.3
     left_right_y_distance: 0.3
     

@@ -16,6 +16,7 @@ propagator:
 state_validity_check:
     - collisions
     - stability
+    - distance
 
 collisions:
     type: "CollisionCheck"
@@ -36,7 +37,6 @@ stability:
     stability_margin: 0.03
     
 distance:
-    type: "Distance"
-    end_effector: ["r_sole", "l_sole"]
+    type: "DistanceCheck_comanplus"
     max_x_distance: 0.5
     max_y_distance: 0.35
