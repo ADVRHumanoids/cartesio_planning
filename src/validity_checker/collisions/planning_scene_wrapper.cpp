@@ -77,7 +77,6 @@ PlanningSceneWrapper::PlanningSceneWrapper(ModelInterface::ConstPtr model):
     _monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>(rml);
 
     _srdf = _model->getSrdf();
-
 }
 
 void PlanningSceneWrapper::startMonitor()
@@ -93,6 +92,13 @@ void PlanningSceneWrapper::startMonitor()
 
     // this starts monitored planning scene publisher
     _monitor->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
+    
+//     acm.clear();
+//     acm = _monitor->getPlanningScene()->getAllowedCollisionMatrixNonConst();
+//     acm.setEntry("ee1", "francesca", true);
+//     acm.setEntry("l_wrist", "francesca", true);
+//     acm.setEntry("ee2", "francesca", true);
+//     acm.setEntry("r_wrist", "francesca", true);
 
 }
 
@@ -183,6 +189,7 @@ void PlanningSceneWrapper::update()
             };
 
             robot_state.setJointPositions(jname, jpos);
+            robot_state.update();
 
         }
         else if(jtype == urdf::Joint::FIXED)
@@ -206,8 +213,10 @@ bool PlanningSceneWrapper::checkCollisions() const
     collision_detection::CollisionRequest collision_request;
 
     collision_detection::CollisionResult collision_result;
-
-    _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
+    
+    
+    
+    _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);//, _monitor->getPlanningScene()->getCurrentState(), acm);
 
     return collision_result.collision;
 }

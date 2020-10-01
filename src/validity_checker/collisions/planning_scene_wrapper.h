@@ -78,7 +78,7 @@ public:
     bool getPlanningScene(moveit_msgs::GetPlanningScene::Request& req,
                           moveit_msgs::GetPlanningScene::Response& res);
     
-    collision_detection::AllowedCollisionMatrix acm;
+    mutable collision_detection::AllowedCollisionMatrix acm;
 
 private:
 
