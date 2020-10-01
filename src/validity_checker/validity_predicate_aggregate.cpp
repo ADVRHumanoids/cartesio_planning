@@ -56,7 +56,9 @@ bool ValidityPredicateAggregate::check(const std::string& id)
 {
     if(_functions.count(id) == 0)
     {
-        throw std::runtime_error("given id %s does not exists");
+//         throw std::runtime_error("given id %s does not exists");
+        std::cout << "given id " << id << " does not exist, skipping it" << std::endl;
+        return true;
     }
 
     if(_functions[id]() != _expected_values[id])

@@ -47,7 +47,7 @@
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/robot_state/robot_state.h>
 #include <moveit/robot_state/conversions.h>
-
+#include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 
 ros::ServiceClient srv;
 
@@ -78,8 +78,10 @@ void attached_collision_object_cb(const moveit_msgs::AttachedCollisionObjectCons
 
 void collision_object_cb(const moveit_msgs::CollisionObjectConstPtr msg)
 {
-    moveit_msgs::AttachedCollisionObject attached_object;
-    attached_object.object = *msg;
+    moveit_msgs::CollisionObject collision_object;
+    collision_object = *msg;
+    collision_object.id = "francesca";
+    
 
     // Add an object into the environment
     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -88,14 +90,14 @@ void collision_object_cb(const moveit_msgs::CollisionObjectConstPtr msg)
     // planning scene. Note that we are using only the "object"
     // field of the attached_object message here.
     moveit_msgs::PlanningScene planning_scene;
-    planning_scene.world.collision_objects.push_back(attached_object.object);
+    planning_scene.world.collision_objects.push_back(collision_object);
     planning_scene.is_diff = true;
-
 
     srv.waitForExistence();
 
     moveit_msgs::ApplyPlanningScene msg2;
     msg2.request.scene = planning_scene;
+
 
     srv.call(msg2);
 }
@@ -104,6 +106,7 @@ void octomap_collision_object_cb(const octomap_msgs::OctomapWithPose msg)
 {
     octomap_msgs::OctomapWithPose attached_object;
     attached_object = msg;
+    attached_object.octomap.id = "octomap";
 
     // Add an object into the environment
     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -115,11 +118,11 @@ void octomap_collision_object_cb(const octomap_msgs::OctomapWithPose msg)
     planning_scene.world.octomap = attached_object;
     planning_scene.is_diff = true;
 
-
     srv.waitForExistence();
 
     moveit_msgs::ApplyPlanningScene msg2;
     msg2.request.scene = planning_scene;
+    msg2.request.scene.name = "octomap";
 
     srv.call(msg2);
 }

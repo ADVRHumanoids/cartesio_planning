@@ -47,7 +47,11 @@ void FootStepPlanner::run()
     _rsc->run();
     
     ros::spinOnce();
-
+        
+    _vc_context.planning_scene->acm.setEntry("l_wrist", "francesca", true);
+    _vc_context.planning_scene->acm.setEntry("ee1", "francesca", true);
+    _vc_context.planning_scene->acm.print(std::cout);
+    
     publish_tf(time);
 }
 
@@ -81,15 +85,6 @@ void FootStepPlanner::init_load_model ()
     _model->setJointPosition(_qhome);
     _model->update();
     
-    // UNCOMMENT THIS WHEN PLANNING WITH CENTAURO: computes initial z-axis position 
-    // of the wheel that will be used during the whole planner
-    if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
-    {
-        Eigen::Affine3d T;
-        _model->getPose("wheel_1", T);
-        _z_wheel = T.translation().z();
-    }
-    
     // Define start model
     _start_model->setJointPosition(_qhome);
     _start_model->update();
@@ -114,8 +109,6 @@ void FootStepPlanner::init_load_model ()
     _solver_model->update();
     
     _map = std::make_shared<XBot::Converter::MapConverter>(_n, "projected_map");
-    
-    
 }
 
 void FootStepPlanner::init_load_position_cartesian_solver() 
@@ -150,7 +143,7 @@ void FootStepPlanner::init_load_position_cartesian_solver()
     _ci_goal = XBot::Cartesian::CartesianInterfaceImpl::MakeInstance("OpenSot",
                                                         ik_prob, ci_ctx);
     _goal_solver = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(_ci_goal);
-    _rsc = std::make_shared<RosServerClass>(_ci_goal);
+    _rsc = std::make_shared<RosServerClass>(_ci_goal);    
 }
 
 void FootStepPlanner::init_load_planner() 
@@ -158,15 +151,37 @@ void FootStepPlanner::init_load_planner()
     // Create the state Compount State Space containing the feet State Spaces and assign the relative bounds
     if (!_planner_config["state_space"]["ee_number"])
     {
-        throw std::runtime_error("Mandatory 'feet_number' private parameter in 'planner_config' missing");
+        throw std::runtime_error("Mandatory 'ee_number' private parameter in 'planner_config' missing");
     }
     YAML_PARSE_OPTION(_planner_config["state_space"], ee_number, int, 2);
+    
+    if (!_planner_config["state_space"]["end_effector"])
+    {
+        throw std::runtime_error("Mandatory 'end_effector' private parameter in 'planner_config' missing");
+    }
     YAML_PARSE_OPTION(_planner_config["state_space"], end_effector, std::vector<std::string>, {});
+    
+    if (!_planner_config["state_space"]["bounds_x"])
+    {
+        throw std::runtime_error("Mandatory 'bounds_x' private parameter in 'planner_config' missing");
+    }
     YAML_PARSE_OPTION(_planner_config["state_space"], bounds_x, std::vector<double>, {});
+    
+    if (!_planner_config["state_space"]["bounds_y"])
+    {
+        throw std::runtime_error("Mandatory 'bounds_y' private parameter in 'planner_config' missing");
+    }
     YAML_PARSE_OPTION(_planner_config["state_space"], bounds_y, std::vector<double>, {});
     
     _ee_number = ee_number;
     _ee_name = end_effector;
+
+    Eigen::Affine3d T;
+    _model->getPose(_ee_name[0], T);
+    _z_wheel = T.translation().z();
+    _EE_rot = T.linear();
+    
+    
     
     ompl::base::RealVectorBounds bounds(2);
     if (bounds_x.size() > 0 && bounds_y.size() > 0)
@@ -199,10 +214,13 @@ void FootStepPlanner::init_load_planner()
     auto foot_selector = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 1, _ee_number);
     foot_selector->setControlSamplerAllocator(getSampler);
     
-    auto step_size = std::make_shared<ompl::control::RealVectorControlSpace>(_space, 3);
+    auto step_size = std::make_shared<ompl::control::RealVectorControlSpace>(_space, _space->getSubspace(0)->getDimension());
+    
+    // Extra ControlSpace for esa_mirror robot with fixed step_size
+//     auto step_size = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 1, 6);
     
     YAML_PARSE_OPTION(_planner_config["control_space"], step_size_max, double, 1.0)
-    ompl::base::RealVectorBounds step_bounds(3);
+    ompl::base::RealVectorBounds step_bounds(_space->getSubspace(0)->getDimension());
     step_bounds.setLow(-1*step_size_max);
     step_bounds.setHigh(step_size_max);
     
@@ -239,12 +257,23 @@ void FootStepPlanner::init_load_state_propagator()
         std::cout << "Duration not set, using default value 0.1" << std::endl;
     
     YAML_PARSE_OPTION(_planner_config["propagator"], duration, double, 0.1);
+    YAML_PARSE_OPTION(_planner_config["propagator"], type, std::string, "");
     
-    if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+    _propagator_type = type;
+    
+    if (type == "centauro")
+    {
+        _propagator = std::make_shared<Planning::Propagators::stepPropagator_centauro>(_space_info, _sw);
+    }
+    else if (type == "tripod")
+    {
+        _propagator = std::make_shared<Planning::Propagators::stepPropagator_tripod>(_space_info, _sw);
+    }
+    else if (type == "" && _sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
     {
         _propagator = std::make_shared<Planning::Propagators::stepPropagator_wheel>(_space_info, _sw);
     }
-    else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+    else if (type == "" && _sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
     {
         _propagator = std::make_shared<Planning::Propagators::stepPropagator_biped>(_space_info, _sw);
     }  
@@ -281,13 +310,13 @@ void FootStepPlanner::init_load_validity_checker()
 
 void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
 {
-    YAML_PARSE_OPTION(_planner_config["distance"], front_rear_x_distance, double, 0.3);
-    YAML_PARSE_OPTION(_planner_config["distance"], left_right_y_distance, double, 0.8);
-    YAML_PARSE_OPTION(_planner_config["distance"], max_x_distance, double, 1.0);
-    YAML_PARSE_OPTION(_planner_config["distance"], max_y_distance, double, 1.0);
-
-    auto ompl_svc = [front_rear_x_distance, left_right_y_distance, max_x_distance, max_y_distance, svp, this](const ompl::base::State * state)
-    {
+    auto ompl_svc = [svp, this](const ompl::base::State * state)
+    {       
+        if (!_space_info->satisfiesBounds(state))
+        {
+            return false;
+        }
+        
         std::vector<Eigen::VectorXd> ee(_ee_number);  
         Eigen::Vector3d x_com = {0, 0, 0};
         double sum_x = 0;
@@ -301,105 +330,18 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             {
                 _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(i), ee[i]);
                 T.translation() << ee[i](0), ee[i](1), _z_wheel;
+                T.linear() = _EE_rot;
             }
             else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)   
             {
                 _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), ee[i]);
-                T.translation() << ee[i](0), ee[i](1), 0;
+                T.translation() << ee[i](0), ee[i](1), _z_wheel;
+                T.linear() = _EE_rot;
+                T.rotate( Eigen::AngleAxis<double>( ee[i](2), Eigen::Vector3d(0,0,1) )); 
             }
-                                   
-            T.linear() << 1, 0, 0, 0, 1, 0, 0, 0, 1;
-            T.rotate( Eigen::AngleAxis<double>( ee[i](2), Eigen::Vector3d(0,0,1) ));  
-
             _solver->setDesiredPose(_ee_name[i], T);
         }
         
-        // VALIDITY FUNCTIONS FOR CENTAURO
-        // Check on relative distance
-        if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
-        {
-            double x_diff; 
-            double y_diff;                  
-            
-            for (int i = 0; i < _ee_number; i += 2)
-            {
-                x_diff = sqrt((ee[i](0) - ee[i+1](0)) * (ee[i](0) - ee[i+1](0)));
-                y_diff = sqrt((ee[i](1) - ee[i+1](1)) * (ee[i](1) - ee[i+1](1)));
-                if (x_diff > max_x_distance || y_diff > max_y_distance)
-                {
-                    return false;
-                }
-            }
-            
-            // Check feet crossing
-            double xRel_w;
-            double yRel_w;
-            
-            for (int i = 0; i < _ee_number; i += 2)
-            {
-                xRel_w = ee[i](0) - ee[i+1](0);
-                yRel_w = ee[i](1) - ee[i+1](1);
-                if (yRel_w < 0.15)          
-                {
-                    return false;        
-                }
-            }
-            
-            // Check distance between front and rear feet on x-axis
-            const auto x_left = sqrt((ee[0](0) - ee[2](0)) * (ee[0](0) - ee[2](0)));
-            const auto x_right = sqrt((ee[1](0) - ee[3](0)) * (ee[1](0) - ee[3](0)));
-            const auto x_left_right = sqrt((ee[0](0) - ee[3](0)) * (ee[0](0) - ee[3](0)));
-            const auto x_right_left = sqrt((ee[1](0) - ee[2](0)) * (ee[1](0) - ee[2](0)));
-            
-            if (x_right < front_rear_x_distance || x_left < front_rear_x_distance || x_right > 0.9 || x_left > 0.9 || x_left_right < front_rear_x_distance || x_right_left < front_rear_x_distance || x_right_left > 0.8 || x_left_right > 0.8)
-            {
-                return false;
-            }
-            
-            // Check distance between front and rear feet on y-axis
-            const auto y_front = sqrt((ee[0](1) - ee[1](1)) * (ee[0](1) - ee[1](1)));
-            const auto y_rear = sqrt((ee[2](1) - ee[3](1)) * (ee[2](1) - ee[3](1)));
-            const auto y_front_rear = sqrt((ee[0](1) - ee[3](1)) * (ee[0](1) - ee[3](1)));
-            const auto y_rear_front = sqrt((ee[2](1) - ee[1](1)) * (ee[2](1) - ee[1](1)));        
-            
-            if (y_front < left_right_y_distance || y_rear < left_right_y_distance || y_front > 0.8 || y_rear > 0.8 || y_front_rear < left_right_y_distance || y_front_rear > 0.8 || y_rear_front < left_right_y_distance || y_rear_front > 0.8)
-            {
-                return false;
-            }
-            
-        }
-       
-        // VALIDITY FUNCTIONS FOR COMANPLUS          
-        // Check for relative distance
-        else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
-        {
-            double x_diff = sqrt((ee[0](0) - ee[1](0)) * (ee[0](0) - ee[1](0))); 
-            double y_diff = sqrt((ee[0](1) - ee[1](1)) * (ee[0](1) - ee[1](1)));
-
-            if (x_diff > max_x_distance || y_diff > max_y_distance)
-            {
-                return false;
-            }           
-            
-            // Check for relative orientation
-            double res1 = (ee[0](2) - ee[1](2));
-            double res2 = (boost::math::constants::pi<double>()*2 - (ee[0](2) - ee[1](2))); 
-        
-            if (std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) > boost::math::constants::pi<double>()/6)
-            {
-                return false;
-            }           
-             
-            // Check for feet crossing
-            double xRel_w = ee[0](0) - ee[1](0);
-            double yRel_w = ee[0](1) - ee[1](1);
-    
-            if (-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > -0.20)                
-            {
-                return false;        
-            }           
-        }
-
         // Check whether one of the two feet is in collision with the environment
         for (int i = 0; i < _ee_number; i++)
         {
@@ -409,12 +351,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                 return false;
             }
         }
-         
-        if (!_space_info->satisfiesBounds(state))
-        {
-            return false;
-        }
-        
+               
         _model->setJointPosition(_qhome);
         _model->update();           
         
@@ -427,11 +364,18 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
        
         // Check if the start state has been already explored and pick the relative postural
         // at the beginning, the postural is equal to the home state 
-        if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+        
+        if (_propagator_type == "centauro")
+            step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator_centauro>(_propagator);
+        
+        else if (_propagator_type == "tripod")
+            step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator_tripod>(_propagator);
+        
+        else if (_propagator_type == "" && _sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
         {
             step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator_wheel>(_propagator);
         }
-        else if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
+        else if (_propagator_type == "" && _sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::SE2SPACE)
         {
             step_propagator = std::dynamic_pointer_cast<XBot::Cartesian::Planning::Propagators::stepPropagator_biped>(_propagator);
         }    
@@ -473,12 +417,15 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         if (_solver->solve())
         {
             _solver->getModel()->getJointPosition(x);
-            if (!svp(x) && _goalSamplerType == "goalSampler2")
+            if (!svp(x) && !_vc_context.vc_aggregate.check("distance"))
+                return false;
+            
+            if (!svp(x) && _goalSamplerType == "goalSampler2" && !_vc_context.vc_aggregate.check("collisions") && !_vc_context.vc_aggregate.check("stability"))
             {
                 XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
                 _goalSampler_counter ++;
                 goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
-                if (goal_sampler->sample(5.0))
+                if (goal_sampler->sample(3.0))
                     _solver->getModel()->getJointPosition(x);
                 else
                 {
@@ -486,10 +433,11 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                     return false;
                 }
             }
-            if (!svp(x) && _goalSamplerType == "goalSampler")
+            
+            if (!svp(x) && _goalSamplerType == "goalSampler" && !_vc_context.vc_aggregate.check("collisions") && !_vc_context.vc_aggregate.check("stability"))
             {
                 _goalSampler_counter ++;
-                if (!_goal_generator->samplePostural(x, 5.0))
+                if (!_goal_generator->samplePostural(x, 0.1))
                 {
                     _counter++;
                     return false;
@@ -635,6 +583,8 @@ bool FootStepPlanner::start_goal_service ( cartesio_planning::CartesioGoal::Requ
         {
             err += (after[i] - before[i]) * (after[i] - before[i]);
         }
+        
+        //TODO to be fixed
         err = sqrt(err);
         
         if (err < tolerance)
@@ -647,7 +597,7 @@ bool FootStepPlanner::start_goal_service ( cartesio_planning::CartesioGoal::Requ
             res.status.val = cartesio_planning::CartesioPlannerGoalStatus::APPROXIMATE_SOLUTION;
             std::cout << "APPROXIMATE SOLUTION FOUND...setting start and goal states! (error = " << err << ")" << std::endl;
         }
-        _pdef->setStartAndGoalStates(start, goal);
+        _pdef->setStartAndGoalStates(start, goal, 1.5);
         return true;
     }
     else
@@ -770,7 +720,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         }
 
         std::cout << "_q_vect failed size: " << q_fail.size() << std::endl;
-        interpolate();
+//         interpolate();
         
         for (int i = 0; i < data.numVertices(); i++)
         {
@@ -791,13 +741,13 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         
         std::cout << "Final solution has " << _q_vect.size() << " steps!" << std::endl;
         
-        for(auto x : _q_traj)
+        for(auto x : _q_vect)
         {
             trajectory_msgs::JointTrajectoryPoint point;
             point.positions.assign(x.data(), x.data() + x.size());
             point.time_from_start = t;
             trj.points.push_back(point);
-            t += ros::Duration(0.01);
+            t += ros::Duration(1.);
         }
         
         trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
@@ -1155,7 +1105,7 @@ ompl::base::PlannerPtr FootStepPlanner::make_planner ( std::__cxx11::string plan
         return std::make_shared<ompl::control::KPIECE1>(_space_info);
     
     else 
-        std::runtime_error("Selected planner does not exist or is not available");
+        std::runtime_error("Selected planner does not exist!");
 }
 
 
@@ -1214,34 +1164,6 @@ void FootStepPlanner::publish_tf(ros::Time time)
     _goal_viz->publishMarkers(time, red_links);
     
 }
-
-// void FootStepPlanner::on_start_state_recv(const sensor_msgs::JointStateConstPtr & msg)
-// {
-//     // tbd: input checking
-// 
-//     XBot::JointNameMap q;
-//     for(int i = 0; i < msg->name.size(); i++)
-//     {
-//         q[msg->name[i]] = msg->position[i];
-//     }
-// 
-//     _start_model->setJointPosition(q);
-//     _start_model->update();
-// }
-
-// void FootStepPlanner::on_goal_state_recv(const sensor_msgs::JointStateConstPtr & msg)
-// {
-//     // tbd: input checking
-// 
-//     XBot::JointNameMap q;
-//     for(int i = 0; i < msg->name.size(); i++)
-//     {
-//         q[msg->name[i]] = msg->position[i];
-//     }
-// 
-//     _goal_model->setJointPosition(q);
-//     _goal_model->update();
-// }
 
 void FootStepPlanner::init_xbotcore_publisher()
 {

@@ -78,8 +78,7 @@ int main(int argc, char ** argv)
             model->setJointPosition(qhome);
             model->update();
             
-            rspub.publishTransforms(ros::Time::now(), "planner")
-            ;
+            rspub.publishTransforms(ros::Time::now(), "planner");
             fixed_rate.sleep();
             ros::spinOnce();
         }

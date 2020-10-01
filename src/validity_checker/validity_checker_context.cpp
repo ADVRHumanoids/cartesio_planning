@@ -33,7 +33,8 @@ ValidityCheckContext::ValidityCheckContext(YAML::Node config,
         }
         else
         {
-            vc_fun = MakeValidityChecker(config[vc_name],
+            vc_fun = MakeValidityChecker(config,
+                                         config[vc_name],
                                          model,
                                          "", nh);
         }
@@ -55,12 +56,12 @@ std::function<bool ()> ValidityCheckContext::make_collision_checker(YAML::Node v
     planning_scene = std::make_shared<PlanningSceneWrapper>(_model);
 
     auto planning_scene_capture = planning_scene;
-
+    
     // define validity checker
     auto validity_checker = [include_environment,
             planning_scene_capture]()
     {
-        planning_scene_capture->update();
+        planning_scene_capture->update();        
 
         if(include_environment)
         {

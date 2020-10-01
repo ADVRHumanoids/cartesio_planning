@@ -73,7 +73,7 @@ namespace XBot { namespace Cartesian {
     
 struct posturalStruct
 {
-    // Vector containing postural relative to a specific state
+    // Postural relative to a specific state
     Eigen::VectorXd postural;
     
     // Parent state
@@ -91,9 +91,7 @@ public:
     
     static ompl::control::ControlSamplerPtr getSampler(const ompl::control::ControlSpace* cspace);
     static ompl::control::DirectedControlSamplerPtr getDirectedControlSampler(const ompl::control::SpaceInformation* space_info);
-    
-//     ompl::control::StatePropagatorPtr make_propagator(const std::string propagatorType);
-    
+        
     void setStateValidityPredicate(StateValidityPredicate);
     
     void setStartAndGoalState();
@@ -212,7 +210,9 @@ private:
     
     CartesianTrajectoryInterpolation::Ptr _interpolator;
     
-    std::string _goalSamplerType;
+    std::string _goalSamplerType, _propagator_type;;
+    
+    Eigen::Matrix3d _EE_rot;
     
 };
 
