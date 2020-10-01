@@ -52,13 +52,14 @@ bool GoalSampler2::sample ( double timeout )
             random_map = generateRandomVelocities(colliding_chains);          
         }
                 
-        // Update joint_map with integrated random velocities
+        // Update joint_map with integrated random velocities       
         for (auto i : random_map)
             joint_map[i.first] += i.second * dt;
         
         iter ++;
      
         _ik_solver->getCI()->setReferencePosture(joint_map);
+        _ik_solver->solve();
                         
         auto toc = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec = toc-tic;
