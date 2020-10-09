@@ -93,7 +93,8 @@ void PlanningSceneWrapper::startMonitor()
     // this starts monitored planning scene publisher
     _monitor->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
     
-    acm.clear();
+    // AllowedCollisionMatrix definition. Entries can be added anywhere in the code simply
+    // with acm.setEntry(std::string name1, std::string name2, bool allowed)
     acm = _monitor->getPlanningScene()->getAllowedCollisionMatrix();
 }
 
@@ -176,7 +177,7 @@ void PlanningSceneWrapper::update()
             {
                 Tj.translation().x(),
                 Tj.translation().y(),
-                Tj.translation().z() /*- 0.93455*/,
+                Tj.translation().z(),
                 Tj_rotation.x(),
                 Tj_rotation.y(),
                 Tj_rotation.z(),
@@ -206,10 +207,16 @@ bool PlanningSceneWrapper::checkCollisions() const
     MonitorLockguardRead lock_r(_monitor);
 
     collision_detection::CollisionRequest collision_request;
+    collision_request.contacts = true;
+    collision_request.max_contacts = 100;
 
     collision_detection::CollisionResult collision_result;  
     
     _monitor->getPlanningScene()->checkCollision(collision_request, collision_result, _monitor->getPlanningScene()->getCurrentState(), acm);
+    
+    // Print colliding links
+    for (auto i : collision_result.contacts)
+        ROS_INFO("Contact between: %s and %s", i.first.first.c_str(), i.first.second.c_str());
 
     return collision_result.collision;
 }
@@ -236,11 +243,9 @@ std::vector<std::string> PlanningSceneWrapper::getCollidingLinks() const
     return links;
 }
 
-std::vector<XBot::ModelChain> PlanningSceneWrapper::getCollidingChains() const //TODO: REFACTOR!
+std::vector<XBot::ModelChain> PlanningSceneWrapper::getCollidingChains() const 
 {
-    auto chain_names = _model->getChainNames(); //TODO: is it needed???
     std::vector<std::string> colliding_links = getCollidingLinks();
-    _model->getSrdf().getGroups(); //TODO: is it needed???
     std::vector<XBot::ModelChain> colliding_chains;
     for (auto i:_srdf.getGroups())
     {
