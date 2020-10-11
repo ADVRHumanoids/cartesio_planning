@@ -207,16 +207,16 @@ bool PlanningSceneWrapper::checkCollisions() const
     MonitorLockguardRead lock_r(_monitor);
 
     collision_detection::CollisionRequest collision_request;
-    collision_request.contacts = true;
-    collision_request.max_contacts = 100;
+//    collision_request.contacts = true;
+//    collision_request.max_contacts = 100;
 
     collision_detection::CollisionResult collision_result;  
     
     _monitor->getPlanningScene()->checkCollision(collision_request, collision_result, _monitor->getPlanningScene()->getCurrentState(), acm);
     
     // Print colliding links
-    for (auto i : collision_result.contacts)
-        ROS_INFO("Contact between: %s and %s", i.first.first.c_str(), i.first.second.c_str());
+//    for (auto i : collision_result.contacts)
+//        ROS_INFO("Contact between: %s and %s", i.first.first.c_str(), i.first.second.c_str());
 
     return collision_result.collision;
 }
