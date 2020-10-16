@@ -4,7 +4,7 @@ solver_options:
 
 stack:
     - ["EEA_link", "EEB_link", "EEC_link"]
-    - ["Base"]
+    #- ["Base"]
     - ["Postural"]
 
 constraints: ["JointLimits"]

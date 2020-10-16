@@ -209,17 +209,17 @@ void FootStepPlanner::init_load_planner()
     auto foot_selector = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 1, _ee_number);
     foot_selector->setControlSamplerAllocator(getSampler);
     
-    auto step_size = std::make_shared<ompl::control::RealVectorControlSpace>(_space, _space->getSubspace(0)->getDimension());
+//    auto step_size = std::make_shared<ompl::control::RealVectorControlSpace>(_space, _space->getSubspace(0)->getDimension());
     
     // Extra ControlSpace for esa_mirror robot with fixed step_size
-//     auto step_size = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 1, 6);
+    auto step_size = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 1, 6);
     
     YAML_PARSE_OPTION(_planner_config["control_space"], step_size_max, double, 1.0)
     ompl::base::RealVectorBounds step_bounds(_space->getSubspace(0)->getDimension());
     step_bounds.setLow(-1*step_size_max);
     step_bounds.setHigh(step_size_max);
     
-    step_size->setBounds(step_bounds);
+//    step_size->setBounds(step_bounds);
     
     _cspace = std::make_shared<ompl::control::CompoundControlSpace>(_space);
     _cspace->addSubspace(foot_selector);
@@ -420,7 +420,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                 XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
                 _goalSampler_counter ++;
                 goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
-                if (goal_sampler->sample(5.0))
+                if (goal_sampler->sample(0.1))
                     _solver->getModel()->getJointPosition(x);
                 else
                 {
