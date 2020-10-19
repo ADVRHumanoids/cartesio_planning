@@ -1,6 +1,6 @@
 state_space:
     ee_number: 3
-    bounds_x: [-1.0, 20.0]
+    bounds_x: [-1.0, 5.0]
     bounds_y: [-5.0, 5.0]
     end_effector: ["EEA_link", "EEB_link", "EEC_link"]
     

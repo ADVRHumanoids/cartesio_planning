@@ -127,6 +127,23 @@ void FootStepPlanner::init_load_position_cartesian_solver()
                                                         ik_prob, ci_ctx);     
     
     _solver = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(_ci);
+    
+    Eigen::Affine3d T;
+    T.translation() << 0.35, -0.6, -0.9;
+    T.linear() = Eigen::Quaternion<double>(0,1,0,0).toRotationMatrix();
+    _solver->setDesiredPose("EEA_link", T);
+    T.translation() << 0.35, 0.6, -0.9;
+    _solver->setDesiredPose("EEB_link", T);
+    T.translation() << -0.7, 0.0, -0.9;
+    _solver->setDesiredPose("EEC_link", T);
+    
+    _solver->solve();
+    Eigen::VectorXd q(_model->getJointNum());
+    _solver->getModel()->getJointPosition(q);
+    _start_model->setJointPosition(q);
+    _start_model->update();
+    _goal_model->setJointPosition(q);
+    _goal_model->update();
         
     // Goal Solver
     ik_yaml_goal = YAML::Load(problem_description);
@@ -209,7 +226,7 @@ void FootStepPlanner::init_load_planner()
     auto foot_selector = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 1, _ee_number);
     foot_selector->setControlSamplerAllocator(getSampler);
     
-//    auto step_size = std::make_shared<ompl::control::RealVectorControlSpace>(_space, _space->getSubspace(0)->getDimension());
+//     auto step_size = std::make_shared<ompl::control::RealVectorControlSpace>(_space, _space->getSubspace(0)->getDimension());
     
     // Extra ControlSpace for esa_mirror robot with fixed step_size
     auto step_size = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 1, 6);
@@ -219,7 +236,7 @@ void FootStepPlanner::init_load_planner()
     step_bounds.setLow(-1*step_size_max);
     step_bounds.setHigh(step_size_max);
     
-//    step_size->setBounds(step_bounds);
+//     step_size->setBounds(step_bounds);
     
     _cspace = std::make_shared<ompl::control::CompoundControlSpace>(_space);
     _cspace->addSubspace(foot_selector);
@@ -592,7 +609,7 @@ bool FootStepPlanner::start_goal_service ( cartesio_planning::CartesioGoal::Requ
             res.status.val = cartesio_planning::CartesioPlannerGoalStatus::APPROXIMATE_SOLUTION;
             std::cout << "APPROXIMATE SOLUTION FOUND...setting start and goal states! (error = " << err << ")" << std::endl;
         }
-        _pdef->setStartAndGoalStates(start, goal, 1.5);
+        _pdef->setStartAndGoalStates(start, goal, 1.0);
         return true;
     }
     else

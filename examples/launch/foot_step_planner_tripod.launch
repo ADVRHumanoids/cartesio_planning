@@ -6,8 +6,8 @@
     <param name="contact_type" type="str" value="point"/>    
     <param name="goalSamplerType" type="str" value="goalSampler2"/>
         
-    <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/robot.urdf"/>
-    <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/robot.srdf"/> 
+<!--     <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/robot.urdf"/> -->
+<!--     <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/robot.srdf"/>  -->
         
     
       
@@ -48,18 +48,18 @@
 
     <!-- single short and wide obstacle -->
     <!-- mesh_viz for obstacle generation -->
-    <!--<node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+    <node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
         <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
-        <param name="scale_x" type="double" value="1."/>
-        <param name="scale_y" type="double" value="1.0"/>
-        <param name="scale_z" type="double" value="1"/>
-        <rosparam param="position"> [-0.200486, 0.929254, 0.256119] </rosparam>
+        <param name="scale_x" type="double" value="10."/>
+        <param name="scale_y" type="double" value="10."/>
+        <param name="scale_z" type="double" value="0.2"/>
+        <rosparam param="position"> [0.0, 0.0, -1.2] </rosparam>
         <rosparam param="orientation"> [0.0, 0.0, 0.0, 1.0] </rosparam>
         <param name="frame_id" value="world"/>
         <param name="name_id" value="floor"/>
         <param name="show_control_axis" type="bool" value="False"/>
         <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
-    </node>-->
+    </node>
     
     <!-- Octomap converter -->
     <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_converter" output="screen"/>

@@ -4,6 +4,9 @@
 #include <ompl/control/ControlSpace.h>
 #include <ompl/control/SpaceInformation.h>
 
+#include <thread>
+#include <chrono>
+
 #include "state_wrapper.h"
 
 namespace XBot { namespace Cartesian { namespace Planning { namespace Propagators{
@@ -273,35 +276,36 @@ public:
         _si->getStateSpace()->copyState(result, start);
         
         auto moved_foot = result->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(foot_sel - 1);
+                
         double scale = 1.0;
         
         if (step_dir == 1)
         {
-            moved_foot->values[0] += scale * 1.2;
+            moved_foot->values[1] += scale * 1.2;
         }
         else if (step_dir == 2)
         {
-            moved_foot->values[1] -= scale * 1.03923;
-            moved_foot->values[0] += scale * 0.6;
+            moved_foot->values[0] -= scale * 1.03923;
+            moved_foot->values[1] += scale * 0.6;
         }
         else if (step_dir == 3)
         {
-            moved_foot->values[1] -= scale * 1.03923;
-            moved_foot->values[0] -= scale * 0.6;
+            moved_foot->values[0] -= scale * 1.03923;
+            moved_foot->values[1] -= scale * 0.6;
         }
         else if (step_dir == 4)
         {
-            moved_foot->values[0] -= scale * 1.2;
+            moved_foot->values[1] -= scale * 1.2;
         }
         else if (step_dir == 5)
         {
-            moved_foot->values[1] += scale * 1.03923;
-            moved_foot->values[0] -= scale * 0.6;
+            moved_foot->values[0] += scale * 1.03923;
+            moved_foot->values[1] -= scale * 0.6;
         }
         else if (step_dir == 6)
         {
-            moved_foot->values[1] += scale * 1.03923;
-            moved_foot->values[0] += scale * 0.6;
+            moved_foot->values[0] += scale * 1.03923;
+            moved_foot->values[1] += scale * 0.6;
         }      
     }
     
