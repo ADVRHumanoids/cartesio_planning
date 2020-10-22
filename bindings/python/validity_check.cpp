@@ -119,7 +119,9 @@ PYBIND11_MODULE(validity_check, m)
             .def("checkStability", &CentroidalStatics::checkStability, py::arg("eps") = 1e-3)
             .def("setContactLinks", &CentroidalStatics::setContactLinks)
             .def("addContactLinks", &CentroidalStatics::addContactLinks)
-            .def("getContactLinks", &CentroidalStatics::getContactLinks);
+            .def("getContactLinks", &CentroidalStatics::getContactLinks)
+            .def("setContactRotationMatrix", &CentroidalStatics::setContactRotationMatrix)
+            .def("getContactFrame", &CentroidalStatics::getContactFrame);
 
         
 }
