@@ -177,6 +177,11 @@ void CentroidalStatics::setContactLinks(const std::vector<std::string>& contact_
     init();
 }
 
+vector< string > CentroidalStatics::getContactLinks()
+{
+    return _contact_links;
+}
+
 void CentroidalStatics::addContactLinks(const std::vector<std::string>& contact_links)
 {
     std::map<std::string, Eigen::Matrix3d> rotations;
