@@ -116,7 +116,7 @@ public:
      * @return map of <link_names, friction cones>
      */
     
-    const Eigen::Matrix3d& getContactFrame(const std::string& contact_link){ return _fcs[contact_link]->getContactFrame();};
+    const Eigen::Matrix3d getContactFrame(const std::string& contact_link){  std::cout << "Getting contact rotation matrix of link " << contact_link << " = \n" << _fcs[contact_link]->getContactFrame() << std::endl; return _fcs[contact_link]->getContactFrame();};
     
     const std::map<std::string, XBot::Cartesian::acceleration::FrictionCone::Ptr>& getFrictionCones(){ return _fcs;}
 

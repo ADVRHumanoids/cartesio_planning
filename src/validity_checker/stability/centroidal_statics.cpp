@@ -171,6 +171,7 @@ void CentroidalStatics::setOptimizeTorque(const bool optimize_torque)
 
 void CentroidalStatics::setContactLinks(const std::vector<std::string>& contact_links)
 {
+    std::cout << "Setting contact links " << std::endl;
     _contact_links.clear();
     _contact_links = contact_links;
 
@@ -179,6 +180,7 @@ void CentroidalStatics::setContactLinks(const std::vector<std::string>& contact_
 
 vector< string > CentroidalStatics::getContactLinks()
 {
+    std::cout << "Getting contact links..." << std::endl;
     return _contact_links;
 }
 
@@ -222,6 +224,7 @@ void CentroidalStatics::removeContactLinks(const std::vector<std::string>& conta
 bool CentroidalStatics::setContactRotationMatrix(const std::string& contact_link,
                                                  const Eigen::Matrix3d& w_R_c)
 {
+    std::cout << "Setting contact rotation matrix " << w_R_c << "\n to " << contact_link << std::endl;
     if(_fcs.find(contact_link) == _fcs.end())
         return false;
     _fcs[contact_link]->setContactRotationMatrix(w_R_c);
