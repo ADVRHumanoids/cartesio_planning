@@ -121,7 +121,9 @@ PYBIND11_MODULE(validity_check, m)
             .def("addContactLinks", &CentroidalStatics::addContactLinks)
             .def("getContactLinks", &CentroidalStatics::getContactLinks)
             .def("setContactRotationMatrix", &CentroidalStatics::setContactRotationMatrix)
-            .def("getContactFrame", &CentroidalStatics::getContactFrame);
+            .def("getContactFrame", &CentroidalStatics::getContactFrame)
+            .def("setForces", &CentroidalStatics::setForces)
+            .def("getForces", &CentroidalStatics::getForces);
 
         
 }

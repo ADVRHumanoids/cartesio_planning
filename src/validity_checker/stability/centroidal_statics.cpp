@@ -2,6 +2,8 @@
 #include <boost/range/algorithm.hpp>
 #include <boost/range/adaptors.hpp>
 
+#include <cartesio_acceleration_support/Force.h>
+
 using namespace XBot::Cartesian::Planning;
 using namespace XBot::Cartesian;
 
@@ -171,7 +173,6 @@ void CentroidalStatics::setOptimizeTorque(const bool optimize_torque)
 
 void CentroidalStatics::setContactLinks(const std::vector<std::string>& contact_links)
 {
-    std::cout << "Setting contact links " << std::endl;
     _contact_links.clear();
     _contact_links = contact_links;
 
@@ -180,7 +181,6 @@ void CentroidalStatics::setContactLinks(const std::vector<std::string>& contact_
 
 vector< string > CentroidalStatics::getContactLinks()
 {
-    std::cout << "Getting contact links..." << std::endl;
     return _contact_links;
 }
 
@@ -224,7 +224,6 @@ void CentroidalStatics::removeContactLinks(const std::vector<std::string>& conta
 bool CentroidalStatics::setContactRotationMatrix(const std::string& contact_link,
                                                  const Eigen::Matrix3d& w_R_c)
 {
-    std::cout << "Setting contact rotation matrix " << w_R_c << "\n to " << contact_link << std::endl;
     if(_fcs.find(contact_link) == _fcs.end())
         return false;
     _fcs[contact_link]->setContactRotationMatrix(w_R_c);
@@ -240,12 +239,12 @@ bool CentroidalStatics::compute()
 bool CentroidalStatics::checkStability(const double eps)
 {
     if(compute())
-    {
+    {   
         Eigen::VectorXd error;
         if(!_dyn_feas->getTaskError(error))
             return false;
         double res = error.norm();
-        //std::cout<<"error.norm(): "<<error.norm()<<std::endl;
+        std::cout << "error.norm(): " << error.norm() << std::endl;
         if(res <= eps)
             return true;
     }
@@ -258,5 +257,19 @@ const std::map<std::string, Eigen::Vector6d>& CentroidalStatics::getForces()
 
     for(auto f : _fs)
         _Fc[f.first] = f.second->getForceValue();
+//         _Fc[f.first] = f.second->getForceReference(); 
     return _Fc;
+}
+
+void CentroidalStatics::setForces(map< string, Eigen::Vector6d> forces) 
+{
+    for (auto i : forces)
+    {
+        auto task = _ci->getTask(i.first); 
+        
+        auto force_task = std::dynamic_pointer_cast<XBot::Cartesian::acceleration::ForceTask>(task);
+        if(!force_task) throw std::runtime_error("Provided task description "
+                                                 "does not have expected type 'ForceTask'");
+        force_task->setForceReference(i.second);
+    }
 }
