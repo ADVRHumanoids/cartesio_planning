@@ -181,6 +181,7 @@ void PlanningSceneWrapper::update()
             };
 
             robot_state.setJointPositions(jname, jpos);
+            robot_state.update();
 
         }
         else if(jtype == urdf::Joint::FIXED)
