@@ -128,22 +128,22 @@ void FootStepPlanner::init_load_position_cartesian_solver()
     
     _solver = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(_ci);
     
-    Eigen::Affine3d T;
-    T.translation() << 0.35, -0.6, -0.9;
-    T.linear() = Eigen::Quaternion<double>(0,1,0,0).toRotationMatrix();
-    _solver->setDesiredPose("EEA_link", T);
-    T.translation() << 0.35, 0.6, -0.9;
-    _solver->setDesiredPose("EEB_link", T);
-    T.translation() << -0.7, 0.0, -0.9;
-    _solver->setDesiredPose("EEC_link", T);
-    
-    _solver->solve();
-    Eigen::VectorXd q(_model->getJointNum());
-    _solver->getModel()->getJointPosition(q);
-    _start_model->setJointPosition(q);
-    _start_model->update();
-    _goal_model->setJointPosition(q);
-    _goal_model->update();
+//     Eigen::Affine3d T;
+//     T.translation() << 0.35, -0.6, -0.9;
+//     T.linear() = Eigen::Quaternion<double>(0,1,0,0).toRotationMatrix();
+//     _solver->setDesiredPose("EEA_link", T);
+//     T.translation() << 0.35, 0.6, -0.9;
+//     _solver->setDesiredPose("EEB_link", T);
+//     T.translation() << -0.7, 0.0, -0.9;
+//     _solver->setDesiredPose("EEC_link", T);
+//     
+//     _solver->solve();
+//     Eigen::VectorXd q(_model->getJointNum());
+//     _solver->getModel()->getJointPosition(q);
+//     _start_model->setJointPosition(q);
+//     _start_model->update();
+//     _goal_model->setJointPosition(q);
+//     _goal_model->update();
         
     // Goal Solver
     ik_yaml_goal = YAML::Load(problem_description);
@@ -226,17 +226,17 @@ void FootStepPlanner::init_load_planner()
     auto foot_selector = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 1, _ee_number);
     foot_selector->setControlSamplerAllocator(getSampler);
     
-//     auto step_size = std::make_shared<ompl::control::RealVectorControlSpace>(_space, _space->getSubspace(0)->getDimension());
+    auto step_size = std::make_shared<ompl::control::RealVectorControlSpace>(_space, _space->getSubspace(0)->getDimension());
     
     // Extra ControlSpace for esa_mirror robot with fixed step_size
-    auto step_size = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 1, 6);
+//     auto step_size = std::make_shared<ompl::control::DiscreteControlSpace>(_space, 1, 6);
     
     YAML_PARSE_OPTION(_planner_config["control_space"], step_size_max, double, 1.0)
     ompl::base::RealVectorBounds step_bounds(_space->getSubspace(0)->getDimension());
     step_bounds.setLow(-1*step_size_max);
     step_bounds.setHigh(step_size_max);
     
-//     step_size->setBounds(step_bounds);
+    step_size->setBounds(step_bounds);
     
     _cspace = std::make_shared<ompl::control::CompoundControlSpace>(_space);
     _cspace->addSubspace(foot_selector);
@@ -1197,10 +1197,10 @@ bool FootStepPlanner::publish_trajectory_service(std_srvs::Empty::Request& req, 
             t += ros::Duration(0.01);
         }
         
-        trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
-        
-        _xbotcore_trj_publisher.publish(trj); 
-        _trj_publisher.publish(trj);
+    trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
+    
+    _xbotcore_trj_publisher.publish(trj); 
+    _trj_publisher.publish(trj);
 }
 
 bool FootStepPlanner::image_service ( std_srvs::Empty::Request& req, std_srvs::Empty::Response& res )

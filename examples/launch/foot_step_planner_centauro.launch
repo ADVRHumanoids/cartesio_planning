@@ -49,7 +49,7 @@
 
     <!-- single short and wide obstacle -->
     <!-- mesh_viz for obstacle generation -->
-    <node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+    <!--<node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
         <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
         <param name="scale_x" type="double" value="1."/>
         <param name="scale_y" type="double" value="1.0"/>
@@ -60,7 +60,7 @@
         <param name="name_id" value="floor"/>
         <param name="show_control_axis" type="bool" value="False"/>
         <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
-    </node>
+    </node>-->
     
     <!-- Octomap converter -->
     <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_converter" output="screen"/>
