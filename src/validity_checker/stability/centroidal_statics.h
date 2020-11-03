@@ -84,10 +84,10 @@ public:
     void setContactLinks(const std::vector<std::string>& contact_links);
     
     /**
-     * @brief getContactLinks retrieve the list of active links
-     * @return a std::vector<std::double> containing the names of the active contacts
+     * @brief getContactLinks retrieve the list of set contact links
+     * @return std::vector<std::string> containing the contact links
      */
-    std::vector<std::string> getContactLinks() { return _contact_links; };
+    const std::vector<std::string>& getContactLinks();
 
     /**
      * @brief addContactLinks add contact links to existing once (rotations are initialized as identity)

@@ -211,6 +211,10 @@ bool PlanningSceneWrapper::checkCollisions() const
     collision_detection::CollisionResult collision_result;  
     
     _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
+    
+//     std::cout << "colliding links: " << std::endl;
+//     for (auto i : getCollidingLinks())
+//         std::cout << i<< std::endl;
 
     return collision_result.collision;
 }

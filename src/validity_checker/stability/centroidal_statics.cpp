@@ -2,6 +2,8 @@
 #include <boost/range/algorithm.hpp>
 #include <boost/range/adaptors.hpp>
 
+#include <cartesio_acceleration_support/Force.h>
+
 using namespace XBot::Cartesian::Planning;
 using namespace XBot::Cartesian;
 
@@ -177,6 +179,11 @@ void CentroidalStatics::setContactLinks(const std::vector<std::string>& contact_
     init();
 }
 
+vector< string > CentroidalStatics::getContactLinks()
+{
+    return _contact_links;
+}
+
 void CentroidalStatics::addContactLinks(const std::vector<std::string>& contact_links)
 {
     std::map<std::string, Eigen::Matrix3d> rotations;
@@ -232,12 +239,11 @@ bool CentroidalStatics::compute()
 bool CentroidalStatics::checkStability(const double eps)
 {
     if(compute())
-    {
+    {   
         Eigen::VectorXd error;
         if(!_dyn_feas->getTaskError(error))
             return false;
         double res = error.norm();
-        //std::cout<<"error.norm(): "<<error.norm()<<std::endl;
         if(res <= eps)
             return true;
     }
@@ -250,6 +256,7 @@ const std::map<std::string, Eigen::Vector6d>& CentroidalStatics::getForces()
 
     for(auto f : _fs)
         _Fc[f.first] = f.second->getForceValue();
+//         _Fc[f.first] = f.second->getForceReference(); 
     return _Fc;
 }
 
