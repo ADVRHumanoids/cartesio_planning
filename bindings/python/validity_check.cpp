@@ -101,7 +101,8 @@ PYBIND11_MODULE(validity_check, m)
             .def("addBox", add_box)
             .def("addSphere", add_ellipse)
             .def("removeCollisionObject", remove_collision_object)
-            .def("update", &PlanningSceneWrapper::update);
+            .def("update", &PlanningSceneWrapper::update)
+            .def("getCollidingLinks", &PlanningSceneWrapper::getCollidingLinks);
             
     py::class_<CentroidalStatics>(m, "CentroidalStatics")
             .def(py::init<ModelInterface::ConstPtr, 

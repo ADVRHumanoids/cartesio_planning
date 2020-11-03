@@ -244,7 +244,6 @@ bool CentroidalStatics::checkStability(const double eps)
         if(!_dyn_feas->getTaskError(error))
             return false;
         double res = error.norm();
-        std::cout << "error.norm(): " << error.norm() << std::endl;
         if(res <= eps)
             return true;
     }
