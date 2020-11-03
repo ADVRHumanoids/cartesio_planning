@@ -252,3 +252,16 @@ const std::map<std::string, Eigen::Vector6d>& CentroidalStatics::getForces()
         _Fc[f.first] = f.second->getForceValue();
     return _Fc;
 }
+
+void CentroidalStatics::setForces(map< string, Eigen::Vector6d> forces) 
+{
+    for (auto i : forces)
+    {
+        auto task = _ci->getTask(i.first); 
+        
+        auto force_task = std::dynamic_pointer_cast<XBot::Cartesian::acceleration::ForceTask>(task);
+        if(!force_task) throw std::runtime_error("Provided task description "
+                                                 "does not have expected type 'ForceTask'");
+        force_task->setForceReference(i.second);
+    }
+}

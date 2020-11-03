@@ -82,6 +82,12 @@ public:
      * @param contact_links
      */
     void setContactLinks(const std::vector<std::string>& contact_links);
+    
+    /**
+     * @brief getContactLinks retrieve the list of active links
+     * @return a std::vector<std::double> containing the names of the active contacts
+     */
+    std::vector<std::string> getContactLinks() { return _contact_links; };
 
     /**
      * @brief addContactLinks add contact links to existing once (rotations are initialized as identity)
@@ -104,6 +110,13 @@ public:
      */
     bool setContactRotationMatrix(const std::string& contact_link,
                                   const Eigen::Matrix3d& w_R_c);
+    
+    /**
+     * @brief getContactFrame retrive contact rotation matrix
+     * @return a con Eigen::Matrix3d containing the rotation matrix
+     */
+    
+    const Eigen::Matrix3d getContactFrame(const std::string& contact_link){ return _fcs[contact_link]->getContactFrame();};
 
     /**
      * @brief getFrictionCones
@@ -130,6 +143,8 @@ public:
      * @return map of link name and associated contact forces
      */
     const std::map<std::string, Eigen::Vector6d>& getForces();
+    
+    void setForces(std::map<std::string, Eigen::Vector6d> forces);
 
 
 private:

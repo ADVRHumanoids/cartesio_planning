@@ -432,11 +432,11 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             if (!svp(x) && !_vc_context.vc_aggregate.check("distance"))
                 return false;
             
-            if (!svp(x) && _goalSamplerType == "goalSampler2" && (!_vc_context.vc_aggregate.check("collisions") || !_vc_context.vc_aggregate.check("stability")))
+            if (!svp(x) && _goalSamplerType == "NSPG" && (!_vc_context.vc_aggregate.check("collisions") || !_vc_context.vc_aggregate.check("stability")))
             {
-                XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
+                XBot::Cartesian::Planning::NSPG::Ptr goal_sampler;
                 _goalSampler_counter ++;
-                goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
+                goal_sampler = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);
                 if (goal_sampler->sample(0.1))
                     _solver->getModel()->getJointPosition(x);
                 else
@@ -1230,8 +1230,8 @@ bool FootStepPlanner::image_service ( std_srvs::Empty::Request& req, std_srvs::E
     _start_model->getVelocityLimits(velocityLim);
     _start_model->eigenToMap(velocityLim, velocityLim_map);
     
-    XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;               
-    goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
+    XBot::Cartesian::Planning::NSPG::Ptr goal_sampler;               
+    goal_sampler = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);
     /*
     for(int i = 1; i < 8; i++)
     {

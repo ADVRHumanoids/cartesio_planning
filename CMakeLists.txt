@@ -157,7 +157,7 @@ include_directories( SYSTEM
 add_library(cartesio_planning SHARED
     src/constraints/cartesian_constraint.cpp
     src/goal/goal_sampler.cpp
-    src/goal/goal_sampler2.cpp
+    src/goal/NSPG.cpp
     src/ik/position_ik_solver.cpp
     src/planner/cartesio_ompl_planner.cpp
     src/state_wrapper.cpp
@@ -167,6 +167,7 @@ add_library(cartesio_planning SHARED
     src/validity_checker/stability/cartesian_utils.cpp
     src/validity_checker/stability/convex_hull_utils.cpp
     src/validity_checker/stability/stability_detection.cpp
+    src/validity_checker/stability/centroidal_statics.cpp
     src/validity_checker/collisions/planning_scene_wrapper.cpp
     src/validity_checker/validity_checker_factory.cpp
     src/validity_checker/validity_predicate_aggregate.cpp

@@ -1,23 +1,30 @@
-#include "goal_sampler2.h"
+#include "NSPG.h"
 
 using namespace XBot::Cartesian::Planning;
 
-GoalSampler2::GoalSampler2 ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_context ):
+static std::default_random_engine randGenerator;
+static std::uniform_real_distribution<double> randDistribution(-1.0, 1.0);
+
+NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_context ):
     _ik_solver(ik_solver),
     _vc_context(vc_context)
-    {}
+    {
+        auto a = std::chrono::system_clock::now();
+        time_t b = std::chrono::system_clock::to_time_t(a);
+        randGenerator.seed(b);
+    }
     
-void GoalSampler2::setIKSolver ( PositionCartesianSolver::Ptr new_ik_solver )
+void NSPG::setIKSolver ( PositionCartesianSolver::Ptr new_ik_solver )
 {
     _ik_solver = new_ik_solver;
 }
 
-void GoalSampler2::getIKSolver ( PositionCartesianSolver::Ptr& ik_solver ) const 
+void NSPG::getIKSolver ( PositionCartesianSolver::Ptr& ik_solver ) const 
 {
     ik_solver = _ik_solver;
 }
 
-bool GoalSampler2::sample ( double timeout ) 
+bool NSPG::sample ( double timeout ) 
 {
     // BE SURE THAT _ik_solver AND _vc_context HAS THE SAME MODEL
     Eigen::VectorXd x, dqlimits;
@@ -74,12 +81,12 @@ bool GoalSampler2::sample ( double timeout )
     return true;
 }
 
-double GoalSampler2::generateRandom() 
+double NSPG::generateRandom() 
 {
-    return (double) (std::rand() - RAND_MAX/2) / (RAND_MAX/2);
+    return randDistribution(randGenerator);
 }
 
-XBot::JointNameMap GoalSampler2::generateRandomVelocities(std::vector<XBot::ModelChain> colliding_chains) 
+XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> colliding_chains) 
 {
     XBot::JointNameMap random_map, chain_map, velocityLim_map;
     Eigen::VectorXd velocity_lim;

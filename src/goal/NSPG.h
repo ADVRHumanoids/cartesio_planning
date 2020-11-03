@@ -11,13 +11,13 @@
 
 namespace XBot { namespace Cartesian { namespace Planning {
     
-    class GoalSampler2 {
+    class NSPG {
            
     public: 
         
-        typedef std::shared_ptr<GoalSampler2> Ptr;
+        typedef std::shared_ptr<NSPG> Ptr;
 
-        GoalSampler2(PositionCartesianSolver::Ptr ik_solver,
+        NSPG(PositionCartesianSolver::Ptr ik_solver,
                      Planning::ValidityCheckContext vc_context);
                
         void setIKSolver(PositionCartesianSolver::Ptr new_ik_solver);

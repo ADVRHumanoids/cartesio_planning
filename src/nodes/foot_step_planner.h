@@ -63,7 +63,7 @@
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "nodes/goal_generation.h"
 #include "goal/goal_sampler.h"
-#include "goal/goal_sampler2.h"
+#include "goal/NSPG.h"
 #include "utils/map_converter.h"
 #include "utils/hash.h"
 #include "planner/cartesian_trajectory_interpolation.h"
