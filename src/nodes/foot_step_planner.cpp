@@ -533,8 +533,8 @@ bool FootStepPlanner::start_goal_service ( cartesio_planning::CartesioGoal::Requ
     std::vector<std::string> red_links = _vc_context.planning_scene->getCollidingLinks();        
     _goal_viz->publishMarkers(ros::Time::now(), red_links);
     
-    XBot::Cartesian::Planning::GoalSampler2::Ptr goal_sampler;
-    goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSampler2>(_solver, _vc_context);
+    XBot::Cartesian::Planning::NSPG::Ptr goal_sampler;
+    goal_sampler = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);
     if (goal_sampler->sample(req.time))
     {
         double err;

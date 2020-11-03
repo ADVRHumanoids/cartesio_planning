@@ -26,6 +26,11 @@ if(${pybind11_FOUND})
     target_link_libraries(constraints PRIVATE cartesio_planning)
     install(TARGETS constraints
         DESTINATION ${CATKIN_PACKAGE_PYTHON_DESTINATION})
+        
+    pybind11_add_module(NSPG NSPG.cpp)
+    target_link_libraries(NSPG PRIVATE cartesio_planning)
+    install(TARGETS NSPG
+        DESTINATION ${CATKIN_PACKAGE_PYTHON_DESTINATION})
 
 else()
     message(STATUS "-----------------------------------pybind not found")
