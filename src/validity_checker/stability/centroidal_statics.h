@@ -116,7 +116,7 @@ public:
      * @return a con Eigen::Matrix3d containing the rotation matrix
      */
     
-    const Eigen::Matrix3d getContactFrame(const std::string& contact_link){ return _fcs[contact_link]->getContactFrame();};
+    const Eigen::Matrix3d getContactFrame(const std::string& contact_link){ return _fcs[contact_link]->getContactFrame();}
 
     /**
      * @brief getFrictionCones

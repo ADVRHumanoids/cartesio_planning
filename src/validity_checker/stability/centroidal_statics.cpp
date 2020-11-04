@@ -179,7 +179,7 @@ void CentroidalStatics::setContactLinks(const std::vector<std::string>& contact_
     init();
 }
 
-vector< string > CentroidalStatics::getContactLinks()
+const std::vector< std::string >& CentroidalStatics::getContactLinks()
 {
     return _contact_links;
 }
