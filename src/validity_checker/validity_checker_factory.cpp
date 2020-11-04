@@ -2,12 +2,15 @@
 
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "validity_checker/stability/stability_detection.h"
+#include "validity_checker/stability/centroidal_statics.h"
 #include "utils/parse_yaml_utils.h"
 
 #include <boost/math/constants/constants.hpp>
 
 namespace
 {
+
+
 
 /**
  * @brief MakeCollisionChecker
@@ -46,6 +49,41 @@ std::function<bool ()> MakeCollisionChecker(YAML::Node vc_node,
     return validity_checker;
 
 }
+
+/**
+ * @brief MakeCentroidalStaticsChecker
+ * @param vc_node
+ * @param model
+ * @return
+ */
+std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
+                                                    XBot::ModelInterface::ConstPtr model,
+                                                    ros::NodeHandle& nh)
+{
+    using namespace XBot::Cartesian::Planning;
+
+    YAML_PARSE_OPTION(vc_node, eps, double, 1e-3);
+    YAML_PARSE_OPTION(vc_node, links, std::vector<std::string>, {});
+    YAML_PARSE_OPTION(vc_node, friction_coefficient, double, 0.5);
+    YAML_PARSE_OPTION(vc_node, optimize_torque, bool, false);
+
+    auto cs = std::make_shared<CentroidalStatics>(model, links, friction_coefficient, optimize_torque);
+    auto cs_ros = std::make_shared<CentroidalStaticsROS>(model, *cs, nh, eps);
+
+    double ros_eps = cs_ros->getEps();
+
+    if(std::sqrt(std::pow(eps-ros_eps,2)) > 1e-6)
+        ROS_WARN("Centroidal Statics eps parameters have been set different in config and launch file!");
+
+    auto validity_checker = [=]()
+    {
+        cs_ros->publish();
+        return cs->checkStability(eps);
+    };
+
+    return validity_checker;
+}
+
 
 /**
  * @brief MakeConvexHullChecker
@@ -297,6 +335,10 @@ std::function<bool ()> XBot::Cartesian::Planning::MakeValidityChecker(YAML::Node
         else if(vc_type == "DistanceCheck_comanplus")
         {
             return MakeDistanceCheck_comanplus(planner_config, vc_node, model);
+        }
+        else if(vc_type == "CentroidalStatics")
+        {
+            return MakeCentroidalStaticsChecker(vc_node, model, nh);
         }
         else
         {

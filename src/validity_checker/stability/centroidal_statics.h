@@ -185,12 +185,12 @@ class CentroidalStaticsROS
 public:
     typedef std::shared_ptr<CentroidalStaticsROS> Ptr;
 
-    CentroidalStaticsROS(XBot::ModelInterface::ConstPtr model, CentroidalStatics& cs, ros::NodeHandle& nh):
+    CentroidalStaticsROS(XBot::ModelInterface::ConstPtr model, CentroidalStatics& cs, ros::NodeHandle& nh, double eps=1e-3):
         _cs(cs),
         _model(*model),
         _nh(nh),
         _tf_prefix(""),
-        _eps(1e-3)
+        _eps(eps)
     {
         _contact_sub = _nh.subscribe("contacts", 10, &CentroidalStaticsROS::set_contacts, this);
 
@@ -199,10 +199,12 @@ public:
         std::string tmp;
         if(_nh.getParam("tf_prefix", tmp))
             _tf_prefix = tmp;
-        double eps;
-        if(nh.getParam("eps", eps))
+        double _eps;
+        if(nh.getParam("eps", _eps))
             _eps = eps;
     }
+
+    double getEps(){return _eps;}
 
 
     void publish()

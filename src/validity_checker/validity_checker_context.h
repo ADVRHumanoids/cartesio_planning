@@ -7,6 +7,7 @@
 
 #include "validity_checker/validity_predicate_aggregate.h"
 #include "validity_checker/collisions/planning_scene_wrapper.h"
+#include "validity_checker/stability/centroidal_statics.h"
 
 namespace XBot { namespace Cartesian { namespace Planning {
 
