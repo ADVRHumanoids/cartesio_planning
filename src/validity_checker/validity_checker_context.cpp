@@ -5,9 +5,10 @@
 namespace XBot { namespace Cartesian { namespace Planning {
 
 ValidityCheckContext::ValidityCheckContext(YAML::Node config,
-                                           ModelInterface::ConstPtr model,
-                                           ros::NodeHandle& nh):
-    _model( model)
+                                           ModelInterface::Ptr model,
+                                           ros::NodeHandle nh):
+    _model( model),
+    _nh(nh)
 {
     if(!config["state_validity_check"])
     {
@@ -36,7 +37,7 @@ ValidityCheckContext::ValidityCheckContext(YAML::Node config,
             vc_fun = MakeValidityChecker(config,
                                          config[vc_name],
                                          model,
-                                         "", nh);
+                                         "", _nh);
         }
 
         vc_aggregate.add(vc_fun, vc_name);

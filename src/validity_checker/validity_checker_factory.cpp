@@ -19,7 +19,7 @@ namespace
  * @return
  */
 std::function<bool ()> MakeCollisionChecker(YAML::Node vc_node,
-                                            XBot::ModelInterface::ConstPtr model)
+                                            XBot::ModelInterface::Ptr model)
 {
     using namespace XBot::Cartesian::Planning;
 
@@ -57,8 +57,8 @@ std::function<bool ()> MakeCollisionChecker(YAML::Node vc_node,
  * @return
  */
 std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
-                                                    XBot::ModelInterface::ConstPtr model,
-                                                    ros::NodeHandle& nh)
+                                                    XBot::ModelInterface::Ptr model,
+                                                    ros::NodeHandle nh)
 {
     using namespace XBot::Cartesian::Planning;
 
@@ -92,8 +92,8 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
  * @return
  */
 std::function<bool ()> MakeConvexHullChecker(YAML::Node vc_node,
-                                             XBot::ModelInterface::ConstPtr model,
-                                             ros::NodeHandle& nh)
+                                             XBot::ModelInterface::Ptr model,
+                                             ros::NodeHandle nh)
 {
     using namespace XBot::Cartesian::Planning;
 
@@ -116,7 +116,7 @@ std::function<bool ()> MakeConvexHullChecker(YAML::Node vc_node,
 
 std::function<bool ()> MakeDistanceCheck_tripod(YAML::Node planner_config,
                                                 YAML::Node vc_node,
-                                                XBot::ModelInterface::ConstPtr model)
+                                                XBot::ModelInterface::Ptr model)
 {
     using namespace XBot::Cartesian::Planning;
     
@@ -161,7 +161,7 @@ std::function<bool ()> MakeDistanceCheck_tripod(YAML::Node planner_config,
 
 std::function<bool ()> MakeDistanceCheck_centauro(YAML::Node planner_config,
                                                   YAML::Node vc_node,
-                                                  XBot::ModelInterface::ConstPtr model)
+                                                  XBot::ModelInterface::Ptr model)
 { 
     using namespace XBot::Cartesian::Planning;
     
@@ -241,7 +241,7 @@ std::function<bool ()> MakeDistanceCheck_centauro(YAML::Node planner_config,
 
 std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
                                                YAML::Node vc_node,
-                                               XBot::ModelInterface::ConstPtr model)
+                                               XBot::ModelInterface::Ptr model)
 { 
     using namespace XBot::Cartesian::Planning;
     
@@ -301,9 +301,9 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
 
 std::function<bool ()> XBot::Cartesian::Planning::MakeValidityChecker(YAML::Node planner_config,
                                                                       YAML::Node vc_node,
-                                                                      ModelInterface::ConstPtr model,
+                                                                      ModelInterface::Ptr model,
                                                                       std::string lib_name,
-                                                                      ros::NodeHandle& nh)
+                                                                      ros::NodeHandle nh)
 {
     /* Obtain factory name from task type */
     std::string vc_type = vc_node["type"].as<std::string>();
