@@ -18,9 +18,9 @@ namespace XBot { namespace Cartesian { namespace Planning {
      */
     std::function<bool(void)> MakeValidityChecker(YAML::Node planner_config,
                                                   YAML::Node task_node,
-                                                  ModelInterface::ConstPtr model,
+                                                  ModelInterface::Ptr model,
                                                   std::string lib_name,
-                                                  ros::NodeHandle& nh);
+                                                  ros::NodeHandle nh);
 
 } } }
 

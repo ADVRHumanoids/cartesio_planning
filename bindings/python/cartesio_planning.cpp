@@ -115,7 +115,7 @@ PYBIND11_MODULE(planning, m)
             .def("setMaxIterations", goal_sampler_set_maxiter)
             .def("setDesiredPose", goal_sampler_setref);
 
-    py::class_<PositionCartesianSolver>(m, "PositionCartesianSolver")
+    py::class_<PositionCartesianSolver, PositionCartesianSolver::Ptr>(m, "PositionCartesianSolver")
             .def(py::init<CartesianInterfaceImpl::Ptr>())
             .def("getError", ik_err)
             .def("getJacobian", ik_jacob)
@@ -123,7 +123,9 @@ PYBIND11_MODULE(planning, m)
             .def("solve", &PositionCartesianSolver::solve)
             .def("setDesiredPose", &PositionCartesianSolver::setDesiredPose)
             .def("reset", &PositionCartesianSolver::reset)
-            .def("setErrorTolerance", &PositionCartesianSolver::setErrorTolerance);
+            .def("setErrorTolerance", &PositionCartesianSolver::setErrorTolerance)
+            .def("getModel", &PositionCartesianSolver::getModel)
+            .def("getCI", &PositionCartesianSolver::getCI);
 
 }
 

@@ -6,6 +6,7 @@
 #include "planner/cartesio_ompl_planner.h"
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "validity_checker/stability/centroidal_statics.h"
+#include "validity_checker/validity_checker_context.h"
 
 
 #include <ros/serialization.h>
@@ -28,7 +29,7 @@ auto add_box = [](PlanningSceneWrapper& self,
 
     shape_msgs::SolidPrimitive solid;
     solid.type = solid.BOX;
-    solid.dimensions = {size.x(), size.y(), size.z()};
+    solid.dimensions = {size.x(), size.y(), size.z()};  
     co.primitives.push_back(solid);
 
     geometry_msgs::Pose pose;
@@ -87,6 +88,14 @@ auto remove_collision_object = [](PlanningSceneWrapper& self,
     self.applyPlanningScene(ps);
 };
 
+auto create_validity_check_context = [](std::string vc_node, ModelInterface::Ptr model)
+{
+    ros::NodeHandle nh;
+    ValidityCheckContext vc_context(YAML::Load(vc_node), model, nh);
+    
+    return vc_context;
+};
+
 PYBIND11_MODULE(validity_check, m)
 {
 
@@ -124,5 +133,10 @@ PYBIND11_MODULE(validity_check, m)
             .def("setContactRotationMatrix", &CentroidalStatics::setContactRotationMatrix)
             .def("getContactFrame", &CentroidalStatics::getContactFrame)
             .def("setForces", &CentroidalStatics::setForces)
-            .def("getForces", &CentroidalStatics::getForces);       
+            .def("getForces", &CentroidalStatics::getForces);     
+            
+    py::class_<ValidityCheckContext>(m, "ValidityCheckContext")
+            .def(py::init(create_validity_check_context),
+                 py::arg("vc_node"),
+                 py::arg("model"));
 }
