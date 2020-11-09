@@ -8,6 +8,7 @@
 #include "validity_checker/stability/centroidal_statics.h"
 #include "validity_checker/validity_checker_context.h"
 
+
 #include <ros/serialization.h>
 #include <eigen_conversions/eigen_msg.h>
 
@@ -17,7 +18,6 @@ using namespace XBot;
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Planning;
 
-
 auto add_box = [](PlanningSceneWrapper& self,
                 std::string id,
                 const Eigen::Vector3d& size,
@@ -25,10 +25,11 @@ auto add_box = [](PlanningSceneWrapper& self,
 {
     moveit_msgs::CollisionObject co;
     co.id = id;
+    co.header.frame_id = "/world";
 
     shape_msgs::SolidPrimitive solid;
     solid.type = solid.BOX;
-    solid.dimensions = {size.x(), size.y(), size.z()};  
+    solid.dimensions = {size.x(), size.y(), size.z()};
     co.primitives.push_back(solid);
 
     geometry_msgs::Pose pose;
@@ -95,7 +96,6 @@ auto create_validity_check_context = [](std::string vc_node, ModelInterface::Ptr
     return vc_context;
 };
 
-
 PYBIND11_MODULE(validity_check, m)
 {
 
@@ -135,7 +135,7 @@ PYBIND11_MODULE(validity_check, m)
             .def("setForces", &CentroidalStatics::setForces)
             .def("getForces", &CentroidalStatics::getForces);     
             
-    py::class_<ValidityCheckContext, std::shared_ptr<ValidityCheckContext>>(m, "ValidityCheckContext")
+    py::class_<ValidityCheckContext>(m, "ValidityCheckContext")
             .def(py::init(create_validity_check_context),
                  py::arg("vc_node"),
                  py::arg("model"));

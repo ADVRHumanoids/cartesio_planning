@@ -6,7 +6,7 @@ namespace XBot { namespace Cartesian { namespace Planning {
 
 ValidityCheckContext::ValidityCheckContext(YAML::Node config,
                                            ModelInterface::Ptr model,
-                                           const ros::NodeHandle &nh):
+                                           ros::NodeHandle nh):
     _model( model),
     _nh(nh)
 {
@@ -42,8 +42,8 @@ ValidityCheckContext::ValidityCheckContext(YAML::Node config,
 
         vc_aggregate.add(vc_fun, vc_name);
 
-    } 
-    
+    }
+
 }
 
 std::function<bool ()> ValidityCheckContext::make_collision_checker(YAML::Node vc_node)

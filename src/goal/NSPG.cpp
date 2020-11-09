@@ -33,8 +33,7 @@ bool NSPG::sample ( double timeout )
     XBot::JointNameMap chain_map, joint_map, velocity_map, random_map;
     
     // Start initializing joint_map
-//     _ik_solver->getModel()->getJointPosition(joint_map);
-    _ik_solver->getCI()->getReferencePosture(joint_map);
+    _ik_solver->getModel()->getJointPosition(joint_map);
     
     _ik_solver->getModel()->getVelocityLimits(dqlimits);
     
@@ -56,18 +55,18 @@ bool NSPG::sample ( double timeout )
         auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
         
         // Generate a random velocity vector for colliding chains' joints only every n iterations
-        if (iter % 50 == 0)
+        if (iter % 100 == 0)
         {
             _ik_solver->getModel()->eigenToMap(x, joint_map);
             random_map = generateRandomVelocities(colliding_chains);  
         }
-         
+                
         // Update joint_map with integrated random velocities       
         for (auto i : random_map)
             joint_map[i.first] += i.second * dt;
         
         iter ++;
-
+     
         _ik_solver->getCI()->setReferencePosture(joint_map);
         _ik_solver->solve();
 
@@ -127,13 +126,6 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
 //                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
 //             }
             
-            if (i.getChainName() == "right_leg" || i.getChainName() == "left_leg")
-            {
-                random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-                random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-                random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));                
-            }
-            
             if (i.getChainName() == "head")
             {
                 random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
@@ -159,13 +151,6 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
 //         random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
 //         random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
 //     }
-
-    if (!_vc_context.vc_aggregate.check("centroidal_statics"))
-    {
-        random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-        random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-        random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
-    }
     
     return random_map;
 }
