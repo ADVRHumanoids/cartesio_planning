@@ -20,12 +20,13 @@ using namespace XBot::Cartesian::Planning;
 
 auto add_box = [](PlanningSceneWrapper& self,
                 std::string id,
+                std::string frame,
                 const Eigen::Vector3d& size,
                 const Eigen::Affine3d& T)
 {
     moveit_msgs::CollisionObject co;
     co.id = id;
-    co.header.frame_id = "/world";
+    co.header.frame_id = frame;
 
     shape_msgs::SolidPrimitive solid;
     solid.type = solid.BOX;
