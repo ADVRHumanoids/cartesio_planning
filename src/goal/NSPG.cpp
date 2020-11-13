@@ -33,7 +33,8 @@ bool NSPG::sample ( double timeout )
     XBot::JointNameMap chain_map, joint_map, velocity_map, random_map;
     
     // Start initializing joint_map
-    _ik_solver->getModel()->getJointPosition(joint_map);
+//     _ik_solver->getModel()->getJointPosition(joint_map);
+    _ik_solver->getCI()->getReferencePosture(joint_map);
     
     _ik_solver->getModel()->getVelocityLimits(dqlimits);
     
@@ -44,7 +45,7 @@ bool NSPG::sample ( double timeout )
     _ik_solver->getModel()->eigenToMap(dqlimits, velocity_map);
     
     float T = 0.0;
-    double dt = 0.01;
+    double dt = 0.1;
     int iter = 0;
     
     while(!_vc_context.vc_aggregate.checkAll())
@@ -55,7 +56,7 @@ bool NSPG::sample ( double timeout )
         auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
         
         // Generate a random velocity vector for colliding chains' joints only every n iterations
-        if (iter % 100 == 0)
+        if (iter % 10 == 0)
         {
             _ik_solver->getModel()->eigenToMap(x, joint_map);
             random_map = generateRandomVelocities(colliding_chains);  
@@ -126,11 +127,18 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
 //                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
 //             }
             
-            if (i.getChainName() == "head")
+            if (i.getChainName() == "right_leg" || i.getChainName() == "left_leg")
             {
                 random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
                 random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));                
+            }
+            
+            if (i.getChainName() == "head")
+            {
+                random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
+                random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
+                random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
             }
             
             i.getJointPosition(chain_map);
