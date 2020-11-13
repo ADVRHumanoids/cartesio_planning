@@ -84,6 +84,11 @@ auto ik_jacob = [](PositionCartesianSolver& self)
     return J;
 };
 
+auto position_cartesian_solver_maker = [](XBot::Cartesian::CartesianInterfaceImpl::Ptr ci)
+{
+    return PositionCartesianSolver(ci);
+};
+
 PYBIND11_MODULE(planning, m)
 {
 
@@ -116,7 +121,9 @@ PYBIND11_MODULE(planning, m)
             .def("setDesiredPose", goal_sampler_setref);
 
     py::class_<PositionCartesianSolver, PositionCartesianSolver::Ptr>(m, "PositionCartesianSolver")
-            .def(py::init<CartesianInterfaceImpl::Ptr>())
+//             .def(py::init<CartesianInterfaceImpl::Ptr>())
+            .def(py::init(position_cartesian_solver_maker),
+                 py::arg("ci"))
             .def("getError", ik_err)
             .def("getJacobian", ik_jacob)
             .def("setMaxIterations", &PositionCartesianSolver::setMaxIterations)
