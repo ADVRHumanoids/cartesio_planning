@@ -45,7 +45,7 @@ bool NSPG::sample ( double timeout )
     _ik_solver->getModel()->eigenToMap(dqlimits, velocity_map);
     
     float T = 0.0;
-    double dt = 0.1;
+    double dt = 0.01;
     int iter = 0;
     
     while(!_vc_context.vc_aggregate.checkAll())
@@ -56,7 +56,7 @@ bool NSPG::sample ( double timeout )
         auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
         
         // Generate a random velocity vector for colliding chains' joints only every n iterations
-        if (iter % 10 == 0)
+        if (iter % 50 == 0)
         {
             _ik_solver->getModel()->eigenToMap(x, joint_map);
             random_map = generateRandomVelocities(colliding_chains);  
