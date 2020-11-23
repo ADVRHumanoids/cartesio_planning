@@ -538,7 +538,7 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 
         _solved = _planner->ompl::base::Planner::solve(timeout);
 
-        if(_solved == ompl::base::PlannerStatus::EXACT_SOLUTION)
+        if(_solved)
         {
             auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
@@ -547,10 +547,7 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
             if(!geom_path->check())
                 return false;
             
-//             return true;
         }
-//         else
-//             return false;
 
         ompl::base::PlannerData pdata(_space_info);
         _planner->getPlannerData(pdata);
@@ -559,7 +556,6 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
         auto logger = MatLogger2::MakeLogger("/tmp/cartesio_ompl_planner");
         logger->save("planner_data", pdata_mat);
         logger.reset();
-
 
         return _solved;
     }

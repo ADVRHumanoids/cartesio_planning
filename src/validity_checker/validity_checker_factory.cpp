@@ -86,9 +86,6 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
     auto validity_checker = [=]()
     {
         cs_ros->publish();
-        auto active_links = cs->getContactLinks();
-        for (auto i : active_links)
-            std::cout << i << "\n!" << cs->getContactFrame(i) << std::endl;
         return cs->checkStability(eps);
     };
 

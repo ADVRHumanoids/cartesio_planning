@@ -2,22 +2,11 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
-#include <pybind11/chrono.h>
-#include <pybind11/numpy.h>
-#include <pybind11/iostream.h>
-#include <pybind11/attr.h>
-#include <pybind11/pytypes.h>
-#include <pybind11/cast.h>
-#include <pybind11/common.h>
-
 
 #include "planner/cartesio_ompl_planner.h"
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "validity_checker/stability/centroidal_statics.h"
 #include "validity_checker/validity_checker_context.h"
-
-#include <geometry_msgs/Quaternion.h>
-
 
 #include <ros/serialization.h>
 #include <eigen_conversions/eigen_msg.h>
@@ -98,10 +87,10 @@ auto remove_collision_object = [](PlanningSceneWrapper& self,
     self.applyPlanningScene(ps);
 };
 
-auto create_validity_check_context = [](std::string vc_node, ModelInterface::Ptr model, bool spin)
+auto create_validity_check_context = [](std::string vc_node, ModelInterface::Ptr model)
 {
     ros::NodeHandle nh;
-    ValidityCheckContext vc_context(YAML::Load(vc_node), model, nh, spin);
+    ValidityCheckContext vc_context(YAML::Load(vc_node), model, nh);
     
     return vc_context;
 };
@@ -149,7 +138,5 @@ PYBIND11_MODULE(validity_check, m)
     py::class_<ValidityCheckContext, std::shared_ptr<ValidityCheckContext>>(m, "ValidityCheckContext")
             .def(py::init(create_validity_check_context),
                  py::arg("vc_node"),
-                 py::arg("model"),
-                 py::arg("spin") = false)
-            .def("publish", &ValidityCheckContext::sendContacts);
+                 py::arg("model"));
 }

@@ -24,21 +24,8 @@ public:
 
     ValidityCheckContext(YAML::Node config,
                          ModelInterface::Ptr model, 
-                         ros::NodeHandle nh = ros::NodeHandle(),
-                         bool spin = false);
+                         ros::NodeHandle nh = ros::NodeHandle());
     
-    static void spinOnce() 
-    {
-        while (ros::ok())
-        {
-            ros::Duration(0.01).sleep();
-            ros::spinOnce();
-        }
-    };
-    
-    void sendContacts(std::vector<std::string> active_links, std::vector<std::vector<float>> rot);
-    
-
     PlanningSceneWrapper::Ptr planning_scene;
     ValidityPredicateAggregate vc_aggregate;
     
