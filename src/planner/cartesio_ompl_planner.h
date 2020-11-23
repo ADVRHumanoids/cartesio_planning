@@ -89,6 +89,8 @@ public:
     void getControlBounds(Eigen::VectorXd& control_min, Eigen::VectorXd& control_max)  const;
 
     StateWrapper getStateWrapper() const;
+    
+    void clearPlanner();
 
 
 private:

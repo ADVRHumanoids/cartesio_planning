@@ -359,8 +359,18 @@ ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
             throw std::runtime_error("dynamic_pointer_cast to 'ompl::base::AtlasStateSpace' failed");
         }
     };
-
-    return std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, _constraint);
+    
+    YAML_PARSE_OPTION(_options["state_space"], epsilon, double, 0.1);
+    YAML_PARSE_OPTION(_options["state_space"], alpha, double, boost::math::constants::pi<double>()/16);
+    YAML_PARSE_OPTION(_options["state_space"], rho, double, 0.1);
+    
+    auto space = std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, _constraint);
+    
+    space->setAlpha(alpha);
+    space->setRho(rho);
+    space->setEpsilon(epsilon);
+    
+    return space;
 }
 
 ompl::base::StateSpacePtr OmplPlanner::make_tangent_bundle()
@@ -516,7 +526,6 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
 
 bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 {
-
     _planner = make_planner(planner_type);
 
 
@@ -525,12 +534,11 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
         _planner->setProblemDefinition(_pdef);
         _planner->setup();
 
-
-        print();
+//         print();
 
         _solved = _planner->ompl::base::Planner::solve(timeout);
 
-        if(_solved)
+        if(_solved == ompl::base::PlannerStatus::EXACT_SOLUTION)
         {
             auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
@@ -538,7 +546,11 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 
             if(!geom_path->check())
                 return false;
+            
+//             return true;
         }
+//         else
+//             return false;
 
         ompl::base::PlannerData pdata(_space_info);
         _planner->getPlannerData(pdata);
@@ -569,6 +581,12 @@ ompl::base::PlannerStatus OmplPlanner::getPlannerStatus() const
 {
     return _solved;
 }
+
+void OmplPlanner::clearPlanner() 
+{
+    _planner->clear();
+}
+
 
 
 ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type)

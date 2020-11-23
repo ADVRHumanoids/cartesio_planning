@@ -5,6 +5,7 @@
 
 #include "planner/cartesio_ompl_planner.h"
 #include "goal/goal_sampler.h"
+#include <ros/ros.h>
 
 namespace py = pybind11;
 
@@ -89,6 +90,7 @@ auto position_cartesian_solver_maker = [](XBot::Cartesian::CartesianInterfaceImp
     return PositionCartesianSolver(ci);
 };
 
+
 PYBIND11_MODULE(planning, m)
 {
 
@@ -111,7 +113,8 @@ PYBIND11_MODULE(planning, m)
                                                   const Eigen::VectorXd&,
                                                   const double)>(&OmplPlanner::setStartAndGoalStates))
             .def("getSolutionPath", &OmplPlanner::getSolutionPath)
-            .def("solve", &OmplPlanner::solve);
+            .def("solve", &OmplPlanner::solve)
+            .def("clearPlanner", &OmplPlanner::clearPlanner);
 
     py::class_<GoalSamplerBase>(m, "GoalSampler")
             .def(py::init(goal_sampler_construct))

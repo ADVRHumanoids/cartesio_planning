@@ -2,11 +2,21 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
+#include <pybind11/chrono.h>
+#include <pybind11/numpy.h>
+#include <pybind11/iostream.h>
+#include <pybind11/attr.h>
+#include <pybind11/pytypes.h>
+#include <pybind11/cast.h>
+#include <pybind11/common.h>
+
 
 #include "planner/cartesio_ompl_planner.h"
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "validity_checker/stability/centroidal_statics.h"
 #include "validity_checker/validity_checker_context.h"
+
+#include <geometry_msgs/Quaternion.h>
 
 
 #include <ros/serialization.h>
@@ -18,15 +28,14 @@ using namespace XBot;
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Planning;
 
+
 auto add_box = [](PlanningSceneWrapper& self,
                 std::string id,
-                std::string frame,
                 const Eigen::Vector3d& size,
                 const Eigen::Affine3d& T)
 {
     moveit_msgs::CollisionObject co;
     co.id = id;
-    co.header.frame_id = frame;
 
     shape_msgs::SolidPrimitive solid;
     solid.type = solid.BOX;
@@ -89,13 +98,14 @@ auto remove_collision_object = [](PlanningSceneWrapper& self,
     self.applyPlanningScene(ps);
 };
 
-auto create_validity_check_context = [](std::string vc_node, ModelInterface::Ptr model)
+auto create_validity_check_context = [](std::string vc_node, ModelInterface::Ptr model, bool spin)
 {
     ros::NodeHandle nh;
-    ValidityCheckContext vc_context(YAML::Load(vc_node), model, nh);
+    ValidityCheckContext vc_context(YAML::Load(vc_node), model, nh, spin);
     
     return vc_context;
 };
+
 
 PYBIND11_MODULE(validity_check, m)
 {
@@ -136,8 +146,10 @@ PYBIND11_MODULE(validity_check, m)
             .def("setForces", &CentroidalStatics::setForces)
             .def("getForces", &CentroidalStatics::getForces);     
             
-    py::class_<ValidityCheckContext>(m, "ValidityCheckContext")
+    py::class_<ValidityCheckContext, std::shared_ptr<ValidityCheckContext>>(m, "ValidityCheckContext")
             .def(py::init(create_validity_check_context),
                  py::arg("vc_node"),
-                 py::arg("model"));
+                 py::arg("model"),
+                 py::arg("spin") = false)
+            .def("publish", &ValidityCheckContext::sendContacts);
 }

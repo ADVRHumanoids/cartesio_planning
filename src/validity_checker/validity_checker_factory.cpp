@@ -64,10 +64,18 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
 
     YAML_PARSE_OPTION(vc_node, eps, double, 1e-3);
     YAML_PARSE_OPTION(vc_node, links, std::vector<std::string>, {});
+    YAML_PARSE_OPTION(vc_node, rotations, std::vector<std::vector<double>>, {});
     YAML_PARSE_OPTION(vc_node, friction_coefficient, double, 0.5);
     YAML_PARSE_OPTION(vc_node, optimize_torque, bool, false);
 
     auto cs = std::make_shared<CentroidalStatics>(model, links, friction_coefficient, optimize_torque);
+    // set rotations
+    for (int i = 0; i < rotations.size(); i++)
+    {
+        Eigen::Quaternion<double> quat(rotations[i][3], rotations[i][0], rotations[i][1], rotations[i][2]);
+        cs->setContactRotationMatrix(links[i], quat.toRotationMatrix());
+    }
+    
     auto cs_ros = std::make_shared<CentroidalStaticsROS>(model, *cs, nh, eps);
 
     double ros_eps = cs_ros->getEps();
@@ -78,6 +86,9 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
     auto validity_checker = [=]()
     {
         cs_ros->publish();
+        auto active_links = cs->getContactLinks();
+        for (auto i : active_links)
+            std::cout << i << "\n!" << cs->getContactFrame(i) << std::endl;
         return cs->checkStability(eps);
     };
 

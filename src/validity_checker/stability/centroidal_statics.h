@@ -193,7 +193,6 @@ public:
         _eps(eps)
     {
         _contact_sub = _nh.subscribe("contacts", 10, &CentroidalStaticsROS::set_contacts, this);
-
         _vis_pub = _nh.advertise<visualization_msgs::Marker>("centroidal_statics/forces", 0);
 
         std::string tmp;
@@ -202,6 +201,8 @@ public:
         double _eps;
         if(nh.getParam("eps", _eps))
             _eps = eps;
+        
+        std::cout << "CentroidalStaticsROS object built!" << std::endl;
     }
 
     double getEps(){return _eps;}
@@ -403,6 +404,7 @@ private:
      */
 public: void set_contacts(cartesio_planning::SetContactFrames::ConstPtr msg)
     {
+        std:cout << "SETTING CONTACTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
         if(msg->action.data() == msg->SET)
         {
             _cs.setContactLinks(msg->frames_in_contact);

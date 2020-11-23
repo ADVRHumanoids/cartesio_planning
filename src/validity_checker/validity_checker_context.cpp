@@ -6,7 +6,8 @@ namespace XBot { namespace Cartesian { namespace Planning {
 
 ValidityCheckContext::ValidityCheckContext(YAML::Node config,
                                            ModelInterface::Ptr model,
-                                           ros::NodeHandle nh):
+                                           ros::NodeHandle nh,
+                                           bool spin):
     _model( model),
     _nh(nh)
 {
@@ -43,7 +44,19 @@ ValidityCheckContext::ValidityCheckContext(YAML::Node config,
         vc_aggregate.add(vc_fun, vc_name);
 
     }
+    
+    if (spin)
+    {
+        _pub = nh.advertise<cartesio_planning::SetContactFrames>("contacts", 10, true);
 
+        while (_pub.getNumSubscribers() == 0)
+        {
+            std::cout << "spinning" << std::endl;
+            ros::Duration(0.01).sleep();
+            ros::spinOnce();
+        }
+    }  
+    
 }
 
 std::function<bool ()> ValidityCheckContext::make_collision_checker(YAML::Node vc_node)
@@ -82,5 +95,30 @@ XBot::Cartesian::Planning::ValidityCheckContext::ValidityCheckContext()
 {
 
 }
+
+void ValidityCheckContext::sendContacts ( vector< string > active_links, vector< vector <float> > rot ) 
+{
+    cartesio_planning::SetContactFrames contacts;
+    
+    std::vector<geometry_msgs::Quaternion> quat(rot.size());
+    for (int i = 0; i < quat.size(); i++)
+    {
+        quat[i].x = rot[i][0];
+        quat[i].y = rot[i][1];
+        quat[i].z = rot[i][2];
+        quat[i].w = rot[i][3];
+    }
+    
+    contacts.action = cartesio_planning::SetContactFrames::SET;
+    contacts.frames_in_contact = active_links;
+    contacts.rotations = quat;
+    contacts.friction_coefficient = 0.5 * std::sqrt(2);
+    contacts.optimize_torque = false;
+    
+    std::cout << "PUBLISHING ACTIVE LINKS AND ROTATION MATRICES!" << std::endl;
+    
+    _pub.publish(contacts);
+}
+
 
 } } }

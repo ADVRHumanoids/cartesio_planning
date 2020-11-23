@@ -40,24 +40,25 @@ void CartesianConstraint::jacobian(const Eigen::Ref<const Eigen::VectorXd>& x,
 
 bool CartesianConstraint::project(Eigen::Ref<Eigen::VectorXd> x) const
 {
-    //return Constraint::project(x);
+    return Constraint::project(x);
 
-    auto model = _ik_solver->getModel();
-
-    // set it to the model
-    model->setJointPosition(x);
-    model->update();
-
-    if(!_ik_solver->solve())
-    {
-        return false;
-    }
-
-    Eigen::VectorXd q_proj;
-    model->getJointPosition(q_proj);
-    x = q_proj;
-
-    return true;
+//     auto model = _ik_solver->getModel();
+// 
+//     // set it to the model
+//     model->setJointPosition(x);
+//     model->update();
+//     
+//     if(!_ik_solver->solve())
+//     {
+//         return false;
+//     }
+// 
+//     Eigen::VectorXd q_proj;
+//     model->getJointPosition(q_proj);
+//     
+//     x = q_proj;
+// 
+//     return true;
 
 }
 
