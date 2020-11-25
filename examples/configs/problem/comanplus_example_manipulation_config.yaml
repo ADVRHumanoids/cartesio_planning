@@ -10,18 +10,29 @@ self_collision:
     include_environment: true
 
 stability:
-    type: "ConvexHull"
-    links:
-      - "l_foot_lower_left_link"
-      - "l_foot_lower_right_link"
-      - "l_foot_upper_left_link"
-      - "l_foot_upper_right_link"
-      - "r_foot_lower_left_link"
-      - "r_foot_lower_right_link"
-      - "r_foot_upper_left_link"
-      - "r_foot_upper_right_link"
+    type: "CentroidalStatics"
+    links: 
+      - "l_sole"
+      - "r_sole"
+      - "l_ball_tip"
+      - "r_ball_tip"
+    friction_coefficient: 0.71
+    eps: 5e-2
+     
 
-    stability_margin: 0.03
+#stability:
+#    type: "ConvexHull"
+#    links:
+#      - "l_foot_lower_left_link"
+#      - "l_foot_lower_right_link"
+#      - "l_foot_upper_left_link"
+#      - "l_foot_upper_right_link"
+#      - "r_foot_lower_left_link"
+#      - "r_foot_lower_right_link"
+#      - "r_foot_upper_left_link"
+#      - "r_foot_upper_right_link"
+
+#    stability_margin: 0.03
 
 RRTstar:
     GoalBias: 0.1
