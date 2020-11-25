@@ -528,8 +528,14 @@ void PlannerExecutor::setGoalState(const XBot::JointNameMap& q)
     Eigen::VectorXd qq;
     _goal_model->getJointPosition(qq);
 
-    if(_manifold)
-        _manifold->project(qq);
+    bool is_goal_manifold = check_state_valid(_goal_model);
+
+    if(!is_goal_manifold)
+    {
+        if(_manifold)
+            _manifold->project(qq);
+    }
+
 
     _goal_model->setJointPosition(qq);
     _goal_model->update();
