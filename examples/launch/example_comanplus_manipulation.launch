@@ -23,7 +23,6 @@
 
 
     <node pkg="cartesio_planning" type="planning_server" name="planning_server" output="screen">
-        <remap from="planner/goal/joint_states" to="cartesian/solution"/>
         <param name="solver" value=""/>
         <param name="is_model_floating_base" value="true"/>
         <param name="use_goal_generator" value="$(arg use_goal_generator)"/>
@@ -63,6 +62,7 @@
     <include unless="$(arg use_goal_generator)" file="$(find cartesian_interface)/launch/cartesio.launch">
         <arg name="tf_prefix" value="ci"/>
         <arg name="world_frame_link" value="$(arg world_frame_link)"/>
+        <arg name="solution_topic" value="planner/goal/joint_states"/> 
     </include>
 
 </launch>
