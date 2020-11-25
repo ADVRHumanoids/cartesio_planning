@@ -20,13 +20,25 @@ PlannerExecutor::PlannerExecutor():
 {
     init_load_config();
     init_load_model();
-    init_load_planner();
-    init_load_validity_checker();
+    planner_init();
     init_goal_generator();
     init_subscribe_start_goal();
     init_trj_publisiher();
     init_planner_srv();
     init_interpolator();
+}
+
+void PlannerExecutor::planner_init()
+{
+    init_load_planner();
+    init_load_validity_checker();
+}
+
+bool PlannerExecutor::update_manifold_from_param(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+    ROS_INFO("Requested update manifold from param");
+    planner_init();
+    return true;
 }
 
 void PlannerExecutor::run()
@@ -312,6 +324,7 @@ void PlannerExecutor::init_trj_publisiher()
 void PlannerExecutor::init_planner_srv()
 {
     _planner_srv = _nh.advertiseService("compute_plan", &PlannerExecutor::planner_service, this);
+    _reset_manifold_srv = _nh.advertiseService("reset_manifold", &PlannerExecutor::update_manifold_from_param, this);
 }
 
 void PlannerExecutor::init_goal_generator()

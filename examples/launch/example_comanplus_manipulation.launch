@@ -29,6 +29,7 @@
         <param name="planner_config"
             textfile="$(find cartesio_planning)/examples/configs/problem/comanplus_example_manipulation_config.yaml"/>
         <param name="world_frame_link" value="$(arg world_frame_link)"/>
+        <param name="eps" value="5e-2"/>
     </node>
 
     <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/>
@@ -59,10 +60,10 @@
         <param name="ns" value="planner/goal_sampler"/>
         <param name="tf_prefix" value="planner/goal_sampler"/>
     </node>
-    <include unless="$(arg use_goal_generator)" file="$(find cartesian_interface)/launch/cartesio.launch">
+    <!-- include unless="$(arg use_goal_generator)" file="$(find cartesian_interface)/launch/cartesio.launch">
         <arg name="tf_prefix" value="ci"/>
         <arg name="world_frame_link" value="$(arg world_frame_link)"/>
         <arg name="solution_topic" value="planner/goal/joint_states"/> 
-    </include>
+    </include -->
 
 </launch>
