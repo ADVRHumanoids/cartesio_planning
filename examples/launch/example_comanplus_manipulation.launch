@@ -2,9 +2,11 @@
 
     <arg name="solver" default="OpenSot"/>
     <arg name="prefix" default=""/>
-    <arg name="use_goal_generator" default="false"/>
+    <arg name="use_goal_generator" default="true"/>
     <arg name="world_frame_link" default="l_sole"/>
-    
+
+    <param name="foo" value="$(optenv MATLOGGER_DISABLE_LOG 1)" />
+
 
     <param name="robot_description"
         textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
