@@ -86,9 +86,9 @@ manifold_str = rospy.get_param("planner/problem_description_constraint")
 manifold_dict = yaml.safe_load(manifold_str)
 
 
-start_pub = rospy.Publisher('planner/start/joint_states', JointState, queue_size=10)
-goal_pub = rospy.Publisher('planner/goal/joint_states', JointState, queue_size=10)
-contact_pub = rospy.Publisher('planner/contacts', SetContactFrames, queue_size=10)
+start_pub = rospy.Publisher('planner/start/joint_states', JointState, queue_size=10, latch=True)
+goal_pub = rospy.Publisher('planner/goal/joint_states', JointState, queue_size=10, latch=True)
+contact_pub = rospy.Publisher('planner/contacts', SetContactFrames, queue_size=10, latch=True)
 
 rospy.init_node('stances_publisher', anonymous=True)
 
