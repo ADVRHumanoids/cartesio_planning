@@ -266,9 +266,8 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
         for (int i = 0; i < ee_number; i++)
         {
             model->getPose(end_effector[i], T);
-            auto rot = T.linear().eulerAngles(0, 1, 2);
-            ee[i] << T.translation().x(), T.translation().y(), rot(2);
-            
+            auto rot = std::asin(T.linear()(0,1));
+            ee[i] << T.translation().x(), T.translation().y(), rot;
         }
         
         double x_diff = sqrt((ee[0](0) - ee[1](0)) * (ee[0](0) - ee[1](0))); 
@@ -295,9 +294,9 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
         double xRel_w = ee[0](0) - ee[1](0);
         double yRel_w = ee[0](1) - ee[1](1);
     
-        if (-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > 0.20)                
+        if (xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > -0.20)
         {
-            std::cout << "relative orientation = " << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
+            std::cout << "relative distance = " << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
             return false;        
         }           
         
