@@ -360,7 +360,16 @@ ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
         }
     };
 
-    return std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, _constraint);
+    YAML_PARSE_OPTION(_options["state_space"], alpha, double, boost::math::constants::pi<double>()/16);
+    YAML_PARSE_OPTION(_options["state_space"], epsilon, double, 0.1);
+    YAML_PARSE_OPTION(_options["state_space"], rho, double, 0.1);
+
+    auto atlas_space = std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, _constraint);
+    atlas_space->setAlpha(alpha);
+    atlas_space->setEpsilon(epsilon);
+    atlas_space->setRho(rho);
+
+    return atlas_space;
 }
 
 ompl::base::StateSpacePtr OmplPlanner::make_tangent_bundle()
@@ -523,6 +532,7 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 
     if(_planner)
     {
+        _planner->clear();
         _planner->setProblemDefinition(_pdef);
         _planner->setup();
 
