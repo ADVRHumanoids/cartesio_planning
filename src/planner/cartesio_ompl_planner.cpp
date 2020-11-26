@@ -359,18 +359,17 @@ ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
             throw std::runtime_error("dynamic_pointer_cast to 'ompl::base::AtlasStateSpace' failed");
         }
     };
-    
-    YAML_PARSE_OPTION(_options["state_space"], epsilon, double, 0.1);
+
     YAML_PARSE_OPTION(_options["state_space"], alpha, double, boost::math::constants::pi<double>()/16);
+    YAML_PARSE_OPTION(_options["state_space"], epsilon, double, 0.1);
     YAML_PARSE_OPTION(_options["state_space"], rho, double, 0.1);
-    
-    auto space = std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, _constraint);
-    
-    space->setAlpha(alpha);
-    space->setRho(rho);
-    space->setEpsilon(epsilon);
-    
-    return space;
+
+    auto atlas_space = std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, _constraint);
+    atlas_space->setAlpha(alpha);
+    atlas_space->setEpsilon(epsilon);
+    atlas_space->setRho(rho);
+
+    return atlas_space;
 }
 
 ompl::base::StateSpacePtr OmplPlanner::make_tangent_bundle()
@@ -480,6 +479,7 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
     // set start and goal
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal, threshold);
 
+
     // trigger callback
     if(_on_set_start_goal)
     {
@@ -535,7 +535,6 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
         _planner->setProblemDefinition(_pdef);
         _planner->setup();
 
-
         print();
 
         _solved = _planner->ompl::base::Planner::solve(timeout);
@@ -579,12 +578,6 @@ ompl::base::PlannerStatus OmplPlanner::getPlannerStatus() const
 {
     return _solved;
 }
-
-void OmplPlanner::clearPlanner() 
-{
-    _planner->clear();
-}
-
 
 
 ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type)
