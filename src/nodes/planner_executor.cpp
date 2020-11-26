@@ -529,7 +529,7 @@ void PlannerExecutor::on_start_state_recv(const sensor_msgs::JointStateConstPtr 
 
 
     setStartState(q);
-
+    run(); //To update models in RVIZ
 }
 
 void PlannerExecutor::setGoalState(const XBot::JointNameMap& q)
@@ -564,6 +564,7 @@ void PlannerExecutor::on_goal_state_recv(const sensor_msgs::JointStateConstPtr &
     }
 
     setGoalState(q);
+    run(); //To update models in RVIZ
 }
 
 bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Request& req,
