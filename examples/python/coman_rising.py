@@ -118,16 +118,32 @@ while len(configs) > 1:
         rate.sleep()
 
     rospy.wait_for_service('planner/compute_plan')
-    try:
-        plan = rospy.ServiceProxy('planner/compute_plan', CartesioPlanner)
-        response = plan(planner_type="RRTConnect", time=60, interpolation_time=0.01, goal_threshold=0.01)
-        if response.status.val == 6: #EXACT_SOLUTION
-            print("EXACT_SOLUTION FOUND")
-            raw_input("Press a button for next config")
-        elif response.status.val == 5: #APPROXIMATE SOLUTION
-            print("APPROXIMATE_SOLUTION FOUND")
-        else:
-            rospy.logerr("PLANNER RETURNED ERROR: %i", response.status.val)
-            break
-    except rospy.ServiceException as e:
-        print("Service call failed: %s"%e)
+    PLAN_MAX_ATTEMPTS = 5
+    PLAN_ATTEMPTS = 0
+    plan_success = False
+    while PLAN_ATTEMPTS < PLAN_MAX_ATTEMPTS:
+        try:
+
+            plan = rospy.ServiceProxy('planner/compute_plan', CartesioPlanner)
+            response = plan(planner_type="RRTConnect", time=(60*(PLAN_ATTEMPTS+1)), interpolation_time=0.01, goal_threshold=0.1)
+            if response.status.val == 6: #EXACT_SOLUTION
+                print("EXACT_SOLUTION FOUND")
+                plan_success = True
+                raw_input("Press a button for next config")
+                print ("Next configuration will be planned")
+            elif response.status.val == 5: #APPROXIMATE SOLUTION
+                print("APPROXIMATE_SOLUTION FOUND")
+                PLAN_ATTEMPTS += 1
+            else:
+                rospy.logerr("PLANNER RETURNED ERROR: %i", response.status.val)
+                PLAN_ATTEMPTS += 1
+
+            if plan_success:
+                break
+
+        except rospy.ServiceException as e:
+            raise Exception("Service call failed: %s"%e)
+
+    if not plan_success:
+        rospy.logerr("PLANNER CAN NOT FIND A SOLUTION, EXITING")
+        break
