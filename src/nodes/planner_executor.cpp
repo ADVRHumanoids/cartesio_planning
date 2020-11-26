@@ -126,7 +126,6 @@ void PlannerExecutor::init_load_planner()
 
 
         std::string problem_description_string;
-        YAML::Node ik_yaml_constraint;
 
         if(!_nh.hasParam(param_name) ||
                 !_nh.getParam(param_name,
@@ -253,7 +252,7 @@ void PlannerExecutor::init_load_validity_checker()
                                                    &PlannerExecutor::get_planning_scene_service, this);
 
     _apply_planning_scene_srv = _nh.advertiseService("apply_planning_scene",
-                                                     &PlannerExecutor::apply_planning_scene_service, this);
+                                                   &PlannerExecutor::apply_planning_scene_service, this);
 
     auto validity_predicate = [this](const Eigen::VectorXd& q)
     {
@@ -601,23 +600,17 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
         return true;
     }
 
-    std::cout<< "goal_threshold: "<<req.goal_threshold<<std::endl;
-
-
-
-
-
 
     std::vector<Eigen::VectorXd> trajectory;
     std::vector<std::vector<Eigen::Affine3d> > cartesian_trajectories;
     if(_distal_links.empty())
-        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, req.goal_threshold, trajectory);
+        res.status.val = callPlanner(req.time, req.planner_type, req.goal_threshold, req.interpolation_time, trajectory);
     else
     {
         std::vector<std::pair<std::string, std::string> > base_distal_links;
         for(unsigned int i = 0; i < _distal_links.size(); ++i)
             base_distal_links.push_back(std::pair<std::string, std::string>(_base_links[i], _distal_links[i]));
-        res.status.val = callPlanner(req.time, req.planner_type, req.interpolation_time, req.goal_threshold, base_distal_links,
+        res.status.val = callPlanner(req.time, req.planner_type, req.goal_threshold, req.interpolation_time, base_distal_links,
                                      trajectory, cartesian_trajectories);
     }
     res.status.msg.data = _planner->getPlannerStatus().asString();
@@ -724,7 +717,6 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
     enforce_bounds(qstart);
     enforce_bounds(qgoal);
     std::cout<<"...done!"<<std::endl;
-
 
     _planner->setStartAndGoalStates(qstart, qgoal, goal_thrs);
 

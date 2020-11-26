@@ -472,10 +472,10 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
     _sw->setState(ompl_goal.get(), goal);
 
     // this resets problem definition
-    if(_cspace_info)
-        setup_problem_definition(_cspace_info);
-    else
-        setup_problem_definition(_space_info);
+//    if(_cspace_info)
+//        setup_problem_definition(_cspace_info);
+//    else
+//        setup_problem_definition(_space_info);
 
     // set start and goal
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal, threshold);
@@ -526,6 +526,7 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
 
 bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 {
+
     _planner = make_planner(planner_type);
 
 
@@ -534,7 +535,8 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
         _planner->setProblemDefinition(_pdef);
         _planner->setup();
 
-//         print();
+
+        print();
 
         _solved = _planner->ompl::base::Planner::solve(timeout);
 
@@ -546,7 +548,6 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
 
             if(!geom_path->check())
                 return false;
-            
         }
 
         ompl::base::PlannerData pdata(_space_info);
@@ -556,6 +557,7 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
         auto logger = MatLogger2::MakeLogger("/tmp/cartesio_ompl_planner");
         logger->save("planner_data", pdata_mat);
         logger.reset();
+
 
         return _solved;
     }
