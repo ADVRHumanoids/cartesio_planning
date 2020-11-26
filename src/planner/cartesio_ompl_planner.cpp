@@ -462,13 +462,14 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
     _sw->setState(ompl_goal.get(), goal);
 
     // this resets problem definition
-    if(_cspace_info)
-        setup_problem_definition(_cspace_info);
-    else
-        setup_problem_definition(_space_info);
+//    if(_cspace_info)
+//        setup_problem_definition(_cspace_info);
+//    else
+//        setup_problem_definition(_space_info);
 
     // set start and goal
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal, threshold);
+
 
     // trigger callback
     if(_on_set_start_goal)
@@ -524,7 +525,6 @@ bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
     {
         _planner->setProblemDefinition(_pdef);
         _planner->setup();
-
 
         print();
 
