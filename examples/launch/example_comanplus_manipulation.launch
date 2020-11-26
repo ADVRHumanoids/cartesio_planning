@@ -5,7 +5,7 @@
     <arg name="use_goal_generator" default="true"/>
     <arg name="world_frame_link" default="l_sole"/>
 
-    <param name="foo" value="$(optenv MATLOGGER_DISABLE_LOG 1)" />
+    <env name="MATLOGGER_DISABLE_LOG" value="1"/>
 
 
     <param name="robot_description"
