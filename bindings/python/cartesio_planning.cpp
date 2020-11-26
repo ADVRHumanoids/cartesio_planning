@@ -61,7 +61,7 @@ auto goal_sample = [](GoalSamplerBase& self,
     throw TimedOut("Goal sampler timed out");
 };
 
-auto goal_sampler_set_maxiter(GoalSamplerBase& self, int maxiter)
+auto goal_sampler_set_maxiter(GoalSamplerBase& self, int maxiter) -> void
 {
     self.getIkSolver()->setMaxIterations(maxiter);
 };

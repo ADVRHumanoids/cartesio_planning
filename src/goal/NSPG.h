@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <thread>
+#include <random>
 
 #include <XBotInterface/ModelInterface.h>
 #include "validity_checker/validity_checker_context.h"
