@@ -145,12 +145,13 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
     }
     
     // Add random velocities to the floating base when the convex hull check fails
-//     if (!_vc_context.vc_aggregate.check("stability"))
-//     {
-//         random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-//         random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-//         random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
-//     }
+     if (!_vc_context.vc_aggregate.check("stability"))
+     {
+         random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
+         random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
+         random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
+     }
+
     
     return random_map;
 }
