@@ -54,7 +54,8 @@ std::function<bool ()> MakeCollisionChecker(YAML::Node vc_node,
  * @brief MakeCentroidalStaticsChecker
  * @param vc_node
  * @param model
- * @return
+ * @param nh
+ * @return validity_checker function
  */
 std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
                                                     XBot::ModelInterface::Ptr model,
@@ -64,18 +65,19 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
 
     YAML_PARSE_OPTION(vc_node, eps, double, 1e-3);
     YAML_PARSE_OPTION(vc_node, links, std::vector<std::string>, {});
-    YAML_PARSE_OPTION(vc_node, rotations, std::vector<std::vector<double>>, {});
     YAML_PARSE_OPTION(vc_node, friction_coefficient, double, 0.5);
     YAML_PARSE_OPTION(vc_node, optimize_torque, bool, false);
+    YAML_PARSE_OPTION(vc_node, rotations, std::vector<std::vector<double>>, {});
 
     auto cs = std::make_shared<CentroidalStatics>(model, links, friction_coefficient, optimize_torque);
+
     // set rotations
     for (int i = 0; i < rotations.size(); i++)
     {
         Eigen::Quaternion<double> quat(rotations[i][3], rotations[i][0], rotations[i][1], rotations[i][2]);
         cs->setContactRotationMatrix(links[i], quat.toRotationMatrix());
     }
-    
+
     auto cs_ros = std::make_shared<CentroidalStaticsROS>(model, *cs, nh, eps);
 
     double ros_eps = cs_ros->getEps();
@@ -266,8 +268,9 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
         for (int i = 0; i < ee_number; i++)
         {
             model->getPose(end_effector[i], T);
-            auto rot = std::asin(T.linear()(0,1));
-            ee[i] << T.translation().x(), T.translation().y(), rot;
+            auto rot = T.linear().eulerAngles(0, 1, 2);
+            ee[i] << T.translation().x(), T.translation().y(), rot(2);
+            
         }
         
         double x_diff = sqrt((ee[0](0) - ee[1](0)) * (ee[0](0) - ee[1](0))); 
@@ -294,9 +297,9 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
         double xRel_w = ee[0](0) - ee[1](0);
         double yRel_w = ee[0](1) - ee[1](1);
     
-        if (xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > -0.20)
+        if (-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > 0.20)                
         {
-            std::cout << "relative distance = " << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
+            std::cout << "relative orientation = " << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
             return false;        
         }           
         
