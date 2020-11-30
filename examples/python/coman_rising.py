@@ -26,6 +26,8 @@ class planner_client(object):
 
         rospy.wait_for_service('/planner/reset_manifold')
         self.__reset_manifold = rospy.ServiceProxy('planner/reset_manifold', Empty)
+        self.__plan = rospy.ServiceProxy('planner/compute_plan', CartesioPlanner)
+        self.__clear = rospy.ServiceProxy('planner/clear_plan', Empty)
 
     def publishStartAndGoal(self, joint_names, start, goal):
         start_msg, goal_msg = self.__createStartAndGoalMsgs(joint_names, start, goal)
@@ -51,7 +53,22 @@ class planner_client(object):
         if to_param:
             rospy.set_param("planner/problem_description_constraint", yaml.dump(self.__manifold_dict))
             rospy.sleep(1.)
-            self.__reset_manifold()
+            try:
+                self.__reset_manifold()
+            except rospy.ServiceException as e:
+                print("Service call failed: %s" % e)
+                return False
+
+    def clearPlanner(self):
+        """
+        To clean the planner after each call
+        """
+        try:
+            self.__clear()
+        except rospy.ServiceException as e:
+            print("Service call failed: %s" % e)
+            return False
+
 
     def solve(self, PLAN_MAX_ATTEMPTS, planner_type, plan_time, interpolation_time, goal_threshold):
         rospy.wait_for_service('planner/compute_plan')
@@ -60,9 +77,7 @@ class planner_client(object):
 
         while PLAN_ATTEMPTS < PLAN_MAX_ATTEMPTS:
             try:
-
-                plan = rospy.ServiceProxy('planner/compute_plan', CartesioPlanner)
-                response = plan(planner_type=planner_type, time=(plan_time * (PLAN_ATTEMPTS + 1)), interpolation_time=interpolation_time,
+                response = self.__plan(planner_type=planner_type, time=(plan_time * (PLAN_ATTEMPTS + 1)), interpolation_time=interpolation_time,
                                 goal_threshold=goal_threshold)
                 if response.status.val == 6:  # EXACT_SOLUTION
                     print("EXACT_SOLUTION FOUND")
@@ -77,6 +92,8 @@ class planner_client(object):
             except rospy.ServiceException as e:
                 print("Service call failed: %s" % e)
                 return False
+
+            self.clearPlanner()
 
         rospy.logerr("PLANNER CAN NOT FIND A SOLUTION, EXITING")
         return False
@@ -144,9 +161,7 @@ if __name__ == '__main__':
     quaternion_contacts = []
     quaternion_contacts.append([])
 
-
     rospy.init_node('stances_publisher', anonymous=True)
-
 
     planner_client = planner_client()
 
