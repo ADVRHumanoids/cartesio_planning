@@ -92,6 +92,7 @@ public:
     
     void clearPlanner();
 
+    void clearPlanner() {_planner->clear();}
 
 private:
 
@@ -137,6 +138,8 @@ private:
     std::shared_ptr<StateWrapper> _sw;
 
     YAML::Node _options;
+
+
 
 
 };

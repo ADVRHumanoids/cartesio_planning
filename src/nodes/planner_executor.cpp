@@ -20,7 +20,8 @@ PlannerExecutor::PlannerExecutor():
 {
     init_load_config();
     init_load_model();
-    planner_init();
+    init_load_planner();
+    init_load_validity_checker();
     init_goal_generator();
     init_subscribe_start_goal();
     init_trj_publisiher();
@@ -30,6 +31,16 @@ PlannerExecutor::PlannerExecutor():
 
 void PlannerExecutor::planner_init()
 {
+    for (int i = 0; i < _planner.use_count(); i ++)
+    {
+        _planner.reset();
+    }
+
+    for (int i = 0; i < _planner.use_count(); i++)
+    {
+        _interpolator.reset();
+    }
+
     init_load_planner();
     init_load_validity_checker();
 }
@@ -323,6 +334,7 @@ void PlannerExecutor::init_planner_srv()
 {
     _planner_srv = _nh.advertiseService("compute_plan", &PlannerExecutor::planner_service, this);
     _reset_manifold_srv = _nh.advertiseService("reset_manifold", &PlannerExecutor::update_manifold_from_param, this);
+    _clear_planner_srv = _nh.advertiseService("clear_planner", &PlannerExecutor::clear_planner, this);
 }
 
 void PlannerExecutor::init_goal_generator()
@@ -735,6 +747,8 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
         t += interpolation_time;
     }
 
+//    _planner->clearPlanner();
+
     return ompl::base::PlannerStatus::StatusType(_planner->getPlannerStatus());
 }
 
@@ -800,4 +814,9 @@ void PlannerExecutor::enforce_bounds(Eigen::VectorXd & q) const
     _planner->getBounds(qmin, qmax);
 
     q = q.cwiseMin(qmax).cwiseMax(qmin);
+}
+
+bool PlannerExecutor::clear_planner(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+    _planner->clearPlanner();
 }
