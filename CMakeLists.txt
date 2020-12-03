@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(cartesio_planning)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+## Compile as C++14, supported in ROS Kinetic and newer
+add_compile_options(-std=c++14)
 
 option(COMPILE_TESTS "Compile internal tests" FALSE)
 
