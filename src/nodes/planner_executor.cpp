@@ -12,6 +12,8 @@
 
 #include "cartesio_planning/CartesianTrajectory.h"
 
+#include <memory>
+
 using namespace XBot::Cartesian;
 
 PlannerExecutor::PlannerExecutor():
@@ -20,8 +22,7 @@ PlannerExecutor::PlannerExecutor():
 {
     init_load_config();
     init_load_model();
-    init_load_planner();
-    init_load_validity_checker();
+    planner_init();
     init_goal_generator();
     init_subscribe_start_goal();
     init_trj_publisiher();
@@ -31,18 +32,17 @@ PlannerExecutor::PlannerExecutor():
 
 void PlannerExecutor::planner_init()
 {
-    for (int i = 0; i < _planner.use_count(); i ++)
-    {
-        _planner.reset();
-    }
-
-    for (int i = 0; i < _planner.use_count(); i++)
-    {
-        _interpolator.reset();
-    }
+    _manifold.reset();
+    _planner.reset();
 
     init_load_planner();
     init_load_validity_checker();
+
+    // new validity checker needs to be set to goal generator,
+    // however the following call is used only when the planner is reset since the first run
+    // already initialize the goal generator with the correct vc_context
+    if(_goal_generator)
+        _goal_generator->setValidityChecker(_vc_context);
 }
 
 bool PlannerExecutor::update_manifold_from_param(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
@@ -224,11 +224,11 @@ void PlannerExecutor::init_load_planner()
 
         if(_plan_controls)
         {
-            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, ompl_constraint, _planner_config);
+            _planner = std::make_unique<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, ompl_constraint, _planner_config);
         }
         else
         {
-            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, ompl_constraint, _planner_config);
+            _planner = std::make_unique<Planning::OmplPlanner>(qmin, qmax, ompl_constraint, _planner_config);
         }
 
 
@@ -239,11 +239,11 @@ void PlannerExecutor::init_load_planner()
 
         if(_plan_controls)
         {
-            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, _planner_config);
+            _planner = std::make_unique<Planning::OmplPlanner>(qmin, qmax, -qdotlims, qdotlims, _planner_config);
         }
         else
         {
-            _planner = std::make_shared<Planning::OmplPlanner>(qmin, qmax, _planner_config);
+            _planner = std::make_unique<Planning::OmplPlanner>(qmin, qmax, _planner_config);
         }
     }
 
@@ -258,12 +258,6 @@ void PlannerExecutor::init_load_validity_checker()
     _vc_context.planning_scene->startMonitor();
 
     _vc_context.planning_scene->startMonitor();
-
-    _get_planning_scene_srv = _nh.advertiseService("get_planning_scene",
-                                                   &PlannerExecutor::get_planning_scene_service, this);
-
-    _apply_planning_scene_srv = _nh.advertiseService("apply_planning_scene",
-                                                   &PlannerExecutor::apply_planning_scene_service, this);
 
     auto validity_predicate = [this](const Eigen::VectorXd& q)
     {
@@ -335,7 +329,12 @@ void PlannerExecutor::init_planner_srv()
 {
     _planner_srv = _nh.advertiseService("compute_plan", &PlannerExecutor::planner_service, this);
     _reset_manifold_srv = _nh.advertiseService("reset_manifold", &PlannerExecutor::update_manifold_from_param, this);
-    _clear_planner_srv = _nh.advertiseService("clear_planner", &PlannerExecutor::clear_planner, this);
+
+    _get_planning_scene_srv = _nh.advertiseService("get_planning_scene",
+                                                   &PlannerExecutor::get_planning_scene_service, this);
+
+    _apply_planning_scene_srv = _nh.advertiseService("apply_planning_scene",
+                                                   &PlannerExecutor::apply_planning_scene_service, this);
 }
 
 void PlannerExecutor::init_goal_generator()
@@ -531,6 +530,8 @@ void PlannerExecutor::setStartState(const XBot::JointNameMap& q)
 
 void PlannerExecutor::on_start_state_recv(const sensor_msgs::JointStateConstPtr & msg)
 {
+    ROS_INFO("Start state received!");
+
     // tbd: input checking
 
     XBot::JointNameMap q;
@@ -567,6 +568,8 @@ void PlannerExecutor::setGoalState(const XBot::JointNameMap& q)
 
 void PlannerExecutor::on_goal_state_recv(const sensor_msgs::JointStateConstPtr & msg)
 {
+    ROS_INFO("Goal state received!");
+
     // tbd: input checking
 
     XBot::JointNameMap q;
@@ -748,8 +751,6 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
         t += interpolation_time;
     }
 
-//    _planner->clearPlanner();
-
     return ompl::base::PlannerStatus::StatusType(_planner->getPlannerStatus());
 }
 
@@ -815,9 +816,4 @@ void PlannerExecutor::enforce_bounds(Eigen::VectorXd & q) const
     _planner->getBounds(qmin, qmax);
 
     q = q.cwiseMin(qmax).cwiseMax(qmin);
-}
-
-bool PlannerExecutor::clear_planner(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
-{
-    _planner->clearPlanner();
 }
