@@ -133,7 +133,8 @@ PYBIND11_MODULE(validity_check, m)
             .def("setContactRotationMatrix", &CentroidalStatics::setContactRotationMatrix)
             .def("getContactFrame", &CentroidalStatics::getContactFrame)
             .def("setForces", &CentroidalStatics::setForces)
-            .def("getForces", &CentroidalStatics::getForces);     
+            .def("getForces", &CentroidalStatics::getForces)
+            .def("setOptimizeTorque", &CentroidalStatics::setOptimizeTorque);
             
     py::class_<ValidityCheckContext>(m, "ValidityCheckContext")
             .def(py::init(create_validity_check_context),
