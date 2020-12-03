@@ -35,6 +35,7 @@ public:
 
     typedef std::function<bool(const Eigen::VectorXd&)> StateValidityPredicate;
     typedef std::shared_ptr<OmplPlanner> Ptr;
+    typedef std::unique_ptr<OmplPlanner> UniquePtr;
 
     OmplPlanner(const OmplPlanner&) = delete;
     OmplPlanner& operator=(const OmplPlanner&) = delete;
