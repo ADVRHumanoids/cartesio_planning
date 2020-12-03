@@ -126,7 +126,7 @@ private:
     ros::NodeHandle _nh, _nhpr;
     YAML::Node _planner_config;
     XBot::ModelInterface::Ptr _model;
-    Planning::OmplPlanner::Ptr _planner;
+    Planning::OmplPlanner::UniquePtr _planner;
     Planning::CartesianConstraint::Ptr _manifold;
     Planning::ValidityCheckContext _vc_context;
 
