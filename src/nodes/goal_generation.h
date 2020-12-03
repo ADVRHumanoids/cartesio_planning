@@ -42,6 +42,8 @@ public:
         return false;
     }
 
+    void setValidityChecker(XBot::Cartesian::Planning::ValidityCheckContext& vc_contex);
+
 private:
     XBot::Cartesian::Planning::ValidityCheckContext& _vc_context;
 

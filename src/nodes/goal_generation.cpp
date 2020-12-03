@@ -19,6 +19,12 @@ GoalGenerator::GoalGenerator(XBot::Cartesian::CartesianInterfaceImpl::Ptr ci,
     _ik->setRosServerClass(_ros_server);
 }
 
+void GoalGenerator::setValidityChecker(XBot::Cartesian::Planning::ValidityCheckContext& vc_contex)
+{
+    _goal_sampler->setValidityCheker(
+                std::bind(&XBot::Cartesian::Planning::ValidityPredicateAggregate::checkAll, &_vc_context.vc_aggregate, nullptr));
+}
+
 void GoalGenerator::update()
 {
     _ros_server->run();
