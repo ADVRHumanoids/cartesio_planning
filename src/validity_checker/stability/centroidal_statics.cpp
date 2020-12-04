@@ -179,6 +179,15 @@ void CentroidalStatics::setContactLinks(const std::vector<std::string>& contact_
     init();
 }
 
+void CentroidalStatics::setContactLinks(const std::vector<string> &contact_links, const bool optimize_torque)
+{
+    _optimize_torque = optimize_torque;
+    _contact_links.clear();
+    _contact_links = contact_links;
+
+    init();
+}
+
 const std::vector< std::string >& CentroidalStatics::getContactLinks()
 {
     return _contact_links;
