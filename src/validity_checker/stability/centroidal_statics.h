@@ -66,6 +66,7 @@ public:
 
     /**
      * @brief setOptimizeTorque permits to enable or disable the optimization of contact moments
+     * NOTE: init() is called
      * @param optimize_torque
      */
     void setOptimizeTorque(const bool optimize_torque);
@@ -79,9 +80,18 @@ public:
 
     /**
      * @brief setContactLinks permits to set a new vector of contact links (rotations are initialized as identity)
+     * NOTE: init() is called
      * @param contact_links
      */
     void setContactLinks(const std::vector<std::string>& contact_links);
+    /**
+     * @brief setContactLinks ermits to set a new vector of contact links (rotations are initialized as identity)
+     * and optimize torque.
+     * NOTE: init() is called once ins this case
+     * @param contact_links
+     * @param optimize_torque
+     */
+    void setContactLinks(const std::vector<string> &contact_links, const bool optimize_torque);
     
     /**
      * @brief getContactLinks retrieve the list of set contact links
