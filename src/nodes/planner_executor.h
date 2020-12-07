@@ -114,7 +114,7 @@ private:
                               cartesio_planning::CartesioGoal::Response& res);
     bool update_manifold_from_param(std_srvs::Empty::Request& req,
                                     std_srvs::Empty::Response& res);
-    bool clear_planner(std_srvs::Empty::Request& req,
+    bool reset_planner(std_srvs::Empty::Request& req,
                        std_srvs::Empty::Response& res);
 
 
@@ -142,7 +142,7 @@ private:
     ros::ServiceServer _get_planning_scene_srv;
     ros::ServiceServer _apply_planning_scene_srv;
     ros::ServiceServer _reset_manifold_srv;
-    ros::ServiceServer _clear_planner_srv;
+    ros::ServiceServer _reset_planner_srv;
 
     GoalGenerator::Ptr _goal_generator;
     bool _use_goal_generator;

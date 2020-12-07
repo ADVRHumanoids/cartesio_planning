@@ -68,6 +68,13 @@ bool PlannerExecutor::update_manifold_from_param(std_srvs::Empty::Request& req, 
     return true;
 }
 
+bool PlannerExecutor::reset_planner(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+{
+    _planner.reset();
+    init_load_planner();
+    return true;
+}
+
 void PlannerExecutor::run()
 {
     auto time = ros::Time::now();
@@ -345,6 +352,7 @@ void PlannerExecutor::init_planner_srv()
 {
     _planner_srv = _nh.advertiseService("compute_plan", &PlannerExecutor::planner_service, this);
     _reset_manifold_srv = _nh.advertiseService("reset_manifold", &PlannerExecutor::update_manifold_from_param, this);
+    _reset_planner_srv = _nh.advertiseService("reset_planner", &PlannerExecutor::reset_planner, this);
 
     _get_planning_scene_srv = _nh.advertiseService("get_planning_scene",
                                                    &PlannerExecutor::get_planning_scene_service, this);

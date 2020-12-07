@@ -27,7 +27,7 @@ class planner_client(object):
         rospy.wait_for_service('/planner/reset_manifold')
         self.__reset_manifold = rospy.ServiceProxy('planner/reset_manifold', Empty)
         self.__plan = rospy.ServiceProxy('planner/compute_plan', CartesioPlanner)
-        self.__clear = rospy.ServiceProxy('planner/clear_plan', Empty)
+        self.__reset_planner = rospy.ServiceProxy('planner/reset_planner', Empty)
 
     def publishStartAndGoal(self, joint_names, start, goal):
         start_msg, goal_msg = self.__createStartAndGoalMsgs(joint_names, start, goal)
@@ -56,8 +56,14 @@ class planner_client(object):
             try:
                 self.__reset_manifold()
             except rospy.ServiceException as e:
-                print("Service call failed: %s" % e)
+                print("Service 'reset_manifold' call failed: %s" % e)
                 return False
+
+        else:
+            try:
+                self.__reset_planner()
+            except rospy.ServiceException as e:
+                print("Service 'reset_planner failed: %s" %e)
 
     def clearPlanner(self):
         """
