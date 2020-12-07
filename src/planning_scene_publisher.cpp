@@ -81,7 +81,7 @@ void collision_object_cb(const moveit_msgs::CollisionObjectConstPtr msg)
 {
     moveit_msgs::CollisionObject collision_object;
     collision_object = *msg;
-    collision_object.id = "object";
+    collision_object.id = msg->id;
     
 
     // Add an object into the environment
@@ -98,6 +98,8 @@ void collision_object_cb(const moveit_msgs::CollisionObjectConstPtr msg)
 
     moveit_msgs::ApplyPlanningScene msg2;
     msg2.request.scene = planning_scene;
+
+    std::cout << "calling the service!" << std::endl;
 
 
     srv.call(msg2);
