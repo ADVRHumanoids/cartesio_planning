@@ -32,11 +32,27 @@ PlannerExecutor::PlannerExecutor():
 
 void PlannerExecutor::planner_init()
 {
+    //If exists, the actual planning scene in temporary stored
+    std::unique_ptr<moveit_msgs::PlanningScene> tmp_scene;
+    if(_vc_context.planning_scene)
+    {
+        moveit_msgs::GetPlanningScene::Request req;
+        moveit_msgs::GetPlanningScene::Response res;
+        _vc_context.planning_scene->getPlanningScene(req, res);
+        tmp_scene = std::make_unique<moveit_msgs::PlanningScene>(res.scene);
+    }
+
+
     _manifold.reset();
     _planner.reset();
 
     init_load_planner();
     init_load_validity_checker();
+
+    //If exists a templorary planning scene is set to resetted vc_context
+    if(tmp_scene)
+        _vc_context.planning_scene->applyPlanningScene(*tmp_scene);
+
 
     // new validity checker needs to be set to goal generator,
     // however the following call is used only when the planner is reset since the first run
