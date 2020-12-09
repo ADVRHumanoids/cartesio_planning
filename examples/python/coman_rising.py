@@ -65,17 +65,6 @@ class planner_client(object):
             except rospy.ServiceException as e:
                 print("Service 'reset_planner failed: %s" %e)
 
-    def clearPlanner(self):
-        """
-        To clean the planner after each call
-        """
-        try:
-            self.__clear()
-        except rospy.ServiceException as e:
-            print("Service call failed: %s" % e)
-            return False
-
-
     def solve(self, PLAN_MAX_ATTEMPTS, planner_type, plan_time, interpolation_time, goal_threshold):
         rospy.wait_for_service('planner/compute_plan')
         PLAN_ATTEMPTS = 0
@@ -98,8 +87,6 @@ class planner_client(object):
             except rospy.ServiceException as e:
                 print("Service call failed: %s" % e)
                 return False
-
-            self.clearPlanner()
 
         rospy.logerr("PLANNER CAN NOT FIND A SOLUTION, EXITING")
         return False
