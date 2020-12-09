@@ -295,6 +295,24 @@ ompl::base::PlannerPtr OmplPlanner::make_RRTstar()
     return planner;
 }
 
+ompl::base::PlannerPtr OmplPlanner::make_RRTConnect()
+{
+    auto planner = std::make_shared<ompl::geometric::RRTConnect>(_space_info);
+    
+    if(!_options || !_options["RRTConnect"])
+    {
+        std::cout << "No options detected" << std::endl;
+        return planner;
+    }
+    
+    auto opt = _options["RRTConnect"];
+    
+    PLANNER_PARSE_OPTION(Range, double)
+    PLANNER_PARSE_OPTION(IntermediateStates, bool)
+    
+    return planner;
+}
+
 ompl::base::StateSpacePtr OmplPlanner::make_constrained_space()
 {
 
@@ -363,11 +381,13 @@ ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
     YAML_PARSE_OPTION(_options["state_space"], alpha, double, boost::math::constants::pi<double>()/16);
     YAML_PARSE_OPTION(_options["state_space"], epsilon, double, 0.1);
     YAML_PARSE_OPTION(_options["state_space"], rho, double, 0.1);
+    YAML_PARSE_OPTION(_options["state_space"], exploration, double, 0.5);
 
     auto atlas_space = std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, _constraint);
     atlas_space->setAlpha(alpha);
     atlas_space->setEpsilon(epsilon);
     atlas_space->setRho(rho);
+    atlas_space->setExploration(exploration);
 
     return atlas_space;
 }
@@ -636,7 +656,7 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
 
         ADD_PLANNER_AND_IF("RRTConnect")
         {
-            return std::make_shared<ompl::geometric::RRTConnect>(_space_info);
+            return make_RRTConnect();
         }
 
         ADD_PLANNER_AND_IF("RRTsharp")
