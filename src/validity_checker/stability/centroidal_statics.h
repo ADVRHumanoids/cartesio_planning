@@ -21,6 +21,7 @@ namespace Planning {
 class CentroidalStatics{
 
 public:
+    typedef std::shared_ptr<CentroidalStatics> Ptr;
     /**
      * @brief CentroidalStatics checks if the robot is statically stable with given contacts.
      * The problem which is optimized depends if the contact moments are optimized or not.
@@ -195,7 +196,8 @@ class CentroidalStaticsROS
 public:
     typedef std::shared_ptr<CentroidalStaticsROS> Ptr;
 
-    CentroidalStaticsROS(XBot::ModelInterface::ConstPtr model, CentroidalStatics& cs, ros::NodeHandle& nh, double eps=1e-3):
+    CentroidalStaticsROS(XBot::ModelInterface::ConstPtr model,
+                         CentroidalStatics::Ptr cs, ros::NodeHandle& nh, double eps=1e-3):
         _cs(cs),
         _model(*model),
         _nh(nh),
@@ -219,13 +221,13 @@ public:
 
     void publish()
     {
-        _fcs = _cs.getFrictionCones();
+        _fcs = _cs->getFrictionCones();
 
         if(_fcs.size() > 0)
         {
-            bool check_stability =  _cs.checkStability(_eps);
+            bool check_stability =  _cs->checkStability(_eps);
 
-            std::map<std::string, Eigen::Vector6d> Fcs = _cs.getForces();
+            std::map<std::string, Eigen::Vector6d> Fcs = _cs->getForces();
 
             int i = 0; int k = 0;
             ros::Time t = ros::Time::now();
@@ -346,7 +348,7 @@ public:
                 static const double DELTA_THETA = M_PI/16.0;
                 double theta = 0.;
                 double scale = 0.09;
-                double angle = M_PI_2-std::atan(_cs.getFricitonCoefficient());
+                double angle = M_PI_2-std::atan(_cs->getFricitonCoefficient());
                 for (std::size_t i = 0; i < 32; i++)
                 {
                    pp[0].x = 0;
@@ -415,16 +417,16 @@ public: void set_contacts(cartesio_planning::SetContactFrames::ConstPtr msg)
     {
         if(msg->action.data() == msg->SET)
         {
-            _cs.setContactLinks(msg->frames_in_contact);
-            _cs.setFrictionCoeff(msg->friction_coefficient);
+            _cs->setContactLinks(msg->frames_in_contact);
+            _cs->setFrictionCoeff(msg->friction_coefficient);
         }
         else if(msg->action.data() == msg->ADD)
         {
-            _cs.addContactLinks(msg->frames_in_contact);
-            _cs.setFrictionCoeff(msg->friction_coefficient);
+            _cs->addContactLinks(msg->frames_in_contact);
+            _cs->setFrictionCoeff(msg->friction_coefficient);
         }
         else if(msg->action.data() == msg->REMOVE)
-            _cs.removeContactLinks(msg->frames_in_contact);
+            _cs->removeContactLinks(msg->frames_in_contact);
 
 
         if(!msg->rotations.empty() && (msg->action.data() == msg->ADD || msg->action.data() == msg->SET))
@@ -438,17 +440,17 @@ public: void set_contacts(cartesio_planning::SetContactFrames::ConstPtr msg)
                     Eigen::Quaterniond q;
                     tf::quaternionMsgToEigen(msg->rotations[i], q);
 
-                    _cs.setContactRotationMatrix(msg->frames_in_contact[i], q.toRotationMatrix());
+                    _cs->setContactRotationMatrix(msg->frames_in_contact[i], q.toRotationMatrix());
                 }
             }
         }
 
-        _cs.setOptimizeTorque(msg->optimize_torque);
+        _cs->setOptimizeTorque(msg->optimize_torque);
 
     }
 
 private:
-    CentroidalStatics& _cs;
+    CentroidalStatics::Ptr _cs;
     const XBot::ModelInterface& _model;
     ros::NodeHandle _nh;
     ros::Subscriber _contact_sub;

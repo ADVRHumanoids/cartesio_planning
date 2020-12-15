@@ -27,7 +27,7 @@ int main(int argc, char ** argv)
     Eigen::Vector2d xlims, ylims;
     xlims[0] = -0.05; xlims[1] = 0.1;
     ylims[0] = -0.05; ylims[1] = 0.05;
-    CentroidalStatics cs(model, links_in_contact, mu, true, xlims, ylims);
+    CentroidalStatics::Ptr cs = std::make_shared<CentroidalStatics>(model, links_in_contact, mu, true, xlims, ylims);
     CentroidalStaticsROS csROS(model, cs, nhp);
 
     auto on_js_received = [&csROS, &cs, model](const sensor_msgs::JointStateConstPtr& msg)
@@ -45,13 +45,13 @@ int main(int argc, char ** argv)
 //            ROS_WARN("NOT STABLE!");
 
 
-        std::map<std::string, Eigen::Vector6d> links_in_contact = cs.getForces();
+        std::map<std::string, Eigen::Vector6d> links_in_contact = cs->getForces();
 
         for(auto contact : links_in_contact)
         {
             Eigen::Affine3d T;
             model->getPose(contact.first, T);
-            if(!cs.setContactRotationMatrix(contact.first, T.linear()))
+            if(!cs->setContactRotationMatrix(contact.first, T.linear()))
                 ROS_ERROR("Can not set rotation for link %s", contact.first);
         }
 

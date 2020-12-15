@@ -91,7 +91,7 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
         cs->setContactRotationMatrix(links[i], quat.toRotationMatrix());
     }
 
-    auto cs_ros = std::make_shared<CentroidalStaticsROS>(model, *cs, nh, eps);
+    auto cs_ros = std::make_shared<CentroidalStaticsROS>(model, cs, nh, eps);
 
     double ros_eps = cs_ros->getEps();
 
@@ -100,7 +100,7 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
 
     auto validity_checker = [=]()
     {
-//        cs_ros->publish();
+        cs_ros->publish();
         return cs->checkStability(eps);
     };
 
