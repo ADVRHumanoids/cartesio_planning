@@ -99,12 +99,15 @@ auto create_validity_check_context = [](std::string vc_node, ModelInterface::Ptr
 auto set_contact_links = [](CentroidalStatics& self, const std::vector<std::string>& active_links)
 {
     self.setContactLinks(active_links);
+    self.init();
 };
 
 auto set_contact_links_and_optimize_torque = [](CentroidalStatics& self,
     const std::vector<std::string>& active_links, bool optimize_torque)
 {
-    self.setContactLinks(active_links, optimize_torque);
+    self.setContactLinks(active_links);
+    self.setOptimizeTorque(optimize_torque);
+    self.init();
 };
 
 PYBIND11_MODULE(validity_check, m)
@@ -140,7 +143,6 @@ PYBIND11_MODULE(validity_check, m)
             .def("checkStability", &CentroidalStatics::checkStability, py::arg("eps") = 1e-3)
             .def("setContactLinks", set_contact_links)
             .def("setContactLinks", set_contact_links_and_optimize_torque)
-            .def("addContactLinks", &CentroidalStatics::addContactLinks)
             .def("getContactLinks", &CentroidalStatics::getContactLinks)
             .def("setContactRotationMatrix", &CentroidalStatics::setContactRotationMatrix)
             .def("getContactFrame", &CentroidalStatics::getContactFrame)

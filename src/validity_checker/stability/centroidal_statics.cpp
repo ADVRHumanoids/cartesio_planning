@@ -167,68 +167,20 @@ bool CentroidalStatics::setFrictionCoeff(const double friction_coeff)
 void CentroidalStatics::setOptimizeTorque(const bool optimize_torque)
 {
     _optimize_torque = optimize_torque;
-
-    init();
 }
 
 void CentroidalStatics::setContactLinks(const std::vector<std::string>& contact_links)
 {
     _contact_links.clear();
     _contact_links = contact_links;
-
-    init();
 }
 
-void CentroidalStatics::setContactLinks(const std::vector<string> &contact_links, const bool optimize_torque)
-{
-    _optimize_torque = optimize_torque;
-    _contact_links.clear();
-    _contact_links = contact_links;
-
-    init();
-}
 
 const std::vector< std::string >& CentroidalStatics::getContactLinks()
 {
     return _contact_links;
 }
 
-void CentroidalStatics::addContactLinks(const std::vector<std::string>& contact_links)
-{
-    std::map<std::string, Eigen::Matrix3d> rotations;
-    for(auto fc : _fcs)
-        rotations[fc.first] = fc.second->getContactFrame();
-
-    for(auto contact_link : contact_links)
-        _contact_links.push_back(contact_link);
-
-    init();
-
-    for(auto R : rotations)
-        setContactRotationMatrix(R.first, R.second);
-}
-
-void CentroidalStatics::removeContactLinks(const std::vector<std::string>& contact_links)
-{
-    std::map<std::string, Eigen::Matrix3d> rotations;
-    for(auto fc : _fcs)
-        rotations[fc.first] = fc.second->getContactFrame();
-
-    for(auto link : contact_links)
-    {
-        std::vector<std::string>::iterator it = std::find(_contact_links.begin(), _contact_links.end(), link);
-        if(it != _contact_links.end())
-        {
-            _contact_links.erase(it);
-            rotations.erase(link);
-        }
-    }
-
-    init();
-
-    for(auto R : rotations)
-        setContactRotationMatrix(R.first, R.second);
-}
 
 bool CentroidalStatics::setContactRotationMatrix(const std::string& contact_link,
                                                  const Eigen::Matrix3d& w_R_c)
