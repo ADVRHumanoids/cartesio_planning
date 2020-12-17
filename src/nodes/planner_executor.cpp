@@ -346,6 +346,7 @@ void PlannerExecutor::init_trj_publisiher()
     }
 
     _trj_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 1, true);
+    _raw_trj_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("raw_trajectory", 1, true);
 }
 
 void PlannerExecutor::init_planner_srv()
@@ -765,7 +766,20 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
 
     std::vector<Eigen::VectorXd> raw_trajectory;
     if(_planner->getPlannerStatus())
+    {
+        auto t = ros::Duration(0.);
+        trajectory_msgs::JointTrajectory msg;
         raw_trajectory = _planner->getSolutionPath();
+        for(auto x : raw_trajectory)
+        {
+            trajectory_msgs::JointTrajectoryPoint point;
+            point.positions.assign(x.data(), x.data() + x.size());
+            point.time_from_start = t;
+            msg.points.push_back(point);
+            t += ros::Duration(0.01);
+        }
+        _raw_trj_pub.publish(msg);
+    }
 
     _interpolator->compute(raw_trajectory);
     double t = 0.;
