@@ -46,15 +46,15 @@ RRTstar:
     KNearest: true
     Range: 1000
     
-RRTConnect:
+#RRTConnect:
     #Range: 1.0
-    IntermediateStates: true
+    #IntermediateStates: true
 
 state_space:
     floating_base_pos_min: [-1, -1, -1]
     floating_base_pos_max: [ 1,  1,  1]
     type: "Atlas"
     alpha: 0.5233
-    rho: 0.5
-    epsilon: 0.5
-    exploration: 0.8
+    rho: 0.1
+    epsilon: 0.1
+    exploration: 0.5
