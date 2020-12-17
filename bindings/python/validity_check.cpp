@@ -110,6 +110,12 @@ auto set_contact_links_and_optimize_torque = [](CentroidalStatics& self,
     self.init();
 };
 
+auto set_optimize_torque = [](CentroidalStatics& self, bool optimize_torque)
+{
+    self.setOptimizeTorque(optimize_torque);
+    self.init();
+};
+
 PYBIND11_MODULE(validity_check, m)
 {
 
@@ -148,7 +154,8 @@ PYBIND11_MODULE(validity_check, m)
             .def("getContactFrame", &CentroidalStatics::getContactFrame)
             .def("setForces", &CentroidalStatics::setForces)
             .def("getForces", &CentroidalStatics::getForces)
-            .def("setOptimizeTorque", &CentroidalStatics::setOptimizeTorque);
+            .def("setOptimizeTorque", set_optimize_torque)
+            .def("isTorqueOptimized", &CentroidalStatics::isTorqueOptimized);
             
     py::class_<ValidityCheckContext>(m, "ValidityCheckContext")
             .def(py::init(create_validity_check_context),
