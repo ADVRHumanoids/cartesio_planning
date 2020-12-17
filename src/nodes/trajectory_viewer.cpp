@@ -37,8 +37,11 @@ int main(int argc, char ** argv)
         k = 0;
     };
 
-    // joint trajectory subscriber
+    // joint trajectory subscriber (interpolated trajectory)
     auto sub = nh.subscribe<trajectory_msgs::JointTrajectory>("joint_trajectory", 1, on_trj_received);
+    
+    // raw joint trajectory subscriber
+//     auto sub = nh.subscribe<trajectory_msgs::JointTrajectory>("raw_trajectory", 1, on_trj_received);
 
     // custom robot state publisher
     XBot::Cartesian::Utils::RobotStatePublisher rspub(model);
