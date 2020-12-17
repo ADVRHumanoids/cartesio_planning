@@ -1,6 +1,7 @@
 string ADD=ADD
 string REMOVE=REMOVE
 string SET=SET
+string NONE=NONE
 
 string action
 
