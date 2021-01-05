@@ -141,7 +141,7 @@ public:
     /**
      * @brief init creates and initialize the optimization problem
      */
-    void init();
+    void init(bool enable_log = true);
 
     bool isTorqueOptimized(){ return _optimize_torque;}
 

@@ -22,25 +22,35 @@ CentroidalStatics::CentroidalStatics(XBot::ModelInterface::ConstPtr model, const
     init();
 }
 
-void CentroidalStatics::init()
+void CentroidalStatics::init(bool enable_log)
 {
+    if(_model_internal)
+        _model_internal.reset();
+    if(_fcs.size() > 0)
+        _fcs.clear();
+    if(_fs.size() > 0)
+        _fs.clear();
+
+    if(_dyn_feas)
+        _dyn_feas.reset();
+
     auto yaml_problem = createYAMLProblem(_contact_links, _friction_coeff, _optimize_torque);
 
     _model_internal = ModelInterface::getModel(_model->getConfigOptions());
     _model_internal->syncFrom(*_model);
-    auto ctx = std::make_shared<Context>(std::make_shared<Parameters>(1.), _model_internal);
+    auto params = std::make_shared<Parameters>(1.);
+    params->setLogEnabled(enable_log);
+    auto ctx = std::make_shared<Context>(params, _model_internal);
 
     ProblemDescription pb(yaml_problem, ctx);
 
+    if(_ci)
+        _ci.reset();
     _ci = CartesianInterfaceImpl::MakeInstance("OpenSot", pb, ctx);
 
     _dyn_feas = std::dynamic_pointer_cast<acceleration::DynamicFeasibility>(_ci->getTask("dynamic_feasibility"));
-    if(_fcs.size() > 0)
-        _fcs.clear();
     for(auto link : _contact_links)
         _fcs[link] = std::dynamic_pointer_cast<acceleration::FrictionCone>(_ci->getTask(link + "_fc"));
-    if(_fs.size() > 0)
-        _fs.clear();
     for(auto link : _contact_links)
         _fs[link] = std::dynamic_pointer_cast<acceleration::ForceTask>(_ci->getTask(link));
 }
