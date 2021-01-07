@@ -96,24 +96,24 @@ auto create_validity_check_context = [](std::string vc_node, ModelInterface::Ptr
     return vc_context;
 };
 
-auto set_contact_links = [](CentroidalStatics& self, const std::vector<std::string>& active_links)
+auto set_contact_links = [](CentroidalStatics& self, const std::vector<std::string>& active_links, bool log = false)
 {
     self.setContactLinks(active_links);
-    self.init();
+    self.init(log);
 };
 
 auto set_contact_links_and_optimize_torque = [](CentroidalStatics& self,
-    const std::vector<std::string>& active_links, bool optimize_torque)
+    const std::vector<std::string>& active_links, bool optimize_torque, bool log = false)
 {
     self.setContactLinks(active_links);
     self.setOptimizeTorque(optimize_torque);
-    self.init();
+    self.init(log);
 };
 
-auto set_optimize_torque = [](CentroidalStatics& self, bool optimize_torque)
+auto set_optimize_torque = [](CentroidalStatics& self, bool optimize_torque, bool log = false)
 {
     self.setOptimizeTorque(optimize_torque);
-    self.init();
+    self.init(log);
 };
 
 PYBIND11_MODULE(validity_check, m)
@@ -139,13 +139,15 @@ PYBIND11_MODULE(validity_check, m)
                          const double,
                          const bool,
                          const Eigen::Vector2d&,
-                         const Eigen::Vector2d&>(),
+                         const Eigen::Vector2d&,
+                         bool>(),
                  py::arg("model"),
                  py::arg("contact_links"),
                  py::arg("friction_coeff"),
                  py::arg("optimize_torque") = false,
                  py::arg("xlims_cop") = Eigen::Vector2d::Zero(2),
-                 py::arg("ylims_cop") = Eigen::Vector2d::Zero(2))
+                 py::arg("ylims_cop") = Eigen::Vector2d::Zero(2),
+                 py::arg("log") = false)
             .def("checkStability", &CentroidalStatics::checkStability, py::arg("eps") = 1e-3)
             .def("setContactLinks", set_contact_links)
             .def("setContactLinks", set_contact_links_and_optimize_torque)

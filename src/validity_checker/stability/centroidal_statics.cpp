@@ -11,7 +11,8 @@ CentroidalStatics::CentroidalStatics(XBot::ModelInterface::ConstPtr model, const
                                      const double friction_coeff,
                                      const bool optimize_torque,
                                      const Eigen::Vector2d& xlims_cop,
-                                     const Eigen::Vector2d& ylims_cop):
+                                     const Eigen::Vector2d& ylims_cop,
+                                     bool log):
     _model(model),
     _friction_coeff(friction_coeff),
     _optimize_torque(optimize_torque),
@@ -19,7 +20,7 @@ CentroidalStatics::CentroidalStatics(XBot::ModelInterface::ConstPtr model, const
     _x_lims_cop(xlims_cop),
     _y_lims_cop(ylims_cop)
 {
-    init();
+    init(log);
 }
 
 void CentroidalStatics::init(bool enable_log)

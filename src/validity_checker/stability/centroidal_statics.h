@@ -63,7 +63,8 @@ public:
     CentroidalStatics(XBot::ModelInterface::ConstPtr model, const std::vector<std::string>& contact_links,
                       const double friction_coeff, const bool optimize_torque = false,
                       const Eigen::Vector2d& xlims_cop = Eigen::Vector2d::Zero(2),
-                      const Eigen::Vector2d& ylims_cop = Eigen::Vector2d::Zero(2));
+                      const Eigen::Vector2d& ylims_cop = Eigen::Vector2d::Zero(2),
+                      bool log = false);
 
     /**
      * @brief setOptimizeTorque permits to enable or disable the optimization of contact moments
