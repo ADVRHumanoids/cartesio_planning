@@ -14,12 +14,45 @@
     </group>
     <group name="arm_A">
         <chain base_link="A1_base" tip_link="EEA_link" />
+        <link name="A1_base"/>
+        <link name="A2_link"/>
+        <link name="A3_link"/>
+        <link name="A4_link"/>
+        <link name="A5_link"/>
+        <link name="A6_link"/>
+        <link name="A7_link"/>
+        <link name="A8_link"/>
+        <link name="A9_link"/>
+        <link name="A10_link"/>
+        <link name="EEA_link"/>
     </group>
     <group name="arm_B">
         <chain base_link="B1_base" tip_link="EEB_link" />
+        <link name="B1_base"/>
+        <link name="B2_link"/>
+        <link name="B3_link"/>
+        <link name="B4_link"/>
+        <link name="B5_link"/>
+        <link name="B6_link"/>
+        <link name="B7_link"/>
+        <link name="B8_link"/>
+        <link name="B9_link"/>
+        <link name="B10_link"/>
+        <link name="EEB_link"/>
     </group>
     <group name="arm_C">
         <chain base_link="C1_base" tip_link="EEC_link" />
+        <link name="C1_base"/>
+        <link name="C2_link"/>
+        <link name="C3_link"/>
+        <link name="C4_link"/>
+        <link name="C5_link"/>
+        <link name="C6_link"/>
+        <link name="C7_link"/>
+        <link name="C8_link"/>
+        <link name="C9_link"/>
+        <link name="C10_link"/>
+        <link name="EEC_link"/>
     </group>
     <group name="chains">
         <group name="arm_A" />
@@ -47,61 +80,35 @@
         <joint name="C9_joint" value="0.334802"/>
         <joint name="C10_joint" value="1.14758"/>
     </group_state>
-
-
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
-    <disable_collisions link1="A10_link" link2="A5_link" reason="Never" />
+    <disable_collisions link1="A10_link" link2="A2_link" reason="Never" />
     <disable_collisions link1="A10_link" link2="A6_link" reason="Never" />
     <disable_collisions link1="A10_link" link2="A7_link" reason="Never" />
     <disable_collisions link1="A10_link" link2="A8_link" reason="Never" />
     <disable_collisions link1="A10_link" link2="A9_link" reason="Adjacent" />
     <disable_collisions link1="A10_link" link2="EEA_link" reason="Adjacent" />
-    <disable_collisions link1="A1_link" link2="A2_link" reason="Adjacent" />
-    <disable_collisions link1="A1_link" link2="A3_link" reason="Never" />
-    <disable_collisions link1="A1_link" link2="A4_link" reason="Never" />
-    <disable_collisions link1="A1_link" link2="A5_link" reason="Never" />
+    <disable_collisions link1="A1_link" link2="A2_link" reason="Never" />
+    <disable_collisions link1="A1_link" link2="A3_link" reason="Adjacent" />
+    <disable_collisions link1="A1_link" link2="A6_link" reason="Never" />
+    <disable_collisions link1="A1_link" link2="A7_link" reason="Never" />
     <disable_collisions link1="A1_link" link2="B1_link" reason="Never" />
     <disable_collisions link1="A1_link" link2="B2_link" reason="Never" />
     <disable_collisions link1="A1_link" link2="B3_link" reason="Never" />
-    <disable_collisions link1="A1_link" link2="B4_link" reason="Never" />
     <disable_collisions link1="A1_link" link2="C1_link" reason="Never" />
     <disable_collisions link1="A1_link" link2="C2_link" reason="Never" />
     <disable_collisions link1="A1_link" link2="C3_link" reason="Never" />
-    <disable_collisions link1="A1_link" link2="C4_link" reason="Never" />
     <disable_collisions link1="A1_link" link2="base_link" reason="Adjacent" />
     <disable_collisions link1="A2_link" link2="A3_link" reason="Adjacent" />
-    <disable_collisions link1="A2_link" link2="A4_link" reason="Never" />
-    <disable_collisions link1="A2_link" link2="A5_link" reason="Never" />
-    <disable_collisions link1="A2_link" link2="A6_link" reason="Never" />
+    <disable_collisions link1="A2_link" link2="A6_link" reason="Adjacent" />
+    <disable_collisions link1="A2_link" link2="A7_link" reason="Never" />
+    <disable_collisions link1="A2_link" link2="A8_link" reason="Never" />
+    <disable_collisions link1="A2_link" link2="A9_link" reason="Never" />
     <disable_collisions link1="A2_link" link2="B1_link" reason="Never" />
-    <disable_collisions link1="A2_link" link2="B2_link" reason="Never" />
-    <disable_collisions link1="A2_link" link2="B3_link" reason="Never" />
     <disable_collisions link1="A2_link" link2="C1_link" reason="Never" />
-    <disable_collisions link1="A2_link" link2="C2_link" reason="Never" />
-    <disable_collisions link1="A2_link" link2="C3_link" reason="Never" />
-    <disable_collisions link1="A2_link" link2="base_link" reason="Never" />
-    <disable_collisions link1="A3_link" link2="A4_link" reason="Adjacent" />
-    <disable_collisions link1="A3_link" link2="A5_link" reason="Never" />
     <disable_collisions link1="A3_link" link2="A6_link" reason="Never" />
     <disable_collisions link1="A3_link" link2="A7_link" reason="Never" />
     <disable_collisions link1="A3_link" link2="B1_link" reason="Never" />
-    <disable_collisions link1="A3_link" link2="B2_link" reason="Never" />
-    <disable_collisions link1="A3_link" link2="B3_link" reason="Never" />
     <disable_collisions link1="A3_link" link2="C1_link" reason="Never" />
-    <disable_collisions link1="A3_link" link2="C2_link" reason="Never" />
-    <disable_collisions link1="A3_link" link2="C3_link" reason="Never" />
-    <disable_collisions link1="A3_link" link2="base_link" reason="Never" />
-    <disable_collisions link1="A4_link" link2="A5_link" reason="Adjacent" />
-    <disable_collisions link1="A4_link" link2="A6_link" reason="Never" />
-    <disable_collisions link1="A4_link" link2="A7_link" reason="Never" />
-    <disable_collisions link1="A4_link" link2="A8_link" reason="Never" />
-    <disable_collisions link1="A4_link" link2="B1_link" reason="Never" />
-    <disable_collisions link1="A4_link" link2="C1_link" reason="Never" />
-    <disable_collisions link1="A5_link" link2="A6_link" reason="Adjacent" />
-    <disable_collisions link1="A5_link" link2="A7_link" reason="Never" />
-    <disable_collisions link1="A5_link" link2="A8_link" reason="Never" />
-    <disable_collisions link1="A5_link" link2="A9_link" reason="Never" />
-    <disable_collisions link1="A5_link" link2="EEA_link" reason="Never" />
     <disable_collisions link1="A6_link" link2="A7_link" reason="Adjacent" />
     <disable_collisions link1="A6_link" link2="A8_link" reason="Never" />
     <disable_collisions link1="A6_link" link2="A9_link" reason="Never" />
@@ -112,47 +119,29 @@
     <disable_collisions link1="A8_link" link2="A9_link" reason="Adjacent" />
     <disable_collisions link1="A8_link" link2="EEA_link" reason="Never" />
     <disable_collisions link1="A9_link" link2="EEA_link" reason="Never" />
-    <disable_collisions link1="B10_link" link2="B5_link" reason="Never" />
+    <disable_collisions link1="B10_link" link2="B2_link" reason="Never" />
     <disable_collisions link1="B10_link" link2="B6_link" reason="Never" />
     <disable_collisions link1="B10_link" link2="B7_link" reason="Never" />
     <disable_collisions link1="B10_link" link2="B8_link" reason="Never" />
     <disable_collisions link1="B10_link" link2="B9_link" reason="Adjacent" />
     <disable_collisions link1="B10_link" link2="EEB_link" reason="Adjacent" />
-    <disable_collisions link1="B1_link" link2="B2_link" reason="Adjacent" />
-    <disable_collisions link1="B1_link" link2="B3_link" reason="Never" />
-    <disable_collisions link1="B1_link" link2="B4_link" reason="Never" />
-    <disable_collisions link1="B1_link" link2="B5_link" reason="Never" />
+    <disable_collisions link1="B1_link" link2="B2_link" reason="Never" />
+    <disable_collisions link1="B1_link" link2="B3_link" reason="Adjacent" />
+    <disable_collisions link1="B1_link" link2="B6_link" reason="Never" />
+    <disable_collisions link1="B1_link" link2="B7_link" reason="Never" />
     <disable_collisions link1="B1_link" link2="C1_link" reason="Never" />
     <disable_collisions link1="B1_link" link2="C2_link" reason="Never" />
     <disable_collisions link1="B1_link" link2="C3_link" reason="Never" />
-    <disable_collisions link1="B1_link" link2="C4_link" reason="Never" />
     <disable_collisions link1="B1_link" link2="base_link" reason="Adjacent" />
     <disable_collisions link1="B2_link" link2="B3_link" reason="Adjacent" />
-    <disable_collisions link1="B2_link" link2="B4_link" reason="Never" />
-    <disable_collisions link1="B2_link" link2="B5_link" reason="Never" />
-    <disable_collisions link1="B2_link" link2="B6_link" reason="Never" />
+    <disable_collisions link1="B2_link" link2="B6_link" reason="Adjacent" />
+    <disable_collisions link1="B2_link" link2="B7_link" reason="Never" />
+    <disable_collisions link1="B2_link" link2="B8_link" reason="Never" />
+    <disable_collisions link1="B2_link" link2="B9_link" reason="Never" />
     <disable_collisions link1="B2_link" link2="C1_link" reason="Never" />
-    <disable_collisions link1="B2_link" link2="C2_link" reason="Never" />
-    <disable_collisions link1="B2_link" link2="C3_link" reason="Never" />
-    <disable_collisions link1="B2_link" link2="base_link" reason="Never" />
-    <disable_collisions link1="B3_link" link2="B4_link" reason="Adjacent" />
-    <disable_collisions link1="B3_link" link2="B5_link" reason="Never" />
     <disable_collisions link1="B3_link" link2="B6_link" reason="Never" />
     <disable_collisions link1="B3_link" link2="B7_link" reason="Never" />
     <disable_collisions link1="B3_link" link2="C1_link" reason="Never" />
-    <disable_collisions link1="B3_link" link2="C2_link" reason="Never" />
-    <disable_collisions link1="B3_link" link2="C3_link" reason="Never" />
-    <disable_collisions link1="B3_link" link2="base_link" reason="Never" />
-    <disable_collisions link1="B4_link" link2="B5_link" reason="Adjacent" />
-    <disable_collisions link1="B4_link" link2="B6_link" reason="Never" />
-    <disable_collisions link1="B4_link" link2="B7_link" reason="Never" />
-    <disable_collisions link1="B4_link" link2="B8_link" reason="Never" />
-    <disable_collisions link1="B4_link" link2="C1_link" reason="Never" />
-    <disable_collisions link1="B5_link" link2="B6_link" reason="Adjacent" />
-    <disable_collisions link1="B5_link" link2="B7_link" reason="Never" />
-    <disable_collisions link1="B5_link" link2="B8_link" reason="Never" />
-    <disable_collisions link1="B5_link" link2="B9_link" reason="Never" />
-    <disable_collisions link1="B5_link" link2="EEB_link" reason="Never" />
     <disable_collisions link1="B6_link" link2="B7_link" reason="Adjacent" />
     <disable_collisions link1="B6_link" link2="B8_link" reason="Never" />
     <disable_collisions link1="B6_link" link2="B9_link" reason="Never" />
@@ -163,36 +152,24 @@
     <disable_collisions link1="B8_link" link2="B9_link" reason="Adjacent" />
     <disable_collisions link1="B8_link" link2="EEB_link" reason="Never" />
     <disable_collisions link1="B9_link" link2="EEB_link" reason="Never" />
-    <disable_collisions link1="C10_link" link2="C5_link" reason="Never" />
+    <disable_collisions link1="C10_link" link2="C2_link" reason="Never" />
     <disable_collisions link1="C10_link" link2="C6_link" reason="Never" />
     <disable_collisions link1="C10_link" link2="C7_link" reason="Never" />
     <disable_collisions link1="C10_link" link2="C8_link" reason="Never" />
     <disable_collisions link1="C10_link" link2="C9_link" reason="Adjacent" />
     <disable_collisions link1="C10_link" link2="EEC_link" reason="Adjacent" />
-    <disable_collisions link1="C1_link" link2="C2_link" reason="Adjacent" />
-    <disable_collisions link1="C1_link" link2="C3_link" reason="Never" />
-    <disable_collisions link1="C1_link" link2="C4_link" reason="Never" />
-    <disable_collisions link1="C1_link" link2="C5_link" reason="Never" />
+    <disable_collisions link1="C1_link" link2="C2_link" reason="Never" />
+    <disable_collisions link1="C1_link" link2="C3_link" reason="Adjacent" />
+    <disable_collisions link1="C1_link" link2="C6_link" reason="Never" />
+    <disable_collisions link1="C1_link" link2="C7_link" reason="Never" />
     <disable_collisions link1="C1_link" link2="base_link" reason="Adjacent" />
     <disable_collisions link1="C2_link" link2="C3_link" reason="Adjacent" />
-    <disable_collisions link1="C2_link" link2="C4_link" reason="Never" />
-    <disable_collisions link1="C2_link" link2="C5_link" reason="Never" />
-    <disable_collisions link1="C2_link" link2="C6_link" reason="Never" />
-    <disable_collisions link1="C2_link" link2="base_link" reason="Never" />
-    <disable_collisions link1="C3_link" link2="C4_link" reason="Adjacent" />
-    <disable_collisions link1="C3_link" link2="C5_link" reason="Never" />
+    <disable_collisions link1="C2_link" link2="C6_link" reason="Adjacent" />
+    <disable_collisions link1="C2_link" link2="C7_link" reason="Never" />
+    <disable_collisions link1="C2_link" link2="C8_link" reason="Never" />
+    <disable_collisions link1="C2_link" link2="C9_link" reason="Never" />
     <disable_collisions link1="C3_link" link2="C6_link" reason="Never" />
     <disable_collisions link1="C3_link" link2="C7_link" reason="Never" />
-    <disable_collisions link1="C3_link" link2="base_link" reason="Never" />
-    <disable_collisions link1="C4_link" link2="C5_link" reason="Adjacent" />
-    <disable_collisions link1="C4_link" link2="C6_link" reason="Never" />
-    <disable_collisions link1="C4_link" link2="C7_link" reason="Never" />
-    <disable_collisions link1="C4_link" link2="C8_link" reason="Never" />
-    <disable_collisions link1="C5_link" link2="C6_link" reason="Adjacent" />
-    <disable_collisions link1="C5_link" link2="C7_link" reason="Never" />
-    <disable_collisions link1="C5_link" link2="C8_link" reason="Never" />
-    <disable_collisions link1="C5_link" link2="C9_link" reason="Never" />
-    <disable_collisions link1="C5_link" link2="EEC_link" reason="Never" />
     <disable_collisions link1="C6_link" link2="C7_link" reason="Adjacent" />
     <disable_collisions link1="C6_link" link2="C8_link" reason="Never" />
     <disable_collisions link1="C6_link" link2="C9_link" reason="Never" />
