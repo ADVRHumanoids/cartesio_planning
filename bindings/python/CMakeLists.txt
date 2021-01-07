@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.15)
 
-find_package(pybind11 QUIET)
+find_package(Python3 REQUIRED COMPONENTS Development Interpreter)
+find_package(pybind11 REQUIRED)
 message(STATUS "**********************************Check for pybind11")
 if(${pybind11_FOUND})
 
-    message(STATUS "+++++++++++++++++++++++++++++++Compiling python bindings")
+    message(STATUS "+++++++++++++++++++++++++++++++Compiling python bindings (${pybind11_LIBRARIES})")
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
     pybind11_add_module(planning cartesio_planning.cpp)
@@ -35,3 +36,4 @@ if(${pybind11_FOUND})
 else()
     message(STATUS "-----------------------------------pybind not found")
 endif()
+
