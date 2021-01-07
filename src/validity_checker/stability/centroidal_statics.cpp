@@ -35,13 +35,13 @@ void CentroidalStatics::init(bool enable_log)
     if(_dyn_feas)
         _dyn_feas.reset();
 
-    auto yaml_problem = createYAMLProblem(_contact_links, _friction_coeff, _optimize_torque);
+    YAML::Node yaml_problem = createYAMLProblem(_contact_links, _friction_coeff, _optimize_torque);
 
     _model_internal = ModelInterface::getModel(_model->getConfigOptions());
     _model_internal->syncFrom(*_model);
     auto params = std::make_shared<Parameters>(1.);
     params->setLogEnabled(enable_log);
-    auto ctx = std::make_shared<Context>(params, _model_internal);
+    std::shared_ptr<Context> ctx = std::make_shared<Context>(params, _model_internal);
 
     ProblemDescription pb(yaml_problem, ctx);
 
@@ -152,7 +152,7 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
             yaml << YAML::Key << "type" << YAML::Value << "CoP";
             yaml << YAML::Key << "link" << YAML::Value << link;
             yaml << YAML::Key << "x_limits" << x;
-            yaml << YAML::Key << "y_limits" << x;
+            yaml << YAML::Key << "y_limits" << y;
             yaml << YAML::EndMap;
         }
     }
