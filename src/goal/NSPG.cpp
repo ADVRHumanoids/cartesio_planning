@@ -72,7 +72,7 @@ bool NSPG::sample ( double timeout )
         _ik_solver->getCI()->setReferencePosture(joint_map);
         _ik_solver->solve();
         
-        if (vc_context.vc_aggregate.checkAll())
+        if (_vc_context.vc_aggregate.checkAll())
             counter += 1;
         else
             counter = 0;
