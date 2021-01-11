@@ -168,6 +168,7 @@ void PlannerExecutor::init_load_planner()
             throw std::runtime_error("problem_description '" + param_name + "' parameter missing");
         }
 
+        _manifold.reset();
         _manifold = make_manifold(problem_description_string);
 
         ompl_constraint = _manifold;
