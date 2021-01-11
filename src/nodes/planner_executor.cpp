@@ -43,7 +43,6 @@ void PlannerExecutor::planner_init()
     }
 
 
-    _manifold.reset();
     _planner.reset();
 
     init_load_planner();
@@ -70,8 +69,9 @@ bool PlannerExecutor::update_manifold_from_param(std_srvs::Empty::Request& req, 
 
 bool PlannerExecutor::reset_planner(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
-    _planner.reset();
-    init_load_planner();
+    ROS_INFO("Requested reset planner");
+    planner_init();
+    //init_load_planner();
     return true;
 }
 
