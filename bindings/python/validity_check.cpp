@@ -149,14 +149,14 @@ PYBIND11_MODULE(validity_check, m)
                  py::arg("ylims_cop") = Eigen::Vector2d::Zero(2),
                  py::arg("log") = false)
             .def("checkStability", &CentroidalStatics::checkStability, py::arg("eps") = 1e-3)
-            .def("setContactLinks", set_contact_links)
-            .def("setContactLinks", set_contact_links_and_optimize_torque)
+            .def("setContactLinks", set_contact_links, py::arg("active_links"), py::arg("log") = false)
+            .def("setContactLinks", set_contact_links_and_optimize_torque, py::arg("active_links"), py::arg("optimize_torque"), py::arg("log") = false)
             .def("getContactLinks", &CentroidalStatics::getContactLinks)
             .def("setContactRotationMatrix", &CentroidalStatics::setContactRotationMatrix)
             .def("getContactFrame", &CentroidalStatics::getContactFrame)
             .def("setForces", &CentroidalStatics::setForces)
             .def("getForces", &CentroidalStatics::getForces)
-            .def("setOptimizeTorque", set_optimize_torque)
+            .def("setOptimizeTorque", set_optimize_torque, py::arg("optimize_torque"), py::arg("log") = false)
             .def("isTorqueOptimized", &CentroidalStatics::isTorqueOptimized);
             
     py::class_<ValidityCheckContext>(m, "ValidityCheckContext")
