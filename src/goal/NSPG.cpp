@@ -46,8 +46,10 @@ bool NSPG::sample ( double timeout )
     float T = 0.0;
     double dt = 0.01;
     int iter = 0;
+    unsigned int counter = 0;
+    unsigned int max_counter = 25;
     
-    while(!_vc_context.vc_aggregate.checkAll())
+    while(!_vc_context.vc_aggregate.checkAll() || counter < max_counter)
     {
         auto tic = std::chrono::high_resolution_clock::now();
         
@@ -69,6 +71,11 @@ bool NSPG::sample ( double timeout )
 
         _ik_solver->getCI()->setReferencePosture(joint_map);
         _ik_solver->solve();
+        
+        if (vc_context.vc_aggregate.checkAll())
+            counter += 1;
+        else
+            counter = 0;
 
         _rspub->publishTransforms(ros::Time::now(), "/NSPG");
                         
