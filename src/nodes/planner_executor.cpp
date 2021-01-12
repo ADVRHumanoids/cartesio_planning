@@ -34,11 +34,11 @@ void PlannerExecutor::planner_init()
 {
     //If exists, the actual planning scene in temporary stored
     std::unique_ptr<moveit_msgs::PlanningScene> tmp_scene;
-    if(_vc_context.planning_scene)
+    if(_vc_context->planning_scene)
     {
         moveit_msgs::GetPlanningScene::Request req;
         moveit_msgs::GetPlanningScene::Response res;
-        _vc_context.planning_scene->getPlanningScene(req, res);
+        _vc_context->planning_scene->getPlanningScene(req, res);
         tmp_scene = std::make_unique<moveit_msgs::PlanningScene>(res.scene);
     }
 
@@ -50,14 +50,14 @@ void PlannerExecutor::planner_init()
 
     //If exists a templorary planning scene is set to resetted vc_context
     if(tmp_scene)
-        _vc_context.planning_scene->applyPlanningScene(*tmp_scene);
+        _vc_context->planning_scene->applyPlanningScene(*tmp_scene);
 
 
     // new validity checker needs to be set to goal generator,
     // however the following call is used only when the planner is reset since the first run
     // already initialize the goal generator with the correct vc_context
     if(_goal_generator)
-        _goal_generator->setValidityChecker(_vc_context);
+        _goal_generator->setValidityChecker(*_vc_context);
 }
 
 bool PlannerExecutor::update_manifold_from_param(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
@@ -276,18 +276,18 @@ void PlannerExecutor::init_load_planner()
 
 void PlannerExecutor::init_load_validity_checker()
 {
-    _vc_context = Planning::ValidityCheckContext(_planner_config,
-                                                 _model, _nh);
+    _vc_context.reset();
+    _vc_context = std::make_unique<Planning::ValidityCheckContext>(_planner_config, _model, _nh);
 
-    _vc_context.planning_scene->startMonitor();
+    _vc_context->planning_scene->startMonitor();
 
-    _vc_context.planning_scene->startMonitor();
+    _vc_context->planning_scene->startMonitor();
 
     auto validity_predicate = [this](const Eigen::VectorXd& q)
     {
         _model->setJointPosition(q);
         _model->update();
-        return _vc_context.vc_aggregate.checkAll();
+        return _vc_context->vc_aggregate.checkAll();
     };
 
     _planner->setStateValidityPredicate(validity_predicate);
@@ -390,7 +390,7 @@ void PlannerExecutor::init_goal_generator()
                                                        ik_prob, ci_ctx);
 
 
-        _goal_generator = std::make_shared<GoalGenerator>(ci, _vc_context);
+        _goal_generator = std::make_shared<GoalGenerator>(ci, *_vc_context);
 
         int max_iterations;
         if(_nhpr.getParam("goal_generator_max_iterations", max_iterations))
@@ -483,7 +483,7 @@ bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
     bool valid = true;
 
     std::vector<std::string> failed_checks;
-    if(!_vc_context.vc_aggregate.checkAll(&failed_checks))
+    if(!_vc_context->vc_aggregate.checkAll(&failed_checks))
     {
         valid = false;
 
@@ -796,14 +796,14 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
 bool PlannerExecutor::get_planning_scene_service(moveit_msgs::GetPlanningScene::Request& req,
                                                  moveit_msgs::GetPlanningScene::Response& res)
 {
-    _vc_context.planning_scene->getPlanningScene(req, res);
+    _vc_context->planning_scene->getPlanningScene(req, res);
     return true;
 }
 
 bool PlannerExecutor::apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request & req,
                                                    moveit_msgs::ApplyPlanningScene::Response & res)
 {
-    _vc_context.planning_scene->applyPlanningScene(req.scene);
+    _vc_context->planning_scene->applyPlanningScene(req.scene);
     return true;
 }
 
@@ -820,7 +820,7 @@ void PlannerExecutor::publish_and_check_start_and_goal_models(ros::Time time)
         ROS_WARN("START state is NOT valid!");
     }
 
-    std::vector<std::string> red_links = _vc_context.planning_scene->getCollidingLinks();
+    std::vector<std::string> red_links = _vc_context->planning_scene->getCollidingLinks();
 
     for(unsigned int i = 0; i < red_links.size(); ++i)
         ROS_WARN("start robot: colliding link %i --> %s",i ,red_links[i].c_str());
@@ -839,7 +839,7 @@ void PlannerExecutor::publish_and_check_start_and_goal_models(ros::Time time)
         ROS_WARN("GOAL state is NOT valid!");
     }
 
-    red_links = _vc_context.planning_scene->getCollidingLinks();
+    red_links = _vc_context->planning_scene->getCollidingLinks();
 
     for(unsigned int i = 0; i < red_links.size(); ++i)
         ROS_WARN("goal robot: colliding link %i --> %s",i ,red_links[i].c_str());

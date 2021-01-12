@@ -128,7 +128,7 @@ private:
     XBot::ModelInterface::Ptr _model;
     Planning::OmplPlanner::UniquePtr _planner;
     Planning::CartesianConstraint::Ptr _manifold;
-    Planning::ValidityCheckContext _vc_context;
+    Planning::ValidityCheckContext::UniquePtr _vc_context;
 
     ros::Subscriber _goal_sub, _start_sub;
     XBot::ModelInterface::Ptr _start_model, _goal_model;
