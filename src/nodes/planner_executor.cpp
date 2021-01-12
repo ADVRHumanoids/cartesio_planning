@@ -34,12 +34,15 @@ void PlannerExecutor::planner_init()
 {
     //If exists, the actual planning scene in temporary stored
     std::unique_ptr<moveit_msgs::PlanningScene> tmp_scene;
-    if(_vc_context->planning_scene)
+    if (_vc_context)
     {
-        moveit_msgs::GetPlanningScene::Request req;
-        moveit_msgs::GetPlanningScene::Response res;
-        _vc_context->planning_scene->getPlanningScene(req, res);
-        tmp_scene = std::make_unique<moveit_msgs::PlanningScene>(res.scene);
+        if(_vc_context->planning_scene)
+        {
+            moveit_msgs::GetPlanningScene::Request req;
+            moveit_msgs::GetPlanningScene::Response res;
+            _vc_context->planning_scene->getPlanningScene(req, res);
+            tmp_scene = std::make_unique<moveit_msgs::PlanningScene>(res.scene);
+        }
     }
 
 
