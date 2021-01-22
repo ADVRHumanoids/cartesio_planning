@@ -54,6 +54,12 @@
 
     <node pkg="tf" type="static_transform_publisher" name="world_connecter_planner_goal_sampler"
         args="0 0 0 0 0 0 world planner/goal_sampler/world 30"/>
+    
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_solution"
+        args="0 0 0 0 0 0 world solution/world 30"/>
+        
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter_NSPG"
+        args="0 0 0 0 0 0 world NSPG/world 30"/>
 
     <node type="rviz" name="rviz" pkg="rviz"
         args="-d $(find cartesio_planning)/configs/rviz/example_comanplus_manipulation.rviz" output="screen"/>
