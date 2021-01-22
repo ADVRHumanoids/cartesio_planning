@@ -4,6 +4,7 @@ manifold:
 state_validity_check:
     - self_collision
     - stability
+    - ground_collision
 
 self_collision:
     type: "CollisionCheck"
@@ -25,6 +26,14 @@ stability:
       - -0.05
       - 0.05
 
+ground_collision:
+    type: "GroundCollisionAvoidance"
+    tolerance: -0.001
+    links:
+      - "l_sole"
+      - "r_sole"
+      - "l_ball_tip"
+      - "r_ball_tip"
      
 
 #stability:

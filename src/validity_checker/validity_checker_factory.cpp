@@ -180,6 +180,39 @@ std::function<bool ()> MakeDistanceCheck_tripod(YAML::Node planner_config,
     
 }
 
+std::function<bool ()> MakeGroundCollisionAvoidance(YAML::Node vc_node, 
+                                                    XBot::ModelInterface::Ptr model)
+{
+    YAML_PARSE_OPTION(vc_node, links, std::vector<std::string>, {});
+    YAML_PARSE_OPTION(vc_node, tolerance, float, 0.0);
+    
+    auto validity_checker = [=]()
+    {
+        Eigen::Affine3d T;
+        std::vector<double> z;
+        for (auto i :links)
+        {
+           model->getPose(i,T);
+           z.push_back(T.translation().z());
+        }
+        
+        // TODO: consider to remove the hack
+        std::vector<double>::iterator z_min_it = std::min_element(z.begin(), z.end());
+        int index = z_min_it - z.begin();
+        double z_min = z[index];
+
+        for (auto i : links)
+        {
+            model->getPose(i, T);
+            if (T.translation().z() < -0.01)
+                return false;
+        }
+        return true;
+    };
+    
+    return validity_checker;
+}
+
 }
 
 std::function<bool ()> MakeDistanceCheck_centauro(YAML::Node planner_config,
@@ -362,6 +395,10 @@ std::function<bool ()> XBot::Cartesian::Planning::MakeValidityChecker(YAML::Node
         else if(vc_type == "CentroidalStatics")
         {
             return MakeCentroidalStaticsChecker(vc_node, model, nh);
+        }
+        else if(vc_type == "GroundCollisionAvoidance")
+        {
+            return MakeGroundCollisionAvoidance(vc_node, model);
         }
         else
         {
