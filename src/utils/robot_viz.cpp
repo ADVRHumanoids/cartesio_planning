@@ -3,7 +3,8 @@
 XBot::Cartesian::Planning::RobotViz::RobotViz(const XBot::ModelInterface::ConstPtr model, const std::string & topic_name, ros::NodeHandle & nh, const XBot::Cartesian::Planning::RobotViz::color & rgba):
     _model(model),
     _nh(nh),
-    _prefix("")
+    _prefix(""),
+    _id(0)
 {
     collision_robot_pub = _nh.advertise<visualization_msgs::MarkerArray>( topic_name, 0, true);
 
@@ -26,7 +27,7 @@ void XBot::Cartesian::Planning::RobotViz::setRGBA(const color& rgba)
     _rgba = rgba;
 }
 
-void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time, const std::vector<std::string> & red_links)
+void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time, const std::vector<std::string> & red_links, bool sequence)
 {
 
 #if ROS_VERSION_MINOR <= 12
@@ -35,7 +36,12 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
 #define STATIC_POINTER_CAST std::static_pointer_cast
 #endif
 
-    visualization_msgs::MarkerArray markers;
+//    visualization_msgs::MarkerArray markers;
+    if (!sequence)
+    {
+        _id = 0;
+        _markers.markers.clear();
+    }
 
     std::string bl = "world"; // _model->getFloatingBaseLink(bl);
 
@@ -51,10 +57,11 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
         {
             visualization_msgs::Marker marker;
 
+
             marker.header.frame_id = _prefix+bl;
             marker.header.stamp = t;
             marker.ns = "collision";
-            marker.id = id;
+            marker.id = _id;
 
             marker.action = visualization_msgs::Marker::ADD;
 
@@ -128,14 +135,14 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
                 marker.scale.y = mesh->scale.y;
                 marker.scale.z = mesh->scale.z;
             }
-            markers.markers.push_back(marker);
-            id++;
+            _markers.markers.push_back(marker);
+            _id++;
 
 
             marker.header.frame_id = _prefix+bl;
             marker.header.stamp = t;
             marker.ns = "visual";
-            marker.id = id;
+            marker.id = _id;
 
             marker.action = visualization_msgs::Marker::ADD;
 
@@ -209,11 +216,11 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
                 marker.scale.y = mesh->scale.y;
                 marker.scale.z = mesh->scale.z;
             }
-            markers.markers.push_back(marker);
-            id++;
+            _markers.markers.push_back(marker);
+            _id++;
         }
     }
-    collision_robot_pub.publish(markers);
+    collision_robot_pub.publish(_markers);
 }
 
 Eigen::Affine3d XBot::Cartesian::Planning::RobotViz::toAffine3d(const urdf::Pose & p)

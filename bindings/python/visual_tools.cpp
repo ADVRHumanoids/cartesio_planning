@@ -27,9 +27,10 @@ auto create_robotviz = [](ModelInterface::ConstPtr model,
 };
 
 auto pub_markers = [](RobotViz& self,
-                      std::vector<std::string> red_links)
+                      std::vector<std::string> red_links,
+                      bool sequence = false)
 {
-    self.publishMarkers(ros::Time::now(), red_links);
+    self.publishMarkers(ros::Time::now(), red_links, sequence);
 };
 
 PYBIND11_MODULE(visual_tools, m)
@@ -41,6 +42,6 @@ PYBIND11_MODULE(visual_tools, m)
                  py::arg("topic"),
                  py::arg("color") = Eigen::Vector4d(0.0, 1.0, 0.0, 0.5),
                  py::arg("tf_prefix") = "")
-            .def("publishMarkers", pub_markers, py::arg("red_links") = std::vector<std::string>())
+            .def("publishMarkers", pub_markers, py::arg("red_links") = std::vector<std::string>(), py::arg("sequence") = false)
             ;
 }

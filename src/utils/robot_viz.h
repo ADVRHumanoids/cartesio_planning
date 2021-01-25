@@ -60,8 +60,9 @@ public:
      * @brief publishMarkers of the robot with a time
      * @param time
      * @param red_links these links will be publisged with the _reserved_color
+     * @param sequence if true, latched sequence of markers, if false, only the latest ModelInterface will be published
      */
-    void publishMarkers(const ros::Time& time, const std::vector<std::string>& red_links);
+    void publishMarkers(const ros::Time& time, const std::vector<std::string>& red_links, bool sequence = false);
 
 private:
 
@@ -70,6 +71,9 @@ private:
     ros::Publisher collision_robot_pub;
     std::string _prefix;
     color _rgba;
+
+    visualization_msgs::MarkerArray _markers;
+    int _id;
 
     static Eigen::Affine3d toAffine3d(const urdf::Pose& p);
 
