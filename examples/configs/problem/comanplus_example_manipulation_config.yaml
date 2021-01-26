@@ -20,11 +20,11 @@ stability:
     friction_coefficient: 0.71
     eps: 5e-2
     x_lim_cop:
-      - -0.05
-      - 0.1
+      - -0.025
+      - 0.065
     y_lim_cop:
-      - -0.05
-      - 0.05
+      - -0.025
+      - 0.025
 
 ground_collision:
     type: "GroundCollisionAvoidance"
@@ -61,7 +61,7 @@ RRTstar:
 
 state_space:
     floating_base_pos_min: [-1, -1, -1]
-    floating_base_pos_max: [ 1,  1,  1]
+    floating_base_pos_max: [ 10,  10,  10]
     type: "Atlas"
     alpha: 0.5233
     rho: 0.1
