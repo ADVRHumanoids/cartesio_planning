@@ -70,15 +70,21 @@
         <param name="tf_prefix" value="planner/goal_sampler"/>
     </node>
 
-    <include if="$(arg gazebo)" file="$(find cartesian_interface)/launch/cartesio.launch">
+    <!--<include if="$(arg gazebo)" file="$(find cartesian_interface)/launch/cartesio.launch">
         <param name="visual_mode" value="true"/>
-    </include>
-
-    <include if="$(arg gazebo)" file="$(find multi_contact_planning)/launch/coman_forza_giusta.launch"/>
+    </include>-->
 
     <node if="$(arg gazebo)" pkg="gazebo_ros" type="gazebo" name="gazebo"
         args="$(env ROBOTOLOGY_ROOT)/external/soap_bar_rrt/multi_contact_planning/examples/configs/world/cogimon_no_wall.world"/>
 
+    <node if="$(arg gazebo)" pkg="cartesio_acceleration_support" type="force_optimization_node" name="fopt_node" output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
+        <param name="tf_prefix" value="ci"/>
+        <param name="problem_description" textfile="$(find multi_contact_planning)/configs/problem/coman_stack_force.yaml"/>
+    </node>
+
+    <node if="$(arg gazebo)" pkg="multi_contact_planning" name="xbot_mode_handler" type="xbot_mode_handler.py"
+          output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
+    </node>
 
     <!--node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
         <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
