@@ -32,6 +32,7 @@ class planner_client(object):
     def publishStartAndGoal(self, joint_names, start, goal):
         start_msg, goal_msg = self.__createStartAndGoalMsgs(joint_names, start, goal)
         self.__start_pub.publish(start_msg)
+        rospy.sleep(0.5)
         self.__goal_pub.publish(goal_msg)
 
     def publishContacts(self, contact_dict, optimize_torques):
@@ -76,20 +77,21 @@ class planner_client(object):
                                 goal_threshold=goal_threshold)
                 if response.status.val == 6:  # EXACT_SOLUTION
                     print("EXACT_SOLUTION FOUND")
-                    return True
+                    return [response.status.val, True]
                 elif response.status.val == 5:  # APPROXIMATE SOLUTION
                     print("APPROXIMATE_SOLUTION FOUND")
                     PLAN_ATTEMPTS += 1
+                    return [response.status.val, True]
                 else:
                     rospy.logerr("PLANNER RETURNED ERROR: %i", response.status.val)
                     PLAN_ATTEMPTS += 1
 
             except rospy.ServiceException as e:
                 print("Service call failed: %s" % e)
-                return False
+                return [0, False]
 
         rospy.logerr("PLANNER CAN NOT FIND A SOLUTION, EXITING")
-        return False
+        return [response.status.val, True]
 
     ##PRIVATE
     def __createStartAndGoalMsgs(self, joint_names, start_config, goal_config):
