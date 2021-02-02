@@ -70,7 +70,18 @@ bool NSPG::sample ( double timeout )
         iter ++;
 
         _ik_solver->getCI()->setReferencePosture(joint_map);
-        _ik_solver->solve();
+        if (!_ik_solver->solve())
+        {
+            auto toc = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<float> fsec = toc-tic;
+            T += fsec.count();
+            if(T >= timeout)
+            {
+                std::cout << "timeout" <<std::endl;
+                return false;
+            }
+            continue;
+        }
         
         if (_vc_context.vc_aggregate.checkAll())
             counter += 1;
@@ -132,13 +143,10 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
 //                 random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
 //                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
 //             }
-            
-            if (i.getChainName() == "head")
-            {
-                random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-                random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-                random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));                
-            }
+
+            random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
+            random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
+            random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));                
             
             i.getJointPosition(chain_map);
                 
@@ -152,13 +160,16 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
     }
     
     // Add random velocities to the floating base when the convex hull check fails
-     if (!_vc_context.vc_aggregate.check("stability"))
-     {
-         random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-         random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-         random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
-     }
+    if (!_vc_context.vc_aggregate.check("stability"))
+    {
+        random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
+        random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
+        random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
+    }
 
+    random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
+    random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
+    random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
     
     return random_map;
 }
