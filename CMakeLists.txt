@@ -78,6 +78,7 @@ add_message_files(
     CartesioPlannerGoalStatus.msg
     SetContactFrames.msg
     CartesianTrajectory.msg
+    SetGroundCheck.msg
     )
 
 ## Generate services in the 'srv' folder
@@ -170,6 +171,7 @@ add_library(cartesio_planning SHARED
     src/validity_checker/stability/stability_detection.cpp
     src/validity_checker/stability/centroidal_statics.cpp
     src/validity_checker/collisions/planning_scene_wrapper.cpp
+    src/validity_checker/collisions/ground_collision.cpp
     src/validity_checker/validity_checker_factory.cpp
     src/validity_checker/validity_predicate_aggregate.cpp
     src/nodes/goal_generation.cpp

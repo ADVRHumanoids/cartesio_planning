@@ -3,6 +3,7 @@
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "validity_checker/stability/stability_detection.h"
 #include "validity_checker/stability/centroidal_statics.h"
+#include "validity_checker/collisions/ground_collision.h"
 #include "utils/parse_yaml_utils.h"
 
 #include <boost/math/constants/constants.hpp>
@@ -181,33 +182,18 @@ std::function<bool ()> MakeDistanceCheck_tripod(YAML::Node planner_config,
 }
 
 std::function<bool ()> MakeGroundCollisionAvoidance(YAML::Node vc_node, 
-                                                    XBot::ModelInterface::Ptr model)
+                                                    XBot::ModelInterface::Ptr model,
+                                                    ros::NodeHandle nh)
 {
-    YAML_PARSE_OPTION(vc_node, links, std::vector<std::string>, {});
-    YAML_PARSE_OPTION(vc_node, tolerance, float, 0.0);
-    
-    auto validity_checker = [=]()
-    {
-        Eigen::Affine3d T;
-        std::vector<double> z;
-        for (auto i :links)
-        {
-           model->getPose(i,T);
-           z.push_back(T.translation().z());
-        }
-        
-        // TODO: consider to remove the hack
-        std::vector<double>::iterator z_min_it = std::min_element(z.begin(), z.end());
-        int index = z_min_it - z.begin();
-        double z_min = z[index];
+    YAML_PARSE_OPTION(vc_node, link, std::string, "");
+    YAML_PARSE_OPTION(vc_node, axis, std::vector<double>, {});
 
-        for (auto i : links)
-        {
-            model->getPose(i, T);
-            if (T.translation().z() < -0.01)
-                return false;
-        }
-        return true;
+    auto gc = std::make_shared<XBot::Cartesian::Planning::GroundCollision>(link, Eigen::Vector3d (axis.data()), model);
+    auto gc_ros = std::make_shared<XBot::Cartesian::Planning::GroundCollisionROS>(gc, model, nh);
+    
+    auto validity_checker = [gc_ros, gc]()
+    {
+        return gc->check();
     };
     
     return validity_checker;
@@ -398,7 +384,7 @@ std::function<bool ()> XBot::Cartesian::Planning::MakeValidityChecker(YAML::Node
         }
         else if(vc_type == "GroundCollisionAvoidance")
         {
-            return MakeGroundCollisionAvoidance(vc_node, model);
+            return MakeGroundCollisionAvoidance(vc_node, model, nh);
         }
         else
         {
