@@ -401,7 +401,7 @@ Visualization Manager:
         Scene Alpha: 0.8999999761581421
         Scene Color: 170; 0; 127
         Scene Display Time: 0.20000000298023224
-        Show Scene Geometry: true
+        Show Scene Geometry: false
         Voxel Coloring: Z-Axis
         Voxel Rendering: Occupied Voxels
       Scene Robot:
@@ -718,6 +718,42 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: false
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Update Topic: /simple_marker_floor/update
+      Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Update Topic: /simple_marker_floor1/update
+      Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Update Topic: /simple_marker_floor2/update
+      Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Update Topic: /simple_marker_floor3/update
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -753,18 +789,18 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.16790209710597992
-        Y: 0.4913910925388336
-        Z: 0.4658813774585724
+        X: 0.7208932042121887
+        Y: -0.008687828667461872
+        Z: 0.4495266079902649
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4303990304470062
+      Pitch: 0.37539905309677124
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.363592147827148
+      Yaw: 4.201775550842285
     Saved: ~
 Window Geometry:
   Displays:
