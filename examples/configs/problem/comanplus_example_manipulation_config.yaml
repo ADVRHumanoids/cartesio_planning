@@ -28,12 +28,11 @@ stability:
 
 ground_collision:
     type: "GroundCollisionAvoidance"
-    tolerance: -0.001
-    links:
-      - "l_sole"
-      - "r_sole"
-      - "l_ball_tip"
-      - "r_ball_tip"
+    #axis: 
+      #- 0.0
+      #- 0.0
+      #- 1.0
+    #link: "r_ball_tip"
      
 
 #stability:

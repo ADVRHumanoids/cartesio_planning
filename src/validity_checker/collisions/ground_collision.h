@@ -6,6 +6,7 @@
 
 #include <XBotInterface/ModelInterface.h>
 #include <cartesio_planning/SetGroundCheck.h>
+#include <sensor_msgs/JointState.h>
 
 #include <ros/ros.h>
 
@@ -16,28 +17,31 @@ class GroundCollision {
 public:
     typedef std::shared_ptr<GroundCollision> Ptr;
 
-    GroundCollision(const std::string link,
-                    const Eigen::Vector3d axis,
-                    XBot::ModelInterface::Ptr model);
+    GroundCollision(XBot::ModelInterface::Ptr model);
 
     bool setLiftedLink(const std::string link);
 
     bool setAxis(const Eigen::Vector3d axis);
+    
+    void setActive(bool active);
 
     std::string getLiftedLink() const {return _link;}
 
     Eigen::Vector3d getAxis() const {return _axis;}
+    
+    bool isActive() const {return _active;}
 
     bool check();
-
-private:
+    
     void init();
 
+private:
     std::string _link;
     Eigen::Vector3d _axis;
     XBot::ModelInterface::Ptr _model;
     double _tol;
     double _h;
+    bool _active;
 };
 
 class GroundCollisionROS {
@@ -48,12 +52,15 @@ public:
                        ros::NodeHandle& nh);
 
     void setChecker(cartesio_planning::SetGroundCheck::ConstPtr msg);
+    
+    void setJointPosition(sensor_msgs::JointState::ConstPtr msg);
 
 private:
     GroundCollision::Ptr _gc;
     XBot::ModelInterface::Ptr _model;
     ros::NodeHandle& _nh;
     ros::Subscriber _sub;
+    ros::Subscriber _model_sub;
 };
 } } }
 

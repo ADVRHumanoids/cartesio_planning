@@ -2,34 +2,31 @@
 
 using namespace XBot::Cartesian::Planning;
 
-GroundCollision::GroundCollision(const std::string link,
-                                 const Eigen::Vector3d axis,
-                                 XBot::ModelInterface::Ptr model):
-    _link(link),
-    _axis(axis),
+GroundCollision::GroundCollision(XBot::ModelInterface::Ptr model):
     _model(model),
-    _tol(1e-2)
-{
-    if(!_link.empty())
-    {
-        init();
-    }
-}
+    _tol(1e-2),
+    _active(false)
+{}
 
 void GroundCollision::init()
 {
     Eigen::Affine3d T;
-    if (!_model->getPose(_link, T))
+    bool c1 = _model->getPose(_link, T);
+    if (!c1)
     {
         std::cout << "[error]: link does not exist! use setLiftedLink(std::string) to change it..." << std::endl;
     }
     double res = sqrt((_axis.norm() - 1) * (_axis.norm() - 1));
-    if (res > 1e-3)
+    bool c2 = res > 1e-3;
+    if (c2)
     {
         std::cout << "[error]: vector given in input is not normalized! use setAxis(Eigen::Vector3d) to change it..." << std::endl;
     }
-
-    _h = (T.translation().transpose() * _axis).value();
+    
+    if (c1 && !c2)
+    {
+        _h = (T.translation().transpose() * _axis).value();
+    }
 }
 
 bool GroundCollision::setAxis(const Eigen::Vector3d axis)
@@ -42,7 +39,6 @@ bool GroundCollision::setAxis(const Eigen::Vector3d axis)
     }
 
     _axis = axis;
-    init();
     return true;
 }
 
@@ -56,23 +52,31 @@ bool GroundCollision::setLiftedLink(const std::string link)
     }
 
     _link = link;
-    init();
     return true;
+}
+
+void GroundCollision::setActive(bool active)
+{
+    _active = active;
 }
 
 bool GroundCollision::check()
 {
+    if (!_active)
+        return true;
+    
     if (!_h)
     {
         std::cout << "GroundCollision not initialized! Set link and/or axis" << std::endl;
         return false;
     }
+    
     Eigen::Affine3d T;
     _model->getPose(_link, T);
 
     double h = (T.translation().transpose() * _axis).value();
 
-    if(h - _h > _tol)
+    if(_h - h > _tol)
         return false;
 
     return true;
@@ -86,13 +90,22 @@ GroundCollisionROS::GroundCollisionROS(GroundCollision::Ptr gc,
     _nh(nh)
 {
     _sub = _nh.subscribe("gc", 10, &GroundCollisionROS::setChecker, this);
+    _model_sub = _nh.subscribe("start/joint_states", 10, &GroundCollisionROS::setJointPosition, this);
 }
 
 void GroundCollisionROS::setChecker(cartesio_planning::SetGroundCheck::ConstPtr msg)
 {
     _gc->setLiftedLink(msg->link);
     _gc->setAxis(Eigen::Vector3d(msg->axis.data()));
+    _gc->setActive(msg->active);
+    
+    if (msg->active)
+        _gc->init();
 }
 
-
-
+void GroundCollisionROS::setJointPosition(sensor_msgs::JointState::ConstPtr msg) 
+{
+    auto q = Eigen::VectorXd::Map(msg->position.data(), msg->position.size());
+    _model->setJointPosition(q);
+    _model->update();
+}

@@ -6,6 +6,7 @@ from geometry_msgs.msg import Quaternion
 
 from cartesio_planning.srv import CartesioPlanner
 from cartesio_planning.msg import SetContactFrames
+from cartesio_planning.msg import SetGroundCheck
 
 from std_srvs.srv import Empty
 
@@ -23,6 +24,7 @@ class planner_client(object):
         self.__start_pub = rospy.Publisher('planner/start/joint_states', JointState, queue_size=10, latch=True)
         self.__goal_pub = rospy.Publisher('planner/goal/joint_states', JointState, queue_size=10, latch=True)
         self.__contact_pub = rospy.Publisher('planner/contacts', SetContactFrames, queue_size=10, latch=True)
+        self.__gc_pub = rospy.Publisher('planner/gc', SetGroundCheck, queue_size=10, latch=True)
 
         rospy.wait_for_service('/planner/reset_manifold')
         self.__reset_manifold = rospy.ServiceProxy('planner/reset_manifold', Empty)
@@ -34,6 +36,13 @@ class planner_client(object):
         self.__start_pub.publish(start_msg)
         rospy.sleep(0.5)
         self.__goal_pub.publish(goal_msg)
+
+    def publishGroundCheck(self, link, axis, active):
+        gc_msg = SetGroundCheck()
+        gc_msg.link = link
+        gc_msg.axis = axis
+        gc_msg.active = active
+        self.__gc_pub.publish(gc_msg)
 
     def publishContacts(self, contact_dict, optimize_torques):
         """

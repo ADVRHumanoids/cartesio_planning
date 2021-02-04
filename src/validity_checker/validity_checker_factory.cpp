@@ -188,7 +188,7 @@ std::function<bool ()> MakeGroundCollisionAvoidance(YAML::Node vc_node,
     YAML_PARSE_OPTION(vc_node, link, std::string, "");
     YAML_PARSE_OPTION(vc_node, axis, std::vector<double>, {});
 
-    auto gc = std::make_shared<XBot::Cartesian::Planning::GroundCollision>(link, Eigen::Vector3d (axis.data()), model);
+    auto gc = std::make_shared<XBot::Cartesian::Planning::GroundCollision>(model);
     auto gc_ros = std::make_shared<XBot::Cartesian::Planning::GroundCollisionROS>(gc, model, nh);
     
     auto validity_checker = [gc_ros, gc]()
