@@ -1,0 +1,8 @@
+<launch>
+
+    <node pkg="cartesio_acceleration_support" type="force_optimization_node" name="fopt_node" output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
+        <param name="tf_prefix" value="ci"/>
+        <param name="problem_description" textfile="$(find multi_contact_planning)/configs/problem/coman_stack_force.yaml"/>
+    </node>
+    
+</launch>
