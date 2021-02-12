@@ -15,6 +15,9 @@
     <param name="robot_description_semantic"
         textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
 
+    <param name="arc_description"
+        textfile="$(find multi_contact_planning)/utils/urdf/arc.urdf"/>
+
     <param name="planner/problem_description_constraint"
         textfile="$(find cartesio_planning)/configs/problem/comanplus_constraint_stack.yaml"/>
 
@@ -79,13 +82,16 @@
     <!--<include if="$(arg gazebo)" file="$(find cartesian_interface)/launch/cartesio.launch">
         <param name="visual_mode" value="true"/>
     </include>-->
+    <group if="$(arg gazebo)">
+        <node pkg="gazebo_ros" type="gazebo" name="gazebo"
+            args="$(env ROBOTOLOGY_ROOT)/external/soap_bar_rrt/multi_contact_planning/examples/configs/world/cogimon_no_wall.world -namespace arc"/>
 
-    <node if="$(arg gazebo)" pkg="gazebo_ros" type="gazebo" name="gazebo"
-        args="$(env ROBOTOLOGY_ROOT)/external/soap_bar_rrt/multi_contact_planning/examples/configs/world/cogimon_no_wall.world"/>
+        <node pkg="gazebo_ros" type="spawn_model" name="arc_spawner" respawn="false" output="screen"
+            args="-urdf -model arc -param arc_description"/>
 
-    <node if="$(arg gazebo)" pkg="multi_contact_planning" name="xbot_mode_handler" type="xbot_mode_handler.py"
-          output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
-    </node>
+        <node pkg="multi_contact_planning" name="xbot_mode_handler" type="xbot_mode_handler.py"
+              output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' "/>
+    </group>
 
     <node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
         <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
