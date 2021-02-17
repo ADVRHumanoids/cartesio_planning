@@ -1,8 +1,10 @@
 <launch>
+    <arg name="robot" default="false"/>
 
     <node pkg="cartesio_acceleration_support" type="force_optimization_node" name="fopt_node" output="screen">
         <param name="tf_prefix" value="ci"/>
         <param name="problem_description" textfile="$(find multi_contact_planning)/configs/problem/coman_stack_force.yaml"/>
+        <rosparam if="$(arg robot)" param="torque_offset" command="load" file="$(env ROBOTOLOGY_ROOT)/build/external/xbot_ros/tau_offset.yaml"/>
     </node>
     
 </launch>
