@@ -16,14 +16,14 @@ void GroundCollision::init()
     {
         std::cout << "[error]: link does not exist! use setLiftedLink(std::string) to change it..." << std::endl;
     }
-    double res = sqrt((_axis.norm() - 1) * (_axis.norm() - 1));
-    bool c2 = res > 1e-3;
-    if (c2)
-    {
-        std::cout << "[error]: vector given in input is not normalized! use setAxis(Eigen::Vector3d) to change it..." << std::endl;
-    }
+//    double res = sqrt((_axis.norm() - 1) * (_axis.norm() - 1));
+//    bool c2 = res > 1e-3;
+//    if (c2)
+//    {
+//        std::cout << "[error]: vector given in input is not normalized! use setAxis(Eigen::Vector3d) to change it..." << std::endl;
+//    }
     
-    if (c1 && !c2)
+    if (c1)
     {
         _h = (T.translation().transpose() * _axis).value();
     }
@@ -77,7 +77,10 @@ bool GroundCollision::check()
     double h = (T.translation().transpose() * _axis).value();
 
     if(_h - h > _tol)
+    {
+        std::cout << _h << " > " << h << std::endl;
         return false;
+    }
 
     return true;
 }
