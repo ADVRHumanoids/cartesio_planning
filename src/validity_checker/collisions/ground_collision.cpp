@@ -66,10 +66,8 @@ bool GroundCollision::check()
 
     if(_h - h > _tol)
     {
-        std::cout << _h << std::endl;
         return false;
     }
-    std::cout << _h << std::endl;
     return true;
 }
 
@@ -81,7 +79,8 @@ GroundCollisionROS::GroundCollisionROS(GroundCollision::Ptr gc,
     _nh(nh)
 {
     _sub = _nh.subscribe("gc", 10, &GroundCollisionROS::setChecker, this);
-    _model_sub = _nh.subscribe("start/joint_states", 1, &GroundCollisionROS::setJointPosition, this);
+    _start_model_sub = _nh.subscribe("start/joint_states", 1, &GroundCollisionROS::setStartJointPosition, this);
+    _goal_model_sub = _nh.subscribe("goal/joint_states", 1, &GroundCollisionROS::setGoalJointPosition, this);
 }
 
 void GroundCollisionROS::setChecker(cartesio_planning::SetGroundCheck::ConstPtr msg)
@@ -90,15 +89,39 @@ void GroundCollisionROS::setChecker(cartesio_planning::SetGroundCheck::ConstPtr 
     _gc->setAxis(Eigen::Vector3d(msg->axis.data()));
     _gc->setActive(msg->active);
 
-    _model->setJointPosition(_q);
+    _model->setJointPosition(_q_start);
     _model->update();
+    Eigen::Affine3d T;
+    _model->getPose(_gc->getLiftedLink(), T);
+    double h_start = (T.translation().transpose() * _gc->getAxis()).value();
+    _model->setJointPosition(_q_goal);
+    _model->update();
+    _model->getPose(_gc->getLiftedLink(), T);
+    double h_goal = (T.translation().transpose() * _gc->getAxis()).value();
+
+    if (h_start > h_goal)
+    {
+        _model->setJointPosition(_q_goal);
+        _model->update();
+    }
+    else
+    {
+        _model->setJointPosition(_q_start);
+        _model->update();
+    }
     
     if (msg->active)
         _gc->init();
 }
 
-void GroundCollisionROS::setJointPosition(sensor_msgs::JointState::ConstPtr msg) 
+void GroundCollisionROS::setStartJointPosition(sensor_msgs::JointState::ConstPtr msg)
 {
     auto q = Eigen::VectorXd::Map(msg->position.data(), msg->position.size());
-    _q = q;
+    _q_start = q;
+}
+
+void GroundCollisionROS::setGoalJointPosition(sensor_msgs::JointState::ConstPtr msg)
+{
+    auto q = Eigen::VectorXd::Map(msg->position.data(), msg->position.size());
+    _q_goal = q;
 }

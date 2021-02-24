@@ -53,15 +53,16 @@ public:
 
     void setChecker(cartesio_planning::SetGroundCheck::ConstPtr msg);
     
-    void setJointPosition(sensor_msgs::JointState::ConstPtr msg);
+    void setStartJointPosition(sensor_msgs::JointState::ConstPtr msg);
+    void setGoalJointPosition(sensor_msgs::JointState::ConstPtr msg);
 
 private:
     GroundCollision::Ptr _gc;
     XBot::ModelInterface::Ptr _model;
     ros::NodeHandle& _nh;
     ros::Subscriber _sub;
-    ros::Subscriber _model_sub;
-    Eigen::VectorXd _q;
+    ros::Subscriber _start_model_sub, _goal_model_sub;
+    Eigen::VectorXd _q_start, _q_goal;
 };
 } } }
 
