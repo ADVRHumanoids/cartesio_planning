@@ -1,4 +1,6 @@
 #include "ground_collision.h"
+#include <thread>
+#include <chrono>
 
 using namespace XBot::Cartesian::Planning;
 
@@ -11,22 +13,8 @@ GroundCollision::GroundCollision(XBot::ModelInterface::Ptr model):
 void GroundCollision::init()
 {
     Eigen::Affine3d T;
-    bool c1 = _model->getPose(_link, T);
-    if (!c1)
-    {
-        std::cout << "[error]: link does not exist! use setLiftedLink(std::string) to change it..." << std::endl;
-    }
-//    double res = sqrt((_axis.norm() - 1) * (_axis.norm() - 1));
-//    bool c2 = res > 1e-3;
-//    if (c2)
-//    {
-//        std::cout << "[error]: vector given in input is not normalized! use setAxis(Eigen::Vector3d) to change it..." << std::endl;
-//    }
-    
-    if (c1)
-    {
-        _h = (T.translation().transpose() * _axis).value();
-    }
+    _model->getPose(_link, T);
+    _h = (T.translation().transpose() * _axis).value();
 }
 
 bool GroundCollision::setAxis(const Eigen::Vector3d axis)
@@ -78,10 +66,10 @@ bool GroundCollision::check()
 
     if(_h - h > _tol)
     {
-        std::cout << _h << " > " << h << std::endl;
+        std::cout << _h << std::endl;
         return false;
     }
-
+    std::cout << _h << std::endl;
     return true;
 }
 
@@ -93,7 +81,7 @@ GroundCollisionROS::GroundCollisionROS(GroundCollision::Ptr gc,
     _nh(nh)
 {
     _sub = _nh.subscribe("gc", 10, &GroundCollisionROS::setChecker, this);
-    _model_sub = _nh.subscribe("start/joint_states", 10, &GroundCollisionROS::setJointPosition, this);
+    _model_sub = _nh.subscribe("start/joint_states", 1, &GroundCollisionROS::setJointPosition, this);
 }
 
 void GroundCollisionROS::setChecker(cartesio_planning::SetGroundCheck::ConstPtr msg)
@@ -101,6 +89,9 @@ void GroundCollisionROS::setChecker(cartesio_planning::SetGroundCheck::ConstPtr 
     _gc->setLiftedLink(msg->link);
     _gc->setAxis(Eigen::Vector3d(msg->axis.data()));
     _gc->setActive(msg->active);
+
+    _model->setJointPosition(_q);
+    _model->update();
     
     if (msg->active)
         _gc->init();
@@ -109,6 +100,5 @@ void GroundCollisionROS::setChecker(cartesio_planning::SetGroundCheck::ConstPtr 
 void GroundCollisionROS::setJointPosition(sensor_msgs::JointState::ConstPtr msg) 
 {
     auto q = Eigen::VectorXd::Map(msg->position.data(), msg->position.size());
-    _model->setJointPosition(q);
-    _model->update();
+    _q = q;
 }

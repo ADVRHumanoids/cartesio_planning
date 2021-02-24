@@ -61,6 +61,7 @@ private:
     ros::NodeHandle& _nh;
     ros::Subscriber _sub;
     ros::Subscriber _model_sub;
+    Eigen::VectorXd _q;
 };
 } } }
 
