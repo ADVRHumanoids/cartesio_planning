@@ -75,29 +75,25 @@ class planner_client(object):
             except rospy.ServiceException as e:
                 print("Service 'reset_planner failed: %s" %e)
 
-    def solve(self, PLAN_MAX_ATTEMPTS, planner_type, plan_time, interpolation_time, goal_threshold):
+    def solve(self, planner_type, plan_time, interpolation_time, goal_threshold):
         rospy.wait_for_service('planner/compute_plan')
-        PLAN_ATTEMPTS = 0
         plan_success = False
 
-        while PLAN_ATTEMPTS < PLAN_MAX_ATTEMPTS:
-            try:
-                response = self.__plan(planner_type=planner_type, time=(plan_time * (PLAN_ATTEMPTS + 1)), interpolation_time=interpolation_time,
-                                goal_threshold=goal_threshold)
-                if response.status.val == 6:  # EXACT_SOLUTION
-                    print("EXACT_SOLUTION FOUND")
-                    return [response.status.val, True]
-                elif response.status.val == 5:  # APPROXIMATE SOLUTION
-                    print("APPROXIMATE_SOLUTION FOUND")
-                    PLAN_ATTEMPTS += 1
-                    return [response.status.val, True]
-                else:
-                    rospy.logerr("PLANNER RETURNED ERROR: %i", response.status.val)
-                    PLAN_ATTEMPTS += 1
+        try:
+            response = self.__plan(planner_type=planner_type, time=(plan_time), interpolation_time=interpolation_time,
+                            goal_threshold=goal_threshold)
+            if response.status.val == 6:  # EXACT_SOLUTION
+                print("EXACT_SOLUTION FOUND")
+                return [response.status.val, True]
+            elif response.status.val == 5:  # APPROXIMATE SOLUTION
+                print("APPROXIMATE_SOLUTION FOUND")
+                return [response.status.val, True]
+            else:
+                rospy.logerr("PLANNER RETURNED ERROR: %i", response.status.val)
 
-            except rospy.ServiceException as e:
-                print("Service call failed: %s" % e)
-                return [0, False]
+        except rospy.ServiceException as e:
+            print("Service call failed: %s" % e)
+            return [0, False]
 
         rospy.logerr("PLANNER CAN NOT FIND A SOLUTION, EXITING")
         return [response.status.val, True]
