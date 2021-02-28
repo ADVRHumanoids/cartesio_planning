@@ -96,7 +96,7 @@
               output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' "/>
 
         <include file="$(find cartesio_planning)/launch/forza_giusta.launch" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
-            <arg name="robot" value="false"/>
+            <arg name="robot" value="true"/>
         </include>
     </group>
 
@@ -110,7 +110,7 @@
         <param name="frame_id" value="world"/>
         <param name="name_id" value="floor"/>
         <param name="show_control_axis" type="bool" value="False"/>
-        <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
+<!--         <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/> -->
     </node>
 
     <node name="mesh_viz_floor1" pkg="mesh_viz" type="mesh_viz_node" output="screen">
@@ -123,7 +123,7 @@
         <param name="frame_id" value="world"/>
         <param name="name_id" value="floor1"/>
         <param name="show_control_axis" type="bool" value="False"/>
-        <remap from="mesh_viz_floor1/floor1" to="planner/collision_objects"/>
+<!--         <remap from="mesh_viz_floor1/floor1" to="planner/collision_objects"/> -->
     </node>
 
     <node name="mesh_viz_floor2" pkg="mesh_viz" type="mesh_viz_node" output="screen">
@@ -136,7 +136,7 @@
         <param name="frame_id" value="world"/>
         <param name="name_id" value="floor2"/>
         <param name="show_control_axis" type="bool" value="False"/>
-        <remap from="mesh_viz_floor2/floor2" to="planner/collision_objects"/>
+<!--         <remap from="mesh_viz_floor2/floor2" to="planner/collision_objects"/> -->
     </node>
 
     <node name="mesh_viz_floor3" pkg="mesh_viz" type="mesh_viz_node" output="screen">
@@ -149,7 +149,7 @@
         <param name="frame_id" value="world"/>
         <param name="name_id" value="floor3"/>
         <param name="show_control_axis" type="bool" value="False"/>
-        <remap from="mesh_viz_floor3/floor3" to="planner/collision_objects"/>
+<!--         <remap from="mesh_viz_floor3/floor3" to="planner/collision_objects"/> -->
     </node>
 
 </launch>
