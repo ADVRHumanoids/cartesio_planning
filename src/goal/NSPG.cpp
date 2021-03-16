@@ -14,6 +14,8 @@ NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_con
         randGenerator.seed(b);
         
         _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_ik_solver->getModel());
+        _logger = XBot::MatLogger2::MakeLogger("/home/luca/MultiDoF-superbuild/external/cartesio_planning/log/checks_log");
+        _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
     }
     
 void NSPG::setIKSolver ( PositionCartesianSolver::Ptr new_ik_solver )
@@ -48,8 +50,10 @@ bool NSPG::sample ( double timeout )
     int iter = 0;
     unsigned int counter = 0;
     unsigned int max_counter = 25;
+
+    bool check = _vc_context.vc_aggregate.checkAll();
     
-    while(!_vc_context.vc_aggregate.checkAll() || counter < max_counter)
+    while(!check)// || counter < max_counter)
     {
         auto tic = std::chrono::high_resolution_clock::now();
         
@@ -70,7 +74,12 @@ bool NSPG::sample ( double timeout )
         iter ++;
 
         _ik_solver->getCI()->setReferencePosture(joint_map);
-        if (!_ik_solver->solve())
+        auto tic_ik = std::chrono::high_resolution_clock::now();
+        bool solved = _ik_solver->solve();
+        auto toc_ik = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float> fsec_ik = toc_ik - tic_ik;
+        _logger->add("time_ik", fsec_ik.count());
+        if (!solved)
         {
             auto toc = std::chrono::high_resolution_clock::now();
             std::chrono::duration<float> fsec = toc-tic;
@@ -83,10 +92,10 @@ bool NSPG::sample ( double timeout )
             continue;
         }
         
-        if (_vc_context.vc_aggregate.checkAll())
-            counter += 1;
-        else
-            counter = 0;
+//        if (_vc_context.vc_aggregate.checkAll())
+//            counter += 1;
+//        else
+//            counter = 0;
 
         _rspub->publishTransforms(ros::Time::now(), "/NSPG");
                         
@@ -98,8 +107,23 @@ bool NSPG::sample ( double timeout )
             std::cout << "timeout" <<std::endl;
             return false;
         }
+
+        auto tic_coll = std::chrono::high_resolution_clock::now();
+        bool check1 = _vc_context.vc_aggregate.check("collisions");
+        auto toc_coll = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float> fsec_coll = toc_coll - tic_coll;
+        _logger->add("collisions", fsec_coll.count());
+        auto tic_stab = std::chrono::high_resolution_clock::now();
+        bool check2 = _vc_context.vc_aggregate.check("stability");
+        auto toc_stab = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float> fsec_stab = toc_stab - tic_stab;
+        _logger->add("collisions", fsec_stab.count());
+
+        check = check1 && check2;
+
     }
     
+    std::cout << "[NSPG]: solution found in " << T << " seconds!" << std::endl;
     return true;
 }
 
@@ -124,12 +148,12 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
         for (auto i:colliding_chains)
         {
 //             // Here you can add extra joints to the kinematic chains in collision.
-//             if (i.getChainName() == "front_right_leg" || i.getChainName() == "front_left_leg" || i.getChainName() == "rear_right_leg" || i.getChainName() == "rear_left_leg")
-//             {
-//                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
-//                 random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-//                 random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-//             }
+             if (i.getChainName() == "front_right_leg" || i.getChainName() == "front_left_leg" || i.getChainName() == "rear_right_leg" || i.getChainName() == "rear_left_leg")
+             {
+                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
+                 random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
+                 random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
+             }
 //             
 //             if (i.getChainName() == "right_arm" || i.getChainName() == "left_arm")
 //             {

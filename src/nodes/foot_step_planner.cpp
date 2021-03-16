@@ -25,6 +25,9 @@ FootStepPlanner::FootStepPlanner ():
         _sw = std::make_shared<Planning::StateWrapper>(Planning::StateWrapper::StateSpaceType::REALVECTOR, 2);
     else if (contact_type == "surface")
         _sw = std::make_shared<Planning::StateWrapper>(Planning::StateWrapper::StateSpaceType::SE2SPACE, 3);
+
+    _logger = XBot::MatLogger2::MakeLogger("/home/luca/MultiDoF-superbuild/external/cartesio_planning/log/NSPG_log");
+    _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
     
     init_load_config();
     init_load_model();
@@ -292,6 +295,8 @@ void FootStepPlanner::init_load_state_propagator()
       
     _space_info->setStatePropagator(_propagator);
     _space_info->setPropagationStepSize(duration);
+
+    _NSPG = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);
 }
 
 void FootStepPlanner::init_load_validity_checker() 
@@ -434,13 +439,24 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             
             if (!svp(x) && _goalSamplerType == "NSPG" && (!_vc_context.vc_aggregate.check("collisions") || !_vc_context.vc_aggregate.check("stability")))
             {
-                XBot::Cartesian::Planning::NSPG::Ptr goal_sampler;
+//                XBot::Cartesian::Planning::NSPG::Ptr goal_sampler;
                 _goalSampler_counter ++;
-                goal_sampler = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);
-                if (goal_sampler->sample(0.1))
+//                goal_sampler = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);
+                auto tic = std::chrono::high_resolution_clock::now();
+                if (_NSPG->sample(0.1))
+                {
+                    auto toc = std::chrono::high_resolution_clock::now();
+                    std::chrono::duration<float> fsec = toc - tic;
+                    _logger->add("success", 1);
+                    _logger->add("time", fsec.count());
                     _solver->getModel()->getJointPosition(x);
+                }
                 else
                 {
+                    auto toc = std::chrono::high_resolution_clock::now();
+                    std::chrono::duration<float> fsec = toc - tic;
+                    _logger->add("success", 0);
+                    _logger->add("time", fsec.count());
                     _counter++;
                     return false;
                 }
@@ -752,6 +768,9 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         auto t = ros::Duration(0.);
         
         std::cout << "Final solution has " << _q_vect.size() << " steps!" << std::endl;
+
+        _logger.reset();
+        _NSPG->_logger.reset();
         
         for(auto x : _q_vect)
         {

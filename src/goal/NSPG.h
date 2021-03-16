@@ -10,6 +10,7 @@
 #include "validity_checker/validity_checker_context.h"
 #include "utils/robot_viz.h"
 #include <cartesian_interface/utils/RobotStatePublisher.h>
+#include <matlogger2/matlogger2.h>
 
 namespace XBot { namespace Cartesian { namespace Planning {
     
@@ -40,6 +41,7 @@ namespace XBot { namespace Cartesian { namespace Planning {
         bool sample(double timeout);
         
         double generateRandom();
+        XBot::MatLogger2::Ptr _logger;
         
     private:        
         XBot::JointNameMap generateRandomVelocities(std::vector<XBot::ModelChain> colliding_chains);
@@ -48,7 +50,7 @@ namespace XBot { namespace Cartesian { namespace Planning {
         
         Planning::ValidityCheckContext _vc_context;
         
-        std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
+        std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;        
         
     };
 }}}

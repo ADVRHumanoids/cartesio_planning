@@ -213,6 +213,10 @@ private:
     std::string _goalSamplerType, _propagator_type;;
     
     Eigen::Matrix3d _EE_rot;
+
+    XBot::MatLogger2::Ptr _logger;
+
+    XBot::Cartesian::Planning::NSPG::Ptr _NSPG;
     
 };
 
