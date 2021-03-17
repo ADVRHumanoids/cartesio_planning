@@ -147,6 +147,12 @@ void FootStepPlanner::init_load_position_cartesian_solver()
 //     _start_model->update();
 //     _goal_model->setJointPosition(q);
 //     _goal_model->update();
+    
+    Eigen::VectorXd qG;
+    _start_model->getJointPosition(qG);
+    qG(0) += 2.0;
+    _goal_model->setJointPosition(qG);
+    _goal_model->update();
         
     // Goal Solver
     ik_yaml_goal = YAML::Load(problem_description);
@@ -296,7 +302,7 @@ void FootStepPlanner::init_load_state_propagator()
     _space_info->setStatePropagator(_propagator);
     _space_info->setPropagationStepSize(duration);
 
-    _NSPG = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);
+    
 }
 
 void FootStepPlanner::init_load_validity_checker() 
@@ -322,7 +328,8 @@ void FootStepPlanner::init_load_validity_checker()
 
     setStateValidityPredicate(validity_predicate);
     
-    _goal_generator = std::make_shared<GoalGenerator>(_ci, _vc_context);
+//     _goal_generator = std::make_shared<GoalGenerator>(_ci, _vc_context);
+    _NSPG = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);
 }
 
 void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
@@ -359,19 +366,19 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             _solver->setDesiredPose(_ee_name[i], T);
         }
         
-        std::cout << "---------FOOTSTEP PLANNER----------" << std::endl;
-        Eigen::Affine3d T_m;
-        _solver->getCI()->getPoseReference("wheel_1", T_m);
-        std::cout << "wheel1_ref: \n" << T_m.matrix() << std::endl;
-        
-        _solver->getCI()->getPoseReference("wheel_2", T_m);
-        std::cout << "wheel2_ref: \n" << T_m.matrix() << std::endl;
-        
-        _solver->getCI()->getPoseReference("wheel_3", T_m);
-        std::cout << "wheel3_ref: \n" << T_m.matrix() << std::endl;
-        
-        _solver->getCI()->getPoseReference("wheel_4", T_m);
-        std::cout << "wheel4_ref: \n" << T_m.matrix() << std::endl;
+//         std::cout << "---------FOOTSTEP PLANNER----------" << std::endl;
+//         Eigen::Affine3d T_m;
+//         _solver->getCI()->getPoseReference("wheel_1", T_m);
+//         std::cout << "wheel1_ref: \n" << T_m.matrix() << std::endl;
+//         
+//         _solver->getCI()->getPoseReference("wheel_2", T_m);
+//         std::cout << "wheel2_ref: \n" << T_m.matrix() << std::endl;
+//         
+//         _solver->getCI()->getPoseReference("wheel_3", T_m);
+//         std::cout << "wheel3_ref: \n" << T_m.matrix() << std::endl;
+//         
+//         _solver->getCI()->getPoseReference("wheel_4", T_m);
+//         std::cout << "wheel4_ref: \n" << T_m.matrix() << std::endl;
         
         // Check whether one of the two feet is in collision with the environment
         for (int i = 0; i < _ee_number; i++)
@@ -445,22 +452,27 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         Eigen::VectorXd x;
         
         // solve
+        auto tic = std::chrono::high_resolution_clock::now();
         if (_solver->solve())
         {
             _solver->getModel()->getJointPosition(x);
-            if (!svp(x) && !_vc_context.vc_aggregate.check("distance"))
-                return false;
+            _model->setJointPosition(x);
+            _model->update();
             
-            if (!svp(x) && _goalSamplerType == "NSPG" && (!_vc_context.vc_aggregate.check("collisions") || !_vc_context.vc_aggregate.check("stability")))
+            if (!_vc_context.vc_aggregate.check("distance"))
+                return false;          
+            
+            if (_goalSamplerType == "NSPG")// && (!_vc_context.vc_aggregate.check("collisions") || !_vc_context.vc_aggregate.check("stability")))
             {
 //                XBot::Cartesian::Planning::NSPG::Ptr goal_sampler;
                 _goalSampler_counter ++;
 //                goal_sampler = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);
-                auto tic = std::chrono::high_resolution_clock::now();
+                
                 if (_NSPG->sample(1.5))
                 {
                     auto toc = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<float> fsec = toc - tic;
+                    std::cout << "solution found in " << fsec.count() << " seconds" << std::endl;
                     _logger->add("success", 1);
                     _logger->add("time", fsec.count());
                     _solver->getModel()->getJointPosition(x);
@@ -469,6 +481,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                 {
                     auto toc = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<float> fsec = toc - tic;
+                    std::cout << "solution not found" << std::endl;
                     _logger->add("success", 0);
                     _logger->add("time", fsec.count());
                     _counter++;
@@ -476,15 +489,15 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                 }
             }
             
-            if (!svp(x) && _goalSamplerType == "goalSampler" && (!_vc_context.vc_aggregate.check("collisions") || !_vc_context.vc_aggregate.check("stability")))
-            {
-                _goalSampler_counter ++;
-                if (!_goal_generator->samplePostural(x, 5.0))
-                {
-                    _counter++;
-                    return false;
-                }
-            }
+//             if (!svp(x) && _goalSamplerType == "goalSampler" && (!_vc_context.vc_aggregate.check("collisions") || !_vc_context.vc_aggregate.check("stability")))
+//             {
+//                 _goalSampler_counter ++;
+//                 if (!_goal_generator->samplePostural(x, 5.0))
+//                 {
+//                     _counter++;
+//                     return false;
+//                 }
+//             }
                       
             // Add the new postural to the std::map together with the start state
             Eigen::VectorXd diff = x - _qhome;
@@ -639,7 +652,7 @@ bool FootStepPlanner::start_goal_service ( cartesio_planning::CartesioGoal::Requ
             res.status.val = cartesio_planning::CartesioPlannerGoalStatus::APPROXIMATE_SOLUTION;
             std::cout << "APPROXIMATE SOLUTION FOUND...setting start and goal states! (error = " << err << ")" << std::endl;
         }
-        _pdef->setStartAndGoalStates(start, goal, 1.0);
+        _pdef->setStartAndGoalStates(start, goal, 2.0);
         return true;
     }
     else

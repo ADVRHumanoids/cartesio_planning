@@ -1,13 +1,13 @@
 state_space:
     ee_number: 4
     bounds_x: [-1.0, 6.0]
-    bounds_y: [-2.0, 2.0]
+    bounds_y: [-1.0, 1.0]
     end_effector: ["wheel_1", "wheel_2", "wheel_3", "wheel_4"]
     
 control_space:
     step_size_max: 0.1
     min_control_duration: 1
-    max_control_duration: 20   
+    max_control_duration: 100   
     
 propagator:
     duration: 0.3
@@ -18,15 +18,25 @@ state_validity_check:
     - stability
     - distance
     
-stability:
-    type: "ConvexHull"
-    links:
-      - "wheel_1"
-      - "wheel_2"
-      - "wheel_3" 
-      - "wheel_4"
+#stability:
+    #type: "ConvexHull"
+    #links:
+      #- "wheel_1"
+      #- "wheel_2"
+      #- "wheel_3" 
+      #- "wheel_4"
 
-    stability_margin: 0.03
+    #stability_margin: 0.03
+    
+stability:
+    type: "CentroidalStatics"
+    links:
+        - "wheel_1"
+        - "wheel_2"
+        - "wheel_3"
+        - "wheel_4"
+    friction_coefficient: 0.71
+    eps: 5e-2
 
 collisions:
     type: "CollisionCheck"
@@ -34,8 +44,8 @@ collisions:
     
 distance:
     type: "DistanceCheck_centauro"
-    max_x_distance: 1.0
-    max_y_distance: 1.0
+    max_x_distance: 1.2
+    max_y_distance: 1.2
     front_rear_x_distance: 0.3
     left_right_y_distance: 0.3
     

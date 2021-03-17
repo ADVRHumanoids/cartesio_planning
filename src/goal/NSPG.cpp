@@ -14,7 +14,9 @@ NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_con
         randGenerator.seed(b);
         
         _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_ik_solver->getModel());
-        _logger = XBot::MatLogger2::MakeLogger("/home/luca/src/MultiDoF-superbuild/external/cartesio_planning/log/checks_log");
+        XBot::MatLogger2::Options opt;
+        opt.default_buffer_size = 1e6;
+        _logger = XBot::MatLogger2::MakeLogger("/home/luca/src/MultiDoF-superbuild/external/cartesio_planning/log/checks_log", opt);
         _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
     }
     
@@ -41,19 +43,19 @@ bool NSPG::sample ( double timeout )
     
     _ik_solver->getModel()->getJointPosition(x);
     
-    std::cout << "---------NSPG----------" << std::endl;
-    Eigen::Affine3d T_m;
-    _ik_solver->getCI()->getPoseReference("wheel_1", T_m);
-    std::cout << "wheel1_ref: \n" << T_m.matrix() << std::endl;
-    
-    _ik_solver->getCI()->getPoseReference("wheel_2", T_m);
-    std::cout << "wheel2_ref: \n" << T_m.matrix() << std::endl;
-    
-    _ik_solver->getCI()->getPoseReference("wheel_3", T_m);
-    std::cout << "wheel3_ref: \n" << T_m.matrix() << std::endl;
-    
-    _ik_solver->getCI()->getPoseReference("wheel_4", T_m);
-    std::cout << "wheel4_ref: \n" << T_m.matrix() << std::endl;
+//     std::cout << "---------NSPG----------" << std::endl;
+//     Eigen::Affine3d T_m;
+//     _ik_solver->getCI()->getPoseReference("wheel_1", T_m);
+//     std::cout << "wheel1_ref: \n" << T_m.matrix() << std::endl;
+//     
+//     _ik_solver->getCI()->getPoseReference("wheel_2", T_m);
+//     std::cout << "wheel2_ref: \n" << T_m.matrix() << std::endl;
+//     
+//     _ik_solver->getCI()->getPoseReference("wheel_3", T_m);
+//     std::cout << "wheel3_ref: \n" << T_m.matrix() << std::endl;
+//     
+//     _ik_solver->getCI()->getPoseReference("wheel_4", T_m);
+//     std::cout << "wheel4_ref: \n" << T_m.matrix() << std::endl;
     
     
     // Fill velocity_map with the velocity limits
@@ -64,16 +66,16 @@ bool NSPG::sample ( double timeout )
     _rspub->publishTransforms(ros::Time::now(), "/NSPG");
     
     float T = 0.0;
-    double dt = 0.01;
+    double dt = 0.005;
     int iter = 0;
     unsigned int counter = 0;
     unsigned int max_counter = 25;
-
-    bool check = _vc_context.vc_aggregate.checkAll();
     
-    std::cout << "check: " << check << std::endl;
-    
-    while(!_vc_context.vc_aggregate.checkAll())// || counter < max_counter)
+    check1 = _vc_context.vc_aggregate.check("collisions");
+    check2 = _vc_context.vc_aggregate.check("stability");
+    bool check = check1 && check2;
+        
+    while(!check)// || counter < max_counter)
     {
         auto tic = std::chrono::high_resolution_clock::now();
         
@@ -129,23 +131,19 @@ bool NSPG::sample ( double timeout )
         }
 
         auto tic_coll = std::chrono::high_resolution_clock::now();
-        bool check1 = _vc_context.vc_aggregate.check("collisions");
+        check1 = _vc_context.vc_aggregate.check("collisions");
         auto toc_coll = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec_coll = toc_coll - tic_coll;
         _logger->add("collisions", fsec_coll.count());
         auto tic_stab = std::chrono::high_resolution_clock::now();
-        bool check2 = _vc_context.vc_aggregate.check("stability");
+        check2 = _vc_context.vc_aggregate.check("stability");
         auto toc_stab = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec_stab = toc_stab - tic_stab;
         _logger->add("collisions", fsec_stab.count());
 
         check = check1 && check2;
-        
-        std::cout << check1 << "   " << check2 << "   " << check << std::endl;
-
     }
     
-    std::cout << "[NSPG]: solution found in " << T << " seconds!" << std::endl;
     return true;
 }
 
@@ -165,7 +163,7 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
     _ik_solver->getModel()->eigenToMap(velocity_lim, velocityLim_map);
     
     // Add random velocities for colliding chains
-    if (!_vc_context.vc_aggregate.check("collisions")) 
+    if (!check1) 
     {
         for (auto i:colliding_chains)
         {
@@ -176,12 +174,12 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
                  random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
                  random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
              }
-//             
-//             if (i.getChainName() == "right_arm" || i.getChainName() == "left_arm")
-//             {
-//                 random_map.insert(std::make_pair("torso_yaw", 2 * generateRandom() * velocityLim_map["torso_yaw"]));  // UNCOMMENT FOR CENTAURO
-//                 random_map.insert(std::make_pair("WaistYaw", 2 * generateRandom() * velocityLim_map["WaistYaw"]));   // UNCOMMENT THIS FOR COMANPLUS
-//             }
+            
+            if (i.getChainName() == "right_arm" || i.getChainName() == "left_arm")
+            {
+                random_map.insert(std::make_pair("torso_yaw", 2 * generateRandom() * velocityLim_map["torso_yaw"]));  // UNCOMMENT FOR CENTAURO
+                random_map.insert(std::make_pair("WaistYaw", 2 * generateRandom() * velocityLim_map["WaistYaw"]));   // UNCOMMENT THIS FOR COMANPLUS
+            }
 //             
 //             if (i.getChainName() == "arm_A" || i.getChainName() == "arm_B" || i.getChainName() == "arm_C")
 //             {
@@ -206,7 +204,7 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
     }
     
     // Add random velocities to the floating base when the convex hull check fails
-    if (!_vc_context.vc_aggregate.check("stability"))
+    if (!check2)
     {
         random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
         random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));

@@ -50,7 +50,9 @@ namespace XBot { namespace Cartesian { namespace Planning {
         
         Planning::ValidityCheckContext _vc_context;
         
-        std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;        
+        std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;  
+        
+        bool check1, check2;
         
     };
 }}}
