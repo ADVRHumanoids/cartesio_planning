@@ -26,7 +26,7 @@ FootStepPlanner::FootStepPlanner ():
     else if (contact_type == "surface")
         _sw = std::make_shared<Planning::StateWrapper>(Planning::StateWrapper::StateSpaceType::SE2SPACE, 3);
 
-    _logger = XBot::MatLogger2::MakeLogger("/home/luca/MultiDoF-superbuild/external/cartesio_planning/log/NSPG_log");
+    _logger = XBot::MatLogger2::MakeLogger("/home/luca/src/MultiDoF-superbuild/external/cartesio_planning/log/NSPG_log");
     _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
     
     init_load_config();
@@ -359,6 +359,20 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             _solver->setDesiredPose(_ee_name[i], T);
         }
         
+        std::cout << "---------FOOTSTEP PLANNER----------" << std::endl;
+        Eigen::Affine3d T_m;
+        _solver->getCI()->getPoseReference("wheel_1", T_m);
+        std::cout << "wheel1_ref: \n" << T_m.matrix() << std::endl;
+        
+        _solver->getCI()->getPoseReference("wheel_2", T_m);
+        std::cout << "wheel2_ref: \n" << T_m.matrix() << std::endl;
+        
+        _solver->getCI()->getPoseReference("wheel_3", T_m);
+        std::cout << "wheel3_ref: \n" << T_m.matrix() << std::endl;
+        
+        _solver->getCI()->getPoseReference("wheel_4", T_m);
+        std::cout << "wheel4_ref: \n" << T_m.matrix() << std::endl;
+        
         // Check whether one of the two feet is in collision with the environment
         for (int i = 0; i < _ee_number; i++)
         {
@@ -443,7 +457,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                 _goalSampler_counter ++;
 //                goal_sampler = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);
                 auto tic = std::chrono::high_resolution_clock::now();
-                if (_NSPG->sample(0.1))
+                if (_NSPG->sample(1.5))
                 {
                     auto toc = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<float> fsec = toc - tic;

@@ -14,7 +14,7 @@ NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_con
         randGenerator.seed(b);
         
         _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_ik_solver->getModel());
-        _logger = XBot::MatLogger2::MakeLogger("/home/luca/MultiDoF-superbuild/external/cartesio_planning/log/checks_log");
+        _logger = XBot::MatLogger2::MakeLogger("/home/luca/src/MultiDoF-superbuild/external/cartesio_planning/log/checks_log");
         _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
     }
     
@@ -41,9 +41,27 @@ bool NSPG::sample ( double timeout )
     
     _ik_solver->getModel()->getJointPosition(x);
     
+    std::cout << "---------NSPG----------" << std::endl;
+    Eigen::Affine3d T_m;
+    _ik_solver->getCI()->getPoseReference("wheel_1", T_m);
+    std::cout << "wheel1_ref: \n" << T_m.matrix() << std::endl;
+    
+    _ik_solver->getCI()->getPoseReference("wheel_2", T_m);
+    std::cout << "wheel2_ref: \n" << T_m.matrix() << std::endl;
+    
+    _ik_solver->getCI()->getPoseReference("wheel_3", T_m);
+    std::cout << "wheel3_ref: \n" << T_m.matrix() << std::endl;
+    
+    _ik_solver->getCI()->getPoseReference("wheel_4", T_m);
+    std::cout << "wheel4_ref: \n" << T_m.matrix() << std::endl;
+    
+    
     // Fill velocity_map with the velocity limits
     _ik_solver->getModel()->eigenToMap(x, velocity_map);
     _ik_solver->getModel()->eigenToMap(dqlimits, velocity_map);
+    
+    _ik_solver->solve();
+    _rspub->publishTransforms(ros::Time::now(), "/NSPG");
     
     float T = 0.0;
     double dt = 0.01;
@@ -53,7 +71,9 @@ bool NSPG::sample ( double timeout )
 
     bool check = _vc_context.vc_aggregate.checkAll();
     
-    while(!check)// || counter < max_counter)
+    std::cout << "check: " << check << std::endl;
+    
+    while(!_vc_context.vc_aggregate.checkAll())// || counter < max_counter)
     {
         auto tic = std::chrono::high_resolution_clock::now();
         
@@ -120,6 +140,8 @@ bool NSPG::sample ( double timeout )
         _logger->add("collisions", fsec_stab.count());
 
         check = check1 && check2;
+        
+        std::cout << check1 << "   " << check2 << "   " << check << std::endl;
 
     }
     
@@ -168,9 +190,9 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
 //                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
 //             }
 
-            random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
+            /*random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
             random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-            random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));                
+            random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));*/                
             
             i.getJointPosition(chain_map);
                 
@@ -191,9 +213,9 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
         random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
     }
 
-    random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-    random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-    random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
+//     random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
+//     random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
+//     random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
     
     return random_map;
 }

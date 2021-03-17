@@ -109,7 +109,7 @@ void octomap_collision_object_cb(const octomap_msgs::OctomapWithPose msg)
 {
     octomap_msgs::OctomapWithPose attached_object;
     attached_object = msg;
-    attached_object.octomap.id = "octomap";
+    attached_object.octomap.id = "OcTree";
 
     // Add an object into the environment
     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

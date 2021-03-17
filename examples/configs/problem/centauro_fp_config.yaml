@@ -11,6 +11,7 @@ control_space:
     
 propagator:
     duration: 0.3
+    type: "centauro"
     
 state_validity_check:
     - collisions

@@ -9,6 +9,7 @@
 #include <geometric_shapes/shape_operations.h>
 
 octomap_msgs::Octomap map;
+bool callbackDone = false;
 
 
 void callback ( const octomap_msgs::OctomapPtr& msg ) {
@@ -17,6 +18,8 @@ void callback ( const octomap_msgs::OctomapPtr& msg ) {
     map.resolution = msg->resolution;
     map.id = msg->id;
     map.data = msg->data;
+    
+    callbackDone = true;
 }
 
 octomap_msgs::OctomapWithPose generateMessage ( octomap_msgs::Octomap inputMap ) {
@@ -56,10 +59,13 @@ int main ( int argc, char** argv ) {
     while ( ros::ok() ) {
         // Create the msg
         octomap_msgs::OctomapWithPose map_to_publish;
-        map_to_publish = generateMessage ( map );
+        if (callbackDone)
+        {
+            map_to_publish = generateMessage ( map );
 
-        // Publish the service
-        octomap_collision_publisher.publish ( map_to_publish );
+            // Publish the service
+            octomap_collision_publisher.publish ( map_to_publish );
+        }
         ros::spinOnce();
         rate.sleep();
     }

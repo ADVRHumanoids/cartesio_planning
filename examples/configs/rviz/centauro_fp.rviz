@@ -28,7 +28,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
   - Class: rviz/Selection
     Name: Selection
 Toolbars:
@@ -119,63 +119,19 @@ Visualization Manager:
         Attached Body Color: 150; 50; 150
         Links:
           All Links Enabled: true
-          DWL:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          DWLExt:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
           DWYTorso:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-            Value: true
           Expand Joint Details: false
           Expand Link Details: false
           Expand Tree: false
-          Head:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          HeadHokuyo:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          HokuyoLaser:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
           LElb:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          LFoot:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LFootmot:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
           LForearm:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LHipMot:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LLowLeg:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -191,25 +147,6 @@ Visualization Manager:
             Show Trail: false
             Value: true
           LShy:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LSoftHand:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          LSoftHandLink:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LThighLowLeg:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LThighUpLeg:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -230,27 +167,7 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          RFoot:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RFootmot:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
           RForearm:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RHipMot:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RLowLeg:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -270,25 +187,6 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          RSoftHand:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          RSoftHandLink:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RThighLowLeg:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RThighUpLeg:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
           RWrMot2:
             Alpha: 1
             Show Axes: false
@@ -299,122 +197,277 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          TCP_L:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          TCP_R:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          Waist:
+          ankle1_1:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          base_link:
+          ankle1_2:
             Alpha: 1
             Show Axes: false
             Show Trail: false
+            Value: true
+          ankle1_3:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          ankle1_4:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          ankle2_1:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          ankle2_2:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          ankle2_3:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          ankle2_4:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          arm1_1:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm1_2:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm1_3:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm1_4:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm1_5:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm1_6:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm1_7:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm1_8:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm2_1:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm2_2:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm2_3:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm2_4:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm2_5:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm2_6:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm2_7:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          arm2_8:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_central:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_left:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          camera_right:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          ee1:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          ee2:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          hip1_1:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          hip1_2:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          hip1_3:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          hip1_4:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          hip2_1:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          hip2_2:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          hip2_3:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          hip2_4:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           imu_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
+          kinect:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          kinect2_rgb_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          kinect2_rgb_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          knee_1:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
             Value: true
-          l_ankle:
+          knee_2:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          l_arm_ft:
+            Value: true
+          knee_3:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          l_foot_lower_left_link:
+            Value: true
+          knee_4:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          l_foot_lower_right_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_foot_upper_left_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_foot_upper_right_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_heel:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_leg_ft:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_sole:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_toe:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
+            Value: true
           l_wrist:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          r_ankle:
+          neck_1:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          r_arm_ft:
+            Value: true
+          neck_2:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          r_foot_lower_left_link:
+            Value: true
+          neck_3:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          r_foot_lower_right_link:
+            Value: true
+          pelvis:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          r_foot_upper_left_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_foot_upper_right_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_heel:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_leg_ft:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_sole:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_toe:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
+            Value: true
           r_wrist:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          torso:
+          torso_2:
             Alpha: 1
             Show Axes: false
             Show Trail: false
+            Value: true
+          velodyne_calib:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          velodyne_calib_base_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          velodyne_mount:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          wheel_1:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          wheel_2:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          wheel_3:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          wheel_4:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           world:
             Alpha: 1
             Show Axes: false
@@ -503,7 +556,7 @@ Visualization Manager:
       Show Axes: false
       Show Descriptions: false
       Show Visual Aids: false
-      Update Topic: /l_sole_cartesian_marker_server/update
+      Update Topic: /wheel_1_cartesian_marker_server/update
       Value: true
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
@@ -512,7 +565,7 @@ Visualization Manager:
       Show Axes: false
       Show Descriptions: false
       Show Visual Aids: false
-      Update Topic: /r_sole_cartesian_marker_server/update
+      Update Topic: /wheel_2_cartesian_marker_server/update
       Value: true
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
@@ -521,7 +574,7 @@ Visualization Manager:
       Show Axes: false
       Show Descriptions: false
       Show Visual Aids: false
-      Update Topic: /simple_marker_floor/update
+      Update Topic: /wheel_3_cartesian_marker_server/update
       Value: true
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
@@ -530,7 +583,7 @@ Visualization Manager:
       Show Axes: false
       Show Descriptions: false
       Show Visual Aids: false
-      Update Topic: /simple_marker_floor/update
+      Update Topic: /wheel_4_cartesian_marker_server/update
       Value: true
   Enabled: true
   Global Options:
@@ -575,7 +628,7 @@ Visualization Manager:
       Pitch: 0.519796252
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.10175824
+      Yaw: 2.09675813
     Saved: ~
 Window Geometry:
   Displays:
