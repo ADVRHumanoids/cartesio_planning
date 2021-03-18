@@ -96,7 +96,7 @@
               output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' "/>
 
         <include file="$(find cartesio_planning)/launch/forza_giusta.launch" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
-            <arg name="robot" value="true"/>
+            <arg name="robot" value="false"/>
         </include>
     </group>
 
@@ -144,12 +144,12 @@
         <param name="scale_x" type="double" value="0.05"/>
         <param name="scale_y" type="double" value="1.15"/>
         <param name="scale_z" type="double" value="2.0"/>
-        <rosparam param="position"> [2.025, 0., 1.0] </rosparam>
+        <rosparam param="position"> [2.125, 0., 1.0] </rosparam>
         <rosparam param="orientation"> [0.0, 0.0, 0.0, 1.0] </rosparam>
         <param name="frame_id" value="world"/>
         <param name="name_id" value="floor3"/>
-        <param name="show_control_axis" type="bool" value="False"/>
-<!--         <remap from="mesh_viz_floor3/floor3" to="planner/collision_objects"/> -->
+        <param name="show_control_axis" type="bool" value="True"/>
+        <remap from="mesh_viz_floor3/floor3" to="planner/collision_objects"/>
     </node>
 
 </launch>
