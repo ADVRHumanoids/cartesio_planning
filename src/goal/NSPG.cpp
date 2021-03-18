@@ -44,7 +44,7 @@ bool NSPG::sample ( double timeout )
     _ik_solver->getModel()->eigenToMap(dqlimits, velocity_map);
     
     float T = 0.0;
-    double dt = 0.01;
+    double dt = 0.001;
     int iter = 0;
     unsigned int counter = 0;
     unsigned int max_counter = 25;

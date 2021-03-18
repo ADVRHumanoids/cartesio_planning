@@ -286,6 +286,11 @@ void PlannerExecutor::init_load_validity_checker()
 
     _vc_context->planning_scene->startMonitor();
 
+    _vc_context->planning_scene->acm.setEntry("LBall", "obstacle", true);
+    _vc_context->planning_scene->acm.setEntry("RBall", "obstacle", true);
+    _vc_context->planning_scene->acm.setEntry("RFoot", "obstacle", true);
+    _vc_context->planning_scene->acm.setEntry("LFoot", "obstacle", true);
+
     auto validity_predicate = [this](const Eigen::VectorXd& q)
     {
         _model->setJointPosition(q);

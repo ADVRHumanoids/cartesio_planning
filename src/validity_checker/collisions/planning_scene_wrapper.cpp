@@ -210,7 +210,9 @@ bool PlanningSceneWrapper::checkCollisions() const
 
     collision_detection::CollisionResult collision_result;  
     
-    _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
+//    _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
+    _monitor->getPlanningScene()->checkCollision(collision_request, collision_result, _monitor->getPlanningScene()->getCurrentState(), acm);
+
     
 //     std::cout << "colliding links: " << std::endl;
 //     for (auto i : getCollidingLinks())
@@ -244,7 +246,23 @@ std::vector<std::string> PlanningSceneWrapper::getCollidingLinks() const
 std::vector<XBot::ModelChain> PlanningSceneWrapper::getCollidingChains() const 
 {
     std::vector<std::string> colliding_links = getCollidingLinks();
+    std::vector<std::string> links;
+    collision_detection::AllowedCollision::Type type;
     std::vector<XBot::ModelChain> colliding_chains;
+    std::vector<std::string>::iterator it;
+
+    acm.getAllEntryNames(links);
+
+    for (auto i : links)
+    {
+        if (acm.getEntry(i, "<octomap>", type) == true && type == collision_detection::AllowedCollision::ALWAYS)
+        {
+            it = std::find(colliding_links.begin(), colliding_links.end(), i);
+            if (it != colliding_links.end())
+                colliding_links.erase(it);
+        }
+    }
+
     for (auto i:_srdf.getGroups())
     {
         auto link  = i.links_;

@@ -10,7 +10,7 @@ Panels:
         - /MarkerArray2/Namespaces1
         - /PlanningScene1/Scene Geometry1
       Splitter Ratio: 0.5
-    Tree Height: 848
+    Tree Height: 755
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -267,6 +267,22 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        l_ball_tip_d:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        l_ball_tip_l:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        l_ball_tip_r:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        l_ball_tip_u:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         l_foot_lower_left_link:
           Alpha: 1
           Show Axes: false
@@ -312,6 +328,22 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
         r_ball_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        r_ball_tip_d:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        r_ball_tip_l:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        r_ball_tip_r:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        r_ball_tip_u:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -361,7 +393,7 @@ Visualization Manager:
           Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
-      TF Prefix: planner
+      TF Prefix: ci
       Update Interval: 0
       Value: true
       Visual Enabled: true
@@ -393,7 +425,7 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: moveit_rviz_plugin/PlanningScene
-      Enabled: true
+      Enabled: false
       Move Group Namespace: planner
       Name: PlanningScene
       Planning Scene Topic: /planning_server/monitored_planning_scene
@@ -409,308 +441,14 @@ Visualization Manager:
         Attached Body Color: 150; 50; 150
         Links:
           All Links Enabled: true
-          DWL:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          DWLExt:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          DWYTorso:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
           Expand Joint Details: false
           Expand Link Details: false
           Expand Tree: false
-          Head:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          HeadHokuyo:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          HokuyoLaser:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          LBall:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LElb:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LFoot:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LFootmot:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LForearm:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LHipMot:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LLowLeg:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LShp:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LShr:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LShy:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LThighLowLeg:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LThighUpLeg:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LWrMot2:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          LWrMot3:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
           Link Tree Style: Links in Alphabetic Order
-          RBall:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RElb:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RFoot:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RFootmot:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RForearm:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RHipMot:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RLowLeg:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RShp:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RShr:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RShy:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RThighLowLeg:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RThighUpLeg:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RWrMot2:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          RWrMot3:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          TCP_L:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          TCP_R:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          Waist:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          base_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          imu_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          l_ankle:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_arm_ft:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_ball_tip:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_foot_lower_left_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_foot_lower_right_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_foot_upper_left_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_foot_upper_right_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_heel:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_leg_ft:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_sole:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_toe:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          l_wrist:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_ankle:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_arm_ft:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_ball_tip:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_foot_lower_left_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_foot_lower_right_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_foot_upper_left_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_foot_upper_right_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_heel:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_leg_ft:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_sole:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_toe:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          r_wrist:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          torso:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          world:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
         Robot Alpha: 1
         Show Robot Collision: false
         Show Robot Visual: true
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: false
       Marker Topic: /planner/convex_hull
@@ -721,62 +459,46 @@ Visualization Manager:
       Value: false
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
-      Enabled: false
+      Enabled: true
       Name: InteractiveMarkers
       Show Axes: false
       Show Descriptions: true
       Show Visual Aids: false
       Update Topic: /simple_marker_floor/update
-      Value: false
+      Value: true
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
-      Enabled: false
+      Enabled: true
       Name: InteractiveMarkers
       Show Axes: false
       Show Descriptions: true
       Show Visual Aids: false
       Update Topic: /simple_marker_floor1/update
-      Value: false
+      Value: true
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
-      Enabled: false
+      Enabled: true
       Name: InteractiveMarkers
       Show Axes: false
       Show Descriptions: true
       Show Visual Aids: false
       Update Topic: /simple_marker_floor2/update
-      Value: false
+      Value: true
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
-      Enabled: false
+      Enabled: true
       Name: InteractiveMarkers
       Show Axes: false
       Show Descriptions: true
       Show Visual Aids: false
       Update Topic: /simple_marker_floor3/update
-      Value: false
+      Value: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /force_opt/force_l_ball_tip/force/value
       Name: Marker
       Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /force_opt/force_l_sole/force/value
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /force_opt/force_r_sole/force/value
-      Name: Marker
-      Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -784,7 +506,23 @@ Visualization Manager:
       Marker Topic: /force_opt/force_r_ball_tip/force/value
       Name: Marker
       Namespaces:
-        {}
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /force_opt/force_r_sole/force/value
+      Name: Marker
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /force_opt/force_r_sole/force/value
+      Name: Marker
+      Namespaces:
+        "": true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -830,18 +568,18 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5904000401496887
+      Pitch: 0.5954000353813171
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.331779956817627
+      Yaw: 5.1617817878723145
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: true
-  Height: 1145
-  Hide Left Dock: true
+    collapsed: false
+  Height: 1052
+  Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001ed000003dbfc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073000000003d000003db000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000396fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000002800000396000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073d0000003efc0100000002fb0000000800540069006d006501000000000000073d000002eb00fffffffb0000000800540069006d006501000000000000045000000000000000000000073d000003db00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001ee0000037efc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000037e000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000396fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000002800000396000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d0065010000000000000780000002eb00fffffffb0000000800540069006d006501000000000000045000000000000000000000058c0000037e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -850,6 +588,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1853
-  X: 67
-  Y: 27
+  Width: 1920
+  X: 1920
+  Y: 120
