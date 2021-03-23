@@ -1,0 +1,20 @@
+<launch>
+
+    <param name="robot_description"
+        textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
+
+    <param name="robot_description_semantic"
+        textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
+    
+    <param name="problem_description"
+        textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
+    
+    <param name="planner_config"
+           textfile="$(find cartesio_planning)/configs/problem/cluttered_test.yaml"/>
+    
+    <node pkg="cartesio_planning" type="cluttered_test" name="cluttered_test" output="screen"/>
+    <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/>
+    
+    <node pkg="rviz" name="rviz" type="rviz" args="-d $(find cartesio_planning)/configs/rviz/cluttered_test.rviz" output="screen"/>
+    
+</launch>

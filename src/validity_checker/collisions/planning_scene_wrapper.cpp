@@ -95,7 +95,7 @@ void PlanningSceneWrapper::startMonitor()
     
     // AllowedCollisionMatrix definition. Entries can be added anywhere in the code simply
     // with acm.setEntry(std::string name1, std::string name2, bool allowed)
-//     acm = _monitor->getPlanningScene()->getAllowedCollisionMatrix();
+    acm = _monitor->getPlanningScene()->getAllowedCollisionMatrix();
 }
 
 void PlanningSceneWrapper::stopMonitor()
@@ -210,7 +210,9 @@ bool PlanningSceneWrapper::checkCollisions() const
 
     collision_detection::CollisionResult collision_result;  
     
-    _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
+//     _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
+    
+    _monitor->getPlanningScene()->checkCollision(collision_request, collision_result, _monitor->getPlanningScene()->getCurrentState(), acm);
     
 //     std::cout << "colliding links: " << std::endl;
 //     for (auto i : getCollidingLinks())

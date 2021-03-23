@@ -1,11 +1,11 @@
 solver_options:
-    regularization: 1e-2
+    regularization: 1e-1
     back_end: "qpoases"
 
 stack:
     - ["LeftFoot", "RightFoot", "LeftHand", "RightHand"]
-#    - ["TorsoRPY"]
-#    - ["Postural"]
+    - ["TorsoRPY"]
+    - ["Postural"]
     
 constraints: ["JointLimits"] #, "VelocityLimits"]
 
@@ -25,21 +25,22 @@ RightFoot:
 
 Postural:
     type: "Postural"
-    lambda: 0.0
     
 LeftHand:
     type: "Cartesian"
     distal_link: "TCP_L"
-    lambda: 1.0
+    #indices: [0, 1, 2, 3, 4]
+    #use_local_subtasks: "true"
 
 RightHand:
     type: "Cartesian"
     distal_link: "TCP_R"
-    lambda: 1.0
+    #indices: [0, 1, 2, 3, 4]
+    #use_local_subtasks: "true"
 
 TorsoRPY:
     type: "Cartesian"
     distal_link: "torso"
     lambda: 1.0
-    indices: [3,4,5]
+    indices: [3,4]
 

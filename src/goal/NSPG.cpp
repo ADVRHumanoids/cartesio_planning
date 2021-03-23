@@ -43,21 +43,6 @@ bool NSPG::sample ( double timeout )
     
     _ik_solver->getModel()->getJointPosition(x);
     
-//     std::cout << "---------NSPG----------" << std::endl;
-//     Eigen::Affine3d T_m;
-//     _ik_solver->getCI()->getPoseReference("wheel_1", T_m);
-//     std::cout << "wheel1_ref: \n" << T_m.matrix() << std::endl;
-//     
-//     _ik_solver->getCI()->getPoseReference("wheel_2", T_m);
-//     std::cout << "wheel2_ref: \n" << T_m.matrix() << std::endl;
-//     
-//     _ik_solver->getCI()->getPoseReference("wheel_3", T_m);
-//     std::cout << "wheel3_ref: \n" << T_m.matrix() << std::endl;
-//     
-//     _ik_solver->getCI()->getPoseReference("wheel_4", T_m);
-//     std::cout << "wheel4_ref: \n" << T_m.matrix() << std::endl;
-    
-    
     // Fill velocity_map with the velocity limits
     _ik_solver->getModel()->eigenToMap(x, velocity_map);
     _ik_solver->getModel()->eigenToMap(dqlimits, velocity_map);
@@ -66,7 +51,7 @@ bool NSPG::sample ( double timeout )
     _rspub->publishTransforms(ros::Time::now(), "/NSPG");
     
     float T = 0.0;
-    double dt = 0.005;
+    double dt = 0.01;
     int iter = 0;
     unsigned int counter = 0;
     unsigned int max_counter = 25;
@@ -77,6 +62,7 @@ bool NSPG::sample ( double timeout )
         
     while(!check)// || counter < max_counter)
     {
+        std::cout << iter << std::endl;
         auto tic = std::chrono::high_resolution_clock::now();
         
         // Acquire colliding chains
@@ -119,7 +105,7 @@ bool NSPG::sample ( double timeout )
 //        else
 //            counter = 0;
 
-        _rspub->publishTransforms(ros::Time::now(), "/NSPG");
+        _rspub->publishTransforms(ros::Time::now(), "");
                         
         auto toc = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec = toc-tic;
@@ -139,7 +125,7 @@ bool NSPG::sample ( double timeout )
         check2 = _vc_context.vc_aggregate.check("stability");
         auto toc_stab = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec_stab = toc_stab - tic_stab;
-        _logger->add("collisions", fsec_stab.count());
+        _logger->add("stability", fsec_stab.count());
 
         check = check1 && check2;
     }
@@ -170,9 +156,9 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
 //             // Here you can add extra joints to the kinematic chains in collision.
              if (i.getChainName() == "front_right_leg" || i.getChainName() == "front_left_leg" || i.getChainName() == "rear_right_leg" || i.getChainName() == "rear_left_leg")
              {
-                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
-                 random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-                 random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
+                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*1));
+                 random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*1));
+                 random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*1));
              }
             
             if (i.getChainName() == "right_arm" || i.getChainName() == "left_arm")
@@ -201,14 +187,18 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
             }
             
         }
+        
+        random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*10));
+        random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*10));
+        random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*10));
     }
     
     // Add random velocities to the floating base when the convex hull check fails
     if (!check2)
     {
-        random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-        random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-        random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
+        random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*10));
+        random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*10));
+        random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*10));
     }
 
 //     random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));

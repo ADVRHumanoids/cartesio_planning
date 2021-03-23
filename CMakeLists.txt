@@ -283,6 +283,9 @@ target_link_libraries(point_cloud_test cartesio_planning ${catkin_LIBRARIES} ${P
 add_executable(centroidal_statics_test src/test_nodes/centroidal_statics_test.cpp)
 target_link_libraries(centroidal_statics_test centroidal_statics ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
+add_executable(cluttered_test tests/cluttered_test.cpp)
+target_link_libraries(cluttered_test ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} cartesio_planning ${cartesian_interface_LIBRARIES})
+
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -416,6 +419,12 @@ install(TARGETS centroidal_statics_test
     )
 
 install(TARGETS foot_step_planner
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+    
+install(TARGETS cluttered_test
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

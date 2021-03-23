@@ -7,6 +7,7 @@
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit_msgs/PlanningScene.h>
 #include <moveit_msgs/GetPlanningScene.h>
+#include <moveit_msgs/ApplyPlanningScene.h>
 
 #include <XBotInterface/ModelInterface.h>
 

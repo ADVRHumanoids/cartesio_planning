@@ -1,0 +1,23 @@
+state_validity_check:
+    - collisions
+    - stability
+
+collisions:
+    type: "CollisionCheck"
+    include_environment: true
+
+stability:
+    type: "CentroidalStatics"
+    links: 
+      - "l_sole"
+      - "r_sole"
+      - "l_ball_tip"
+      - "r_ball_tip"
+    friction_coefficient: 0.71
+    eps: 5e-2
+    x_lim_cop:
+      - -0.1
+      - 0.1
+    y_lim_cop:
+      - -0.05
+      - 0.05
