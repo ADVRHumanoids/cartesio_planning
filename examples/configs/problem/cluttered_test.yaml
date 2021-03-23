@@ -13,7 +13,7 @@ stability:
       - "r_sole"
       - "l_ball_tip"
       - "r_ball_tip"
-    friction_coefficient: 0.71
+    friction_coefficient: 0.85
     eps: 5e-2
     x_lim_cop:
       - -0.1
