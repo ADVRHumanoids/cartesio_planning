@@ -61,17 +61,9 @@ Eigen::Matrix3d rotation(std::vector<double> normal)
 
 Eigen::Matrix3d generalRotation(std::vector<double> normal, std::string axis)
 {
-    // normalize
-//     double sum = sqrt((normal[0]*normal[0]) + (normal[1]*normal[1]) + (normal[2]*normal[2]));
-//     for (auto &i : normal)
-//     {
-//         i = i / sum;
-//     }
-    
     Eigen::Vector3d n;
     n << normal[0], normal[1], normal[2];
-    n.normalize();
-    
+    n.normalize();  
     
     Eigen::Vector3d x_child, y_child, z_child;
     Eigen::Vector3d x_parent ( 1, 0, 0 ), y_parent ( 0, 1, 0 ), z_parent ( 0, 0, 1 );
@@ -80,54 +72,57 @@ Eigen::Matrix3d generalRotation(std::vector<double> normal, std::string axis)
     
     x_child = n;
 
-    // OLD METHOD
-//     value = x_child ( 0 ) * x_child ( 0 ) + x_child ( 1 ) * x_child ( 1 );
-//     z_child ( 2 ) = std::sqrt ( value );
-// 
-//     value = ( x_child ( 2 ) * x_child ( 2 ) ) / ( 1 + ( x_child ( 1 ) * x_child ( 1 ) ) / ( x_child ( 0 ) * x_child ( 0 ) ));
-//     if ( value < 0 ) {
-//     value = 0;
-//     }
-//     z_child ( 0 ) = std::sqrt ( value );
-//     if ( x_child ( 2 ) > 0 ) {
-//     z_child ( 0 ) = -1 * z_child ( 0 );
-//     }
-// 
-//     value = 1 - z_child ( 2 ) * z_child ( 2 ) - z_child ( 0 ) * z_child ( 0 );
-//     if ( value < 0 ) {
-//     value = 0;
-//     }
-//     z_child ( 1 ) = std::sqrt ( value );
-//     if ( x_child ( 1 ) > 0 ) {
-//     z_child ( 1 ) = -1 * z_child ( 1 );
-//     }
-//     z_child.normalize();
-// 
-//     // Create the y_child versor using the cross product between z_child and x_child
-//     y_child = z_child.cross ( x_child );
+    std::cout << "x_child norm: " << x_child.norm() << std::endl;
     
     // NEW METHOD
     value = x_child(0) * x_child(0) + x_child(1) * x_child(1);
-    z_child(2) = std::sqrt(value);
+    if (x_child(1) > 0 && x_child(2) > 0)
+        z_child(2) = -std::sqrt(value);
+    else
+        z_child(2) = std::sqrt(value);
     std::cout << "z_child(2): " << z_child(2) << std::endl;
     
     double b = x_child(1) * x_child(2) * z_child(2);
     std::cout << "b: " << b << std::endl;
     double delta = pow(b,2) - pow(z_child(2),2)*(pow(x_child(2),2)*pow(z_child(2),2) + pow(x_child(0),2)*pow(z_child(2),2) - pow(x_child(0),2));
+    std::cout << "delta before: " << delta << std::endl;
     if (delta < 0)
         delta = 0;
     std::cout << "delta: " << delta << std::endl;
     value = (b + sqrt(delta)) / pow(z_child(2),2);
-    z_child(1) = value;
+    if ((x_child(1) < 0 && x_child(2) > 0) || (x_child(1) > 0 && x_child(2) > 0))
+        z_child(1) = -value;
+    else
+        z_child(1) = value;
     
-    z_child(0) = (-x_child(2)*z_child(2) - x_child(1)*z_child(1)) / x_child(0);
-    
+    if (x_child(0) == 0)
+        z_child(0) = 0;
+    else
+        z_child(0) = (-x_child(2)*z_child(2) - x_child(1)*z_child(1)) / x_child(0);
+
+    std::cout << "x_child: " << x_child.transpose() << std::endl;
+    std::cout << "z_child: " << z_child.transpose() << std::endl;
+    std::cout << "z_child norm: " << z_child.norm() << std::endl;
+    z_child.normalize();
+    std::cout << "z_child after: " << z_child.transpose() << std::endl;
+    std::cout << "z_child norm after:  " << z_child.norm() << std::endl;
+
+    std::cout << "y_child: " << y_child.transpose() << std::endl;
+    std::cout << "y_child norm: " << y_child.norm() << std::endl;
     y_child = z_child.cross(x_child);
+    y_child.normalize();
+    std::cout << "y_child after: " << y_child.transpose() << std::endl;
+    std::cout << "y_child norm after: " << y_child.norm() << std::endl;
+
 
     // Create the rotation matrix between parent and child frames
     R << x_child.transpose() * x_parent, y_child.transpose() * x_parent, z_child.transpose() * x_parent,
          x_child.transpose() * y_parent, y_child.transpose() * y_parent, z_child.transpose() * y_parent,
          x_child.transpose() * z_parent, y_child.transpose() * z_parent, z_child.transpose() * z_parent;
+
+
+    std::cout << "det(R): " << R.determinant() << std::endl;
+    std::cout << "R'*R: " << R.transpose()*R << std::endl;
     
     if (axis == "z")
     {
@@ -147,7 +142,6 @@ Eigen::Matrix3d generalRotation(std::vector<double> normal, std::string axis)
         Ry << cos(-M_PI/2), 0.0, sin(-M_PI/2), 0.0, 1.0, 0.0, -sin(-M_PI/2), 0.0, cos(-M_PI/2);
         return R*Ry;
     }
-    
     return R;
 }
 
@@ -163,6 +157,8 @@ void generateStances()
 //     std::vector<double> n_L_h = {0.0, -1.0, 0.0};
     std::vector<double> n_R_h = {-1/sqrt(2), 0.0, 1/sqrt(2)};
     std::vector<double> n_L_h = {-1/sqrt(2), 0.0, 1/sqrt(2)};
+    std::vector<double> n_R_f = {0.0, 0.0995, 0.9950};
+    std::vector<double> n_L_f = {0.0, -0.0995, 0.9950};
     
     // stance 0
     TLFoot.translation() << 0.0, 0.1, 0.0;
@@ -225,6 +221,36 @@ void generateStances()
     stances.push_back({TLFoot, TRFoot, TLHand});
     
     // stance 12
+    active_links.push_back({"l_sole", "r_sole"});
+    stances.push_back({TLFoot, TRFoot});
+
+    // stance 13
+    active_links.push_back({"l_sole"});
+    stances.push_back({TLFoot});
+
+    // stance 14
+    TRFoot.translation() << 0.8, -0.1, 0.4;
+    TRFoot.linear() = generalRotation(n_R_f, "z");
+    active_links.push_back({"l_sole", "r_sole"});
+    stances.push_back({TLFoot, TRFoot});
+
+    // stance 15
+    TLHand.translation() << 0.8, 0.3, 1.6;
+    TLHand.linear() = generalRotation({0.0, -1/sqrt(2), 1/sqrt(2)}, "-z");
+    active_links.push_back({"l_sole", "r_sole", "TCP_L"});
+    stances.push_back({TLFoot, TRFoot, TLHand});
+
+    // stance 16
+    active_links.push_back({"r_sole", "TCP_L"});
+    stances.push_back({TRFoot, TLHand});
+
+    // stance 17
+    TLFoot.translation() << 0.8, 0.1, 0.4;
+    TLFoot.linear() = generalRotation(n_L_f, "z");
+    active_links.push_back({"l_sole", "r_sole", "TCP_L"});
+    stances.push_back({TLFoot, TRFoot, TLHand});
+
+    // stance 18
     active_links.push_back({"l_sole", "r_sole"});
     stances.push_back({TLFoot, TRFoot});
 }
@@ -313,7 +339,7 @@ void generateConfigurations(std::vector<std::vector<Eigen::Affine3d>> stances,
         }
         contacts.rotations = rot;
         
-        if (active_links[i].size() == 2)
+        if (active_links[i].size() <= 2)
             contacts.optimize_torque = true;
         else
             contacts.optimize_torque = false;
@@ -329,12 +355,16 @@ void generateConfigurations(std::vector<std::vector<Eigen::Affine3d>> stances,
             model->update();
         }
         
+        Eigen::VectorXd qhome;
+        NSPG->getIKSolver()->getModel()->getRobotState("home", qhome);
+        NSPG->getIKSolver()->getModel()->setJointPosition(qhome);
+        NSPG->getIKSolver()->getModel()->update();
         auto tic = std::chrono::high_resolution_clock::now();
-        if (qList.size() > 0)
-        {
-            NSPG->getIKSolver()->getModel()->setJointPosition(qList[qList.size()-1]);
-            NSPG->getIKSolver()->getModel()->update();
-        }
+//        if (qList.size() > 0)
+//        {
+//            NSPG->getIKSolver()->getModel()->setJointPosition(qList[qList.size()-1]);
+//            NSPG->getIKSolver()->getModel()->update();
+//        }
         
         if (!NSPG->sample(3.0))
         {
@@ -378,11 +408,12 @@ bool normal_test_service(std_srvs::Empty::Request& req, std_srvs::Empty::Respons
     model->getPose("TCP_R", T);
     
     Tdes = T;
-    Tdes.translation().z() += 0.5;
+//    Tdes.translation().z() += 0.5;
 //     Tdes.linear() = generalRotation({T.linear()(0,2), T.linear()(1,2), T.linear()(2,2)}, "-z");
     
-    std::vector<double> n = {-1/sqrt(3), 1/sqrt(3) , 1/sqrt(3)};   
-    Tdes.linear() = generalRotation(n, "-z");
+    Tdes.translation() << 0.0, 0.0, 0.0;
+    std::vector<double> n = {0.0, 0.0995, 0.9950};
+    Tdes.linear() = generalRotation(n, "x");
     
     tf::Transform transform;
 
@@ -411,7 +442,7 @@ void setTiles()
         {
             shape_msgs::SolidPrimitive primitive;
             primitive.type = shape_msgs::SolidPrimitive::BOX;
-            primitive.dimensions = {0.2, 0.1, 0.01};            
+            primitive.dimensions = {0.2, 0.2, 0.01};
             obj.primitives.push_back(primitive);
             
             geometry_msgs::Pose pose;
