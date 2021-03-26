@@ -35,30 +35,6 @@ std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> rspub;
 ros::ServiceServer apply_planning_scene_srv, get_planning_scene_srv, start_srv;
 ros::Publisher contact_pub, mesh_viz_pub;
 
-Eigen::Matrix3d rotation(std::vector<double> normal)
-{
-    Eigen::Matrix3d Rx, Ry, Rz;
-    std::vector<double> theta;
-    
-    if (normal[1] == -1.0)
-    {
-//         theta = {3.1415/2, 0.0, 0.0};
-        theta = {0.0, 3*M_PI/4, 0.0};
-    }
-    
-    if (normal[1] == 1.0)
-    {       
-//         theta = {-3.1415/2, 0.0, 0.0};
-        theta = {0.0, 3*M_PI/4, 0.0};
-    }
-    
-    Rx << 1.0, 0.0, 0.0, 0.0, cos(theta[0]) -sin(theta[0]), 0.0, sin(theta[0]), cos(theta[0]);
-    Ry << cos(theta[1]), 0.0, sin(theta[1]), 0.0, 1.0, 0.0, -sin(theta[1]), 0.0, cos(theta[1]);
-    Rz << cos(theta[2]), -sin(theta[2]), 0.0, sin(theta[2]), cos(theta[2]), 0.0, 0.0, 0.0, 1.0; 
-    
-    return Rx*Ry*Rz;
-}
-
 Eigen::Matrix3d generalRotation(std::vector<double> normal, std::string axis)
 {
     Eigen::Vector3d n;
@@ -130,6 +106,13 @@ Eigen::Matrix3d generalRotation(std::vector<double> normal, std::string axis)
         Ry << cos(M_PI/2), 0.0, sin(M_PI/2), 0.0, 1.0, 0.0, -sin(M_PI/2), 0.0, cos(M_PI/2);
         return R*Ry;
     }
+    if (axis == "z_foot")
+    {
+        Eigen::Matrix3d Ry, Rz;
+        Ry << cos(M_PI/2), 0.0, sin(M_PI/2), 0.0, 1.0, 0.0, -sin(M_PI/2), 0.0, cos(M_PI/2);
+        Rz << cos(M_PI/2), -sin(M_PI/2), 0.0, sin(M_PI/2), cos(M_PI/2), 0.0, 0.0, 0.0, 1.0;
+        return R*Ry*Rz;
+    }
     else if (axis == "y")
     {
         Eigen::Matrix3d Rz;
@@ -157,8 +140,8 @@ void generateStances()
 //     std::vector<double> n_L_h = {0.0, -1.0, 0.0};
     std::vector<double> n_R_h = {-1/sqrt(2), 0.0, 1/sqrt(2)};
     std::vector<double> n_L_h = {-1/sqrt(2), 0.0, 1/sqrt(2)};
-    std::vector<double> n_R_f = {0.0, 0.0995, 0.9950};
-    std::vector<double> n_L_f = {0.0, -0.0995, 0.9950};
+    std::vector<double> n_R_f = {0.0, 0.2425, 0.9701};
+    std::vector<double> n_L_f = {0.0, -0.2425, 0.9701};
     
     // stance 0
     TLFoot.translation() << 0.0, 0.1, 0.0;
@@ -169,7 +152,7 @@ void generateStances()
     stances.push_back({TLFoot, TRFoot});
     
     // stance 1
-    TRHand.translation() << 0.5, -0.3, 1.0;
+    TRHand.translation() << 0.5, -0.4, 1.0;
     TRHand.linear() = generalRotation(n_R_h, "-z");   
     active_links.push_back({"l_sole", "r_sole", "TCP_R"});
     stances.push_back({TLFoot, TRFoot, TRHand});
@@ -179,7 +162,7 @@ void generateStances()
     stances.push_back({TLFoot, TRHand});
     
     // stance 3
-    TRFoot.translation() << 0.25, -0.1, 0.2;
+    TRFoot.translation() << 0.25, -0.1, 0.15;
     active_links.push_back({"l_sole", "r_sole", "TCP_R"});
     stances.push_back({TLFoot, TRFoot, TRHand});
     
@@ -188,7 +171,7 @@ void generateStances()
     stances.push_back({TRFoot, TRHand});
     
     // stance 5
-    TLFoot.translation() << 0.25, 0.1, 0.2;
+    TLFoot.translation() << 0.25, 0.1, 0.15;
     active_links.push_back({"l_sole", "r_sole", "TCP_R"});
     stances.push_back({TLFoot, TRFoot, TRHand});
     
@@ -197,7 +180,7 @@ void generateStances()
     stances.push_back({TLFoot, TRFoot});
     
     // stance 7
-    TLHand.translation() << 0.7, 0.3, 1.2;
+    TLHand.translation() << 0.75, 0.4, 1.1;
     TLHand.linear() = generalRotation(n_L_h, "-z");
     active_links.push_back({"l_sole", "r_sole", "TCP_L"});
     stances.push_back({TLFoot, TRFoot, TLHand});
@@ -207,7 +190,7 @@ void generateStances()
     stances.push_back({TRFoot, TLHand});
     
     // stance 9
-    TLFoot.translation() << 0.5, 0.1, 0.4;
+    TLFoot.translation() << 0.5, 0.1, 0.3;
     active_links.push_back({"l_sole", "r_sole", "TCP_L"});
     stances.push_back({TLFoot, TRFoot, TLHand});
     
@@ -216,7 +199,7 @@ void generateStances()
     stances.push_back({TLFoot, TLHand});
     
     // stance 11
-    TRFoot.translation() << 0.5, -0.1, 0.4;
+    TRFoot.translation() << 0.5, -0.1, 0.3;
     active_links.push_back({"l_sole", "r_sole", "TCP_L"});
     stances.push_back({TLFoot, TRFoot, TLHand});
     
@@ -229,14 +212,14 @@ void generateStances()
     stances.push_back({TLFoot});
 
     // stance 14
-    TRFoot.translation() << 0.8, -0.1, 0.4;
-    TRFoot.linear() = generalRotation(n_R_f, "z");
+    TRFoot.translation() << 0.8, -0.15, 0.3;
+    TRFoot.linear() = generalRotation(n_R_f, "z_foot");
     active_links.push_back({"l_sole", "r_sole"});
     stances.push_back({TLFoot, TRFoot});
 
     // stance 15
-    TLHand.translation() << 0.8, 0.3, 1.6;
-    TLHand.linear() = generalRotation({0.0, -1/sqrt(2), 1/sqrt(2)}, "-z");
+    TLHand.translation() << 1.0, 0.4, 1.6;
+    TLHand.linear() = generalRotation({-1.0, 0.0, 0.0}, "-z");
     active_links.push_back({"l_sole", "r_sole", "TCP_L"});
     stances.push_back({TLFoot, TRFoot, TLHand});
 
@@ -245,12 +228,17 @@ void generateStances()
     stances.push_back({TRFoot, TLHand});
 
     // stance 17
-    TLFoot.translation() << 0.8, 0.1, 0.4;
-    TLFoot.linear() = generalRotation(n_L_f, "z");
+    TLFoot.translation() << 0.8, 0.15, 0.4;
+    TLFoot.linear() = generalRotation(n_L_f, "z_foot");
     active_links.push_back({"l_sole", "r_sole", "TCP_L"});
     stances.push_back({TLFoot, TRFoot, TLHand});
 
+//    active_links.push_back({"r_sole"});
+//    stances.push_back({TRFoot});
+
     // stance 18
+//    TLFoot.translation() << 0.8, 0.1, 0.3;
+//    TLFoot.linear() = generalRotation(n_L_f, "z_foot");
     active_links.push_back({"l_sole", "r_sole"});
     stances.push_back({TLFoot, TRFoot});
 }
@@ -286,8 +274,7 @@ void loadValidityChecker(ros::NodeHandle nh, YAML::Node planner_config)
 
 void generateConfigurations(std::vector<std::vector<Eigen::Affine3d>> stances, 
                                                     std::vector<std::vector<std::string>> active_links,
-                                                    std::vector<Eigen::VectorXd>& qList
-                                                   )
+                                                    std::vector<Eigen::VectorXd>& qList)
 {
     if (stances.size() != active_links.size())
     {
@@ -347,7 +334,11 @@ void generateConfigurations(std::vector<std::vector<Eigen::Affine3d>> stances,
         contacts.friction_coefficient = 0.72;
         
         contact_pub.publish(contacts);
-        ros::spinOnce();       
+        for (int counter = 0; counter < 100; counter++)
+        {
+            ros::spinOnce();
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
         
         if (!qList.empty())
         {
@@ -355,18 +346,18 @@ void generateConfigurations(std::vector<std::vector<Eigen::Affine3d>> stances,
             model->update();
         }
         
-        Eigen::VectorXd qhome;
-        NSPG->getIKSolver()->getModel()->getRobotState("home", qhome);
-        NSPG->getIKSolver()->getModel()->setJointPosition(qhome);
-        NSPG->getIKSolver()->getModel()->update();
+//        Eigen::VectorXd qhome;
+//        NSPG->getIKSolver()->getModel()->getRobotState("home", qhome);
+//        NSPG->getIKSolver()->getModel()->setJointPosition(qhome);
+//        NSPG->getIKSolver()->getModel()->update();
         auto tic = std::chrono::high_resolution_clock::now();
-//        if (qList.size() > 0)
-//        {
-//            NSPG->getIKSolver()->getModel()->setJointPosition(qList[qList.size()-1]);
-//            NSPG->getIKSolver()->getModel()->update();
-//        }
+        if (qList.size() > 0)
+        {
+            NSPG->getIKSolver()->getModel()->setJointPosition(qList[qList.size()-1]);
+            NSPG->getIKSolver()->getModel()->update();
+        }
         
-        if (!NSPG->sample(3.0))
+        if (!NSPG->sample(10.0))
         {
             auto toc = std::chrono::high_resolution_clock::now();
             rspub->publishTransforms(ros::Time::now(), "");
@@ -442,7 +433,7 @@ void setTiles()
         {
             shape_msgs::SolidPrimitive primitive;
             primitive.type = shape_msgs::SolidPrimitive::BOX;
-            primitive.dimensions = {0.2, 0.2, 0.01};
+            primitive.dimensions = {0.2, 0.1, 0.01};
             obj.primitives.push_back(primitive);
             
             geometry_msgs::Pose pose;
@@ -540,6 +531,7 @@ int main(int argc, char** argv)
                 model->update();
                 rspub->publishTransforms(ros::Time::now(), "");
                 std::this_thread::sleep_for(std::chrono::seconds(1));
+                ros::spinOnce();
             }
         }
         else
