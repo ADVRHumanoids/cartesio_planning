@@ -67,7 +67,7 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
     YAML_PARSE_OPTION(vc_node, eps, double, 1e-3);
     YAML_PARSE_OPTION(vc_node, links, std::vector<std::string>, {});
     YAML_PARSE_OPTION(vc_node, friction_coefficient, double, 0.5);
-    YAML_PARSE_OPTION(vc_node, optimize_torque, bool, false);
+    YAML_PARSE_OPTION(vc_node, optimize_torque, bool, true);
     YAML_PARSE_OPTION(vc_node, rotations, std::vector<std::vector<double>>, {});
     YAML_PARSE_OPTION(vc_node, x_lim_cop, std::vector<double>, {});
     YAML_PARSE_OPTION(vc_node, y_lim_cop, std::vector<double>, {});
@@ -310,7 +310,6 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
 
         if (x_diff > max_x_distance || y_diff > max_y_distance)
         {
-            std::cout << "x_diff = " << x_diff << "    y_diff = " << y_diff << std::endl;
             return false;
         }           
             
@@ -320,8 +319,6 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
         
         if (std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) > boost::math::constants::pi<double>()/6)
         {
-            std::cout << "orientation foot 1: " << ee[0](2) << "    orientation foot 2:" << ee[1](2) << std::endl;
-            std::cout << "res = " << std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) << std::endl;
             return false;
         }           
              
@@ -329,9 +326,8 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
         double xRel_w = ee[0](0) - ee[1](0);
         double yRel_w = ee[0](1) - ee[1](1);
     
-        if (-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > 0.20)                
+        if (-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > 0.25)
         {
-            std::cout << "relative orientation = " << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
             return false;        
         }           
         
