@@ -82,7 +82,11 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
     if(_optimize_torque)
     {
         for(auto link : contact_links)
+        {
+            if (link == "TCP_R" || link == "TCP_L")
+                continue;
             yaml << link + "_cop";
+        }
     }
     yaml << YAML::EndSeq;
 
@@ -111,6 +115,8 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
 
     std::vector<double> f_max(6,1000.);
     std::vector<double> f_min(6,-1000.);
+    std::vector<double> f_max_hands = {1000., 1000., 1000., 0., 0., 0.};
+    std::vector<double> f_min_hands = {-1000., -1000., -1000., 0., 0., 0.};
     if(!optimize_torque)
         f_max[3] = f_max[4] = f_max[5] = f_min[3] = f_min[4] = f_min[5] = 0.;
 
@@ -122,8 +128,16 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
         yaml << YAML::Key << "lib_name" << YAML::Value << libname;
         yaml << YAML::Key << "type" << YAML::Value << "ForceLimits";
         yaml << YAML::Key << "link" << YAML::Value << link;
-        yaml << YAML::Key << "min" << YAML::Value << f_min;
-        yaml << YAML::Key << "max" << YAML::Value << f_max;
+        if (link == "TCP_R" || link == "TCP_L")
+        {
+            yaml << YAML::Key << "min" << YAML::Value << f_min_hands;
+            yaml << YAML::Key << "max" << YAML::Value << f_max_hands;
+        }
+        else
+        {
+            yaml << YAML::Key << "min" << YAML::Value << f_min;
+            yaml << YAML::Key << "max" << YAML::Value << f_max;
+        }
         yaml << YAML::EndMap;
     }
 
@@ -140,17 +154,19 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
 
     if(_optimize_torque)
     {
-        std::vector<double> x,y;
+        std::vector<double> x,y,x_hand,y_hand;
         x.push_back(_x_lims_cop[0]); x.push_back(_x_lims_cop[1]);
         y.push_back(_y_lims_cop[0]); y.push_back(_y_lims_cop[1]);
         for(auto link : contact_links)
         {
+            if (link == "TCP_R" || link == "TCP_L")
+                continue;
             yaml << YAML::Key << link + "_cop";
             yaml << YAML::BeginMap;
             yaml << YAML::Key << "name" << YAML::Value << link + "_cop";
             yaml << YAML::Key << "lib_name" << YAML::Value << libname;
             yaml << YAML::Key << "type" << YAML::Value << "CoP";
-            yaml << YAML::Key << "link" << YAML::Value << link;
+            yaml << YAML::Key << "link" << YAML::Value << link;          
             yaml << YAML::Key << "x_limits" << x;
             yaml << YAML::Key << "y_limits" << y;
             yaml << YAML::EndMap;
