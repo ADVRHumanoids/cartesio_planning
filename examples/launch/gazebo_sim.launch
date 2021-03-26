@@ -14,13 +14,14 @@
   <arg name="world_name" default="$(find centauro_gazebo)/worlds/centauro.world"/>
   <arg name="gui" default="true"/>
   <arg name="script_type" value="gzserver"/>
+  <arg name="paused" value="false"/>
   
   
   <!-- run gazebo -->
   <group if="$(arg gazebo)">
   <!-- start gazebo server-->
         <node name="gazebo" pkg="gazebo_ros" type="$(arg script_type)" respawn="false" output="screen"
-                args="$(arg command_arg1) $(arg command_arg2) $(arg command_arg3) -e $(arg physics) $(arg extra_gazebo_args) $(arg world_name) -namespace centauro" />
+                args="$(arg command_arg1) $(arg command_arg2) $(arg command_arg3) -e $(arg physics) $(arg extra_gazebo_args) $(arg world_name) $(arg paused) -namespace centauro" />
 
         <!-- start gazebo client -->
         <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen" if="$(arg gui)"/>
@@ -30,7 +31,7 @@
         <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
        args="-urdf -model centauro -param robot_description"/>
 
-        <rosparam file="$(find centauro_gazebo)/config/centauro_control_joint_state_publisher.yaml" command="load"/>
+<!--        <rosparam file="$(find centauro_gazebo)/config/centauro_control_joint_state_publisher.yaml" command="load"/>-->
 
         <node name="joint_state_spawner" pkg="controller_manager" type="spawner"
            respawn="false" output="screen" ns="/centauro"
@@ -43,6 +44,20 @@
         </node>
 
   </group>
+
+  <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
+        <param name="resolution" value="0.05" />
+
+        <!-- fixed map frame (set to 'map' if SLAM or localization running!) -->
+        <param name="frame_id" type="string" value="world" />
+        <param name="base_frame_id" type="string" value="world"/>
+
+        <!-- maximum range to integrate (speedup!) -->
+        <param name="sensor_model/max_range" value="5.0" />
+
+        <!-- data source to integrate (PointCloud2) -->
+        <remap from="cloud_in" to="/velodyne_points" />
+  </node>
 
 </launch>
 

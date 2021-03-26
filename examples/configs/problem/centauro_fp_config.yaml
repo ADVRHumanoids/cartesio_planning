@@ -1,7 +1,7 @@
 state_space:
     ee_number: 4
     bounds_x: [-1.0, 6.0]
-    bounds_y: [-1.0, 1.0]
+    bounds_y: [-0.7, 0.7]
     end_effector: ["wheel_1", "wheel_2", "wheel_3", "wheel_4"]
     
 control_space:

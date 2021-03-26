@@ -22,19 +22,35 @@ collisions:
     type: "CollisionCheck"
     include_environment: true
     
-stability:
-    type: "ConvexHull"
-    links:
-      - "l_foot_lower_left_link"
-      - "l_foot_lower_right_link"
-      - "l_foot_upper_left_link"
-      - "l_foot_upper_right_link"
-      - "r_foot_lower_left_link"
-      - "r_foot_lower_right_link"
-      - "r_foot_upper_left_link"
-      - "r_foot_upper_right_link"
+#stability:
+#    type: "ConvexHull"
+#    links:
+#      - "l_foot_lower_left_link"
+#      - "l_foot_lower_right_link"
+#      - "l_foot_upper_left_link"
+#      - "l_foot_upper_right_link"
+#      - "r_foot_lower_left_link"
+#      - "r_foot_lower_right_link"
+#      - "r_foot_upper_left_link"
+#      - "r_foot_upper_right_link"
+#
+#    stability_margin: 0.03
 
-    stability_margin: 0.03
+stability:
+    type: "CentroidalStatics"
+    links:
+        - "l_sole"
+        - "r_sole"
+    friction_coefficient: 0.71
+    optimize_torque: "true"
+    x_lim_cop:
+      - -0.1
+      - 0.1
+    y_lim_cop:
+      - -0.05
+      - 0.05
+    eps: 5e-2
+
     
 distance:
     type: "DistanceCheck_comanplus"
