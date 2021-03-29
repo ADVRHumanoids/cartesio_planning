@@ -4,7 +4,7 @@
     
     <!-- Types of contact: point, surface -->
     <param name="contact_type" type="str" value="surface"/>    
-    <param name="goalSamplerType" type="str" value="goalSampler2"/>
+    <param name="goalSamplerType" type="str" value="NSPG"/>
         
     <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/cogimon.urdf"/>
     <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/cogimon.srdf"/> 
