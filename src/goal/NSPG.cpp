@@ -16,7 +16,8 @@ NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_con
         _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_ik_solver->getModel());
         XBot::MatLogger2::Options opt;
         opt.default_buffer_size = 1e6;
-        _logger = XBot::MatLogger2::MakeLogger("/home/luca/MultiDoF-superbuild/external/cartesio_planning/log/checks_log", opt);
+        std::string environment = getenv("ROBOTOLOGY_ROOT");
+        _logger = XBot::MatLogger2::MakeLogger(environment + "/external/cartesio_planning/log/checks_log", opt);
         _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
     }
     
