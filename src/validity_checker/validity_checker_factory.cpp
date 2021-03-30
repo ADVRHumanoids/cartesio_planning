@@ -289,6 +289,8 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
     
     YAML_PARSE_OPTION(vc_node, max_x_distance, double, 0.0);
     YAML_PARSE_OPTION(vc_node, max_y_distance, double, 0.0);
+    YAML_PARSE_OPTION(vc_node, min_x_distance, double, 0.0);
+    YAML_PARSE_OPTION(vc_node, min_y_distance, double, 0.0);
     YAML_PARSE_OPTION(planner_config["state_space"], ee_number, int, 2);
     YAML_PARSE_OPTION(planner_config["state_space"], end_effector, std::vector<std::string>, {});
        
@@ -310,6 +312,7 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
 
         if (x_diff > max_x_distance || y_diff > max_y_distance)
         {
+            std::cout << "relative distance" << std::endl;
             return false;
         }           
             
@@ -319,15 +322,19 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
         
         if (std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) > boost::math::constants::pi<double>()/6)
         {
+            std::cout << "relative orientation" << std::endl;
             return false;
         }           
              
         // Check for feet crossing
         double xRel_w = ee[0](0) - ee[1](0);
         double yRel_w = ee[0](1) - ee[1](1);
+        std::cout << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
     
-        if (-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > 0.25)
+        if (abs(-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2))) < 0.2)
         {
+            std::cout << "feet crossing" << std::endl;
+            std::cout << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
             return false;        
         }           
         

@@ -62,7 +62,7 @@ std::function<bool ()> ValidityCheckContext::make_collision_checker(YAML::Node v
     auto validity_checker = [include_environment,
             planning_scene_capture]()
     {
-        planning_scene_capture->update();        
+        planning_scene_capture->update(); 
 
         if(include_environment)
         {
