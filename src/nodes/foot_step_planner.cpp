@@ -150,7 +150,7 @@ void FootStepPlanner::init_load_position_cartesian_solver()
     
     Eigen::VectorXd qG;
     _start_model->getJointPosition(qG);
-    qG(0) += 2.0;
+    qG(0) += 3.0;
     _goal_model->setJointPosition(qG);
     _goal_model->update();
         
@@ -777,20 +777,20 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         std::cout << "_q_vect failed size: " << q_fail.size() << std::endl;
 //         interpolate();
         
-        for (int i = 0; i < data.numVertices(); i++)
-        {
-            Eigen::VectorXd foot;
-            Eigen::VectorXd state(8);
-            for (int j = 0; j < _ee_number; j++)
-            {
-                if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
-                {
-                    _sw->getState(data.getVertex(i).getState()->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(j), foot);
-                    state(2*j) = foot(0);
-                    state(2*j + 1) = foot(1);
-                }
-            }
-        }
+//         for (int i = 0; i < data.numVertices(); i++)
+//         {
+//             Eigen::VectorXd foot;
+//             Eigen::VectorXd state(8);
+//             for (int j = 0; j < _ee_number; j++)
+//             {
+//                 if (_sw->getStateSpaceType() == Planning::StateWrapper::StateSpaceType::REALVECTOR)
+//                 {
+//                     _sw->getState(data.getVertex(i).getState()->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::RealVectorStateSpace::StateType>(j), foot);
+//                     state(2*j) = foot(0);
+//                     state(2*j + 1) = foot(1);
+//                 }
+//             }
+//         }
         
         auto t = ros::Duration(0.);
         

@@ -3,6 +3,8 @@
 #include <ompl/control/spaces/RealVectorControlSpace.h>
 #include <ompl/control/ControlSpace.h>
 #include <ompl/control/SpaceInformation.h>
+#include <ros/ros.h>
+#include <cartesio_planning/SetContactFrames.h>
 
 #include <thread>
 #include <chrono>
@@ -21,7 +23,9 @@ public:
                     std::shared_ptr<StateWrapper> sw,
                     const ompl::base::ConstraintPtr manifold = NULL):
     ompl::control::StatePropagator(si)
-    {}
+    {
+        
+    }
         
     virtual const ompl::base::State* getStartState() = 0;
        
@@ -198,9 +202,13 @@ public:
     stepPropagator(si, sw, manifold),
     _si(si),
     _sw(sw),
-    _manifold(manifold)
+    _manifold(manifold),
+    _nh(), 
+    init(true),
+    old_ctrl(0)
     {
         _start_state = _si->allocState();
+        _pub = _nh.advertise<cartesio_planning::SetContactFrames>("/planner/contacts", 10, true);
     }
     
     
@@ -213,7 +221,43 @@ public:
         _si->getStateSpace()->copyState(_start_state, start); 
         
         int foot_sel = control->as<ompl::control::CompoundControlSpace::ControlType>()->as<ompl::control::DiscreteControlSpace::ControlType>(0)->value;
+        if (old_ctrl == foot_sel)
+            init = false;
+        else
+            init = true;
+        old_ctrl = foot_sel;
         auto step_size = control->as<ompl::control::CompoundControlSpace::ControlType>()->as<ompl::control::RealVectorControlSpace::ControlType>(1)->values;
+        
+        if (foot_sel == 2 && init)
+        {
+            cartesio_planning::SetContactFrames contacts;
+            contacts.action = cartesio_planning::SetContactFrames::SET;
+            contacts.frames_in_contact = {"r_sole"};
+            contacts.optimize_torque = true;
+            
+            _pub.publish(contacts);
+            for (int i = 0; i < 10; i++)
+            {
+                ros::spinOnce();
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+            std::cout << "spin done!" << std::endl;
+        }
+        else if (foot_sel == 1 && init)
+        {
+            cartesio_planning::SetContactFrames contacts;
+            contacts.action = cartesio_planning::SetContactFrames::SET;
+            contacts.frames_in_contact = {"l_sole"};
+            contacts.optimize_torque = true;
+            
+            _pub.publish(contacts);
+            for (int i = 0; i < 10; i++)
+            {
+                ros::spinOnce();
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+            std::cout << "spin done!" << std::endl;
+        }
         
         _si->getStateSpace()->copyState(result, start);
         
@@ -247,6 +291,10 @@ private:
     ompl::base::ConstraintPtr _manifold;
     ompl::control::SpaceInformationPtr _si;
     ompl::base::State* _start_state;
+    ros::NodeHandle _nh;
+    ros::Publisher _pub;
+    mutable bool init;
+    mutable int old_ctrl;
 };
 
 class stepPropagator_tripod : public stepPropagator {
