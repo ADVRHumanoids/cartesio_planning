@@ -45,6 +45,7 @@ namespace XBot { namespace Cartesian { namespace Planning {
         
     private:        
         XBot::JointNameMap generateRandomVelocities(std::vector<XBot::ModelChain> colliding_chains);
+        void generateVelocityCollisions(std::vector<XBot::ModelChain>, XBot::JointNameMap& random_map);
         
         PositionCartesianSolver::Ptr _ik_solver;
         
@@ -53,6 +54,8 @@ namespace XBot { namespace Cartesian { namespace Planning {
         std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;  
         
         bool check1, check2;
+
+        bool _vel_check;
         
     };
 }}}
