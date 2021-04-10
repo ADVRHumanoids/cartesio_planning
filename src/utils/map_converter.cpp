@@ -34,7 +34,7 @@ void MapConverter::convert ()
     {
         for (int height = 0; height < _map.info.height; height++)
         {
-            if (_map.data[height*_map.info.width + width] > 0 || _map.data[height*_map.info.width + width] == -1)
+            if (_map.data[height*_map.info.width + width] > 0)// || _map.data[height*_map.info.width + width] == -1)
             {
                 _pos_occ.push_back({width * _map.info.resolution + _map.info.resolution/2 + _map.info.origin.position.x,
                                     height * _map.info.resolution + _map.info.resolution/2 + _map.info.origin.position.y});
