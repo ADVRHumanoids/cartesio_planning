@@ -11,6 +11,7 @@
 #include <cartesio_acceleration_support/DynamicFeasibility.h>
 #include <cartesio_acceleration_support/FrictionCone.h>
 #include <cartesio_acceleration_support/Force.h>
+#include <cartesio_acceleration_support/NormalTorque.h>
 
 
 
@@ -158,6 +159,7 @@ private:
     XBot::ModelInterface::Ptr _model_internal;
 
     std::map<std::string, XBot::Cartesian::acceleration::FrictionCone::Ptr> _fcs;
+    std::map<std::string, XBot::Cartesian::acceleration::NormalTorque::Ptr> _nts;
     std::map<std::string, XBot::Cartesian::acceleration::ForceTask::Ptr> _fs;
     bool _optimize_torque;
     double _friction_coeff;

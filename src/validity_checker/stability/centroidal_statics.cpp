@@ -86,6 +86,7 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
             if (link == "TCP_R" || link == "TCP_L")
                 continue;
             yaml << link + "_cop";
+            yaml << link + "_nt";
         }
     }
     yaml << YAML::EndSeq;
@@ -169,6 +170,17 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
             yaml << YAML::Key << "link" << YAML::Value << link;          
             yaml << YAML::Key << "x_limits" << x;
             yaml << YAML::Key << "y_limits" << y;
+            yaml << YAML::EndMap;
+
+            yaml << YAML::Key << link + "_nt";
+            yaml << YAML::BeginMap;
+            yaml << YAML::Key << "name" << YAML::Value << link + "_nt";
+            yaml << YAML::Key << "lib_name" << YAML::Value << libname;
+            yaml << YAML::Key << "type" << YAML::Value << "NormalTorque";
+            yaml << YAML::Key << "link" << YAML::Value << link;
+            yaml << YAML::Key << "x_limits" << x[1];
+            yaml << YAML::Key << "y_limits" << y[1];
+            yaml << YAML::Key << "friction_coeff" << YAML::Value << friction_coeff;
             yaml << YAML::EndMap;
         }
     }
