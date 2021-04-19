@@ -190,7 +190,7 @@ public:
         _cs(cs),
         _model(*model),
         _nh(nh),
-        _tf_prefix("planner/"),
+        _tf_prefix("ci/"),
         _eps(eps)
     {
         _contact_sub = _nh.subscribe("contacts", 10, &CentroidalStaticsROS::set_contacts, this);

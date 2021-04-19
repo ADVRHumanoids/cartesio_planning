@@ -82,14 +82,17 @@ void FootStepPlanner::init_load_model ()
     
     _model->getRobotState("home", _qhome);
     _model->setJointPosition(_qhome);
+    Eigen::VectorXd qhome(_model->getJointNum());
+    qhome << 0.0538123, -7.25856e-17,    0.0269701,  1.08748e-16, -7.87239e-07,  -1.2962e-17,  -0.00373849,    -0.393397,   4.8984e-07,     0.711108,    -0.317651,   0.00373866,   0.00373849, -0.393397,  -4.8984e-07,     0.711108,    -0.317651,  -0.00373866,            0, 0,     0.959931,     0.007266,            0,     -1.91986,            0,   -0.523599, 0,     0.959931,   -0.007266,            0,     -1.91986,            0,    -0.523599,            0;
+    _model->setJointPosition(qhome);
     _model->update();
     
     // Define start model
-    _start_model->setJointPosition(_qhome);
+    _start_model->setJointPosition(qhome);
     _start_model->update();
     
     // Define goal model
-    _goal_model->setJointPosition(_qhome);
+    _goal_model->setJointPosition(qhome);
     _goal_model->update();
     
     // Mesh_viz
@@ -610,7 +613,8 @@ bool FootStepPlanner::start_goal_service ( cartesio_planning::CartesioGoal::Requ
                 start[3*i] = T.translation().x();
                 start[3*i + 1] = T.translation().y();
                 rpy = T.linear().eulerAngles(0,1,2);
-                start[3*i + 2] = rpy[2];
+//                 start[3*i + 2] = rpy[2];
+                start[3*i + 2] = 0;
             }
         }
         

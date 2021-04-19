@@ -312,7 +312,7 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
 
         if (x_diff > max_x_distance || y_diff > max_y_distance)
         {
-//             std::cout << "relative distance" << std::endl;
+            std::cout << "relative distance" << std::endl;
             return false;
         }           
             
@@ -320,21 +320,21 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
         double res1 = (ee[0](2) - ee[1](2));
         double res2 = (boost::math::constants::pi<double>()*2 - (ee[0](2) - ee[1](2))); 
         
-        if (std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) > boost::math::constants::pi<double>()/6)
-        {
+//         if (std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) > boost::math::constants::pi<double>()/6)
+//         {
 //             std::cout << "relative orientation" << std::endl;
-            return false;
-        }           
+//             return false;
+//         }           
              
         // Check for feet crossing
         double xRel_w = ee[0](0) - ee[1](0);
         double yRel_w = ee[0](1) - ee[1](1);
 //         std::cout << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
     
-        if (abs(-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2))) < 0.2)
+        if (abs(-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2))) < 0.15)
         {
-//             std::cout << "feet crossing" << std::endl;
-//             std::cout << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
+            std::cout << "feet crossing" << std::endl;
+            std::cout << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
             return false;        
         }           
         

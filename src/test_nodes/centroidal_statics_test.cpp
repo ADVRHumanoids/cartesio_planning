@@ -39,10 +39,10 @@ int main(int argc, char ** argv)
         model->setJointPosition(q);
         model->update();
 
-//        if(cs.checkStability(1e-3))
-//            ROS_INFO("STABLE!");
-//        else
-//            ROS_WARN("NOT STABLE!");
+       if(cs->checkStability(1e-3))
+           ROS_INFO("STABLE!");
+       else
+           ROS_WARN("NOT STABLE!");
 
 
         std::map<std::string, Eigen::Vector6d> links_in_contact = cs->getForces();
