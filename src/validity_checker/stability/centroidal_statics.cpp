@@ -178,8 +178,8 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
             yaml << YAML::Key << "lib_name" << YAML::Value << libname;
             yaml << YAML::Key << "type" << YAML::Value << "NormalTorque";
             yaml << YAML::Key << "link" << YAML::Value << link;
-            yaml << YAML::Key << "x_limits" << x[1];
-            yaml << YAML::Key << "y_limits" << y[1];
+            yaml << YAML::Key << "x_limits" << x;
+            yaml << YAML::Key << "y_limits" << y;
             yaml << YAML::Key << "friction_coeff" << YAML::Value << friction_coeff;
             yaml << YAML::EndMap;
         }
