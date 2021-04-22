@@ -233,6 +233,8 @@ public:
             cartesio_planning::SetContactFrames contacts;
             contacts.action = cartesio_planning::SetContactFrames::SET;
             contacts.frames_in_contact = {"r_sole"};
+            geometry_msgs::Quaternion quat;  quat.x = 0; quat.y = 0; quat.z = 0; quat.w = 1;
+            contacts.rotations.push_back(quat);
             contacts.optimize_torque = true;
             
             _pub.publish(contacts);
@@ -248,6 +250,8 @@ public:
             cartesio_planning::SetContactFrames contacts;
             contacts.action = cartesio_planning::SetContactFrames::SET;
             contacts.frames_in_contact = {"l_sole"};
+            geometry_msgs::Quaternion quat;  quat.x = 0; quat.y = 0; quat.z = 0; quat.w = 1;
+            contacts.rotations.push_back(quat);
             contacts.optimize_torque = true;
             
             _pub.publish(contacts);

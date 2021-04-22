@@ -246,17 +246,17 @@ bool CentroidalStatics::checkStability(const double eps)
         if(!_dyn_feas->getTaskError(error))
             return false;
         res = error.norm();
-        std::cout << "res: " << res << std::endl;
-        auto map = getForces();
-        for (auto i : map)
-            std::cout << i.second << std::endl;
+//         std::cout << "res: " << res << std::endl;
+//         auto map = getForces();
+//         for (auto i : map)
+//             std::cout << i.second << std::endl;
         if(res <= eps)
             return true;
     }
     std::cout << "res: " << res << std::endl;
-    auto map = getForces();
-        for (auto i : map)
-            std::cout << i.second << std::endl;
+//     auto map = getForces();
+//         for (auto i : map)
+//             std::cout << i.second << std::endl;
     return false;
 }
 

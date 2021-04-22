@@ -26,8 +26,8 @@ FootStepPlanner::FootStepPlanner ():
     else if (contact_type == "surface")
         _sw = std::make_shared<Planning::StateWrapper>(Planning::StateWrapper::StateSpaceType::SE2SPACE, 3);
 
-    _logger = XBot::MatLogger2::MakeLogger("/home/luca/src/MultiDoF-superbuild/external/cartesio_planning/log/NSPG_log");
-    _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+//     _logger = XBot::MatLogger2::MakeLogger("/home/luca/src/MultiDoF-superbuild/external/cartesio_planning/log/NSPG_log");
+//     _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
     
     init_load_config();
     init_load_model();
@@ -476,8 +476,8 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                     auto toc = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<float> fsec = toc - tic;
                     std::cout << "solution found in " << fsec.count() << " seconds" << std::endl;
-                    _logger->add("success", 1);
-                    _logger->add("time", fsec.count());
+//                     _logger->add("success", 1);
+//                     _logger->add("time", fsec.count());
                     _solver->getModel()->getJointPosition(x);
                 }
                 else
@@ -485,8 +485,8 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                     auto toc = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<float> fsec = toc - tic;
                     std::cout << "solution not found" << std::endl;
-                    _logger->add("success", 0);
-                    _logger->add("time", fsec.count());
+//                     _logger->add("success", 0);
+//                     _logger->add("time", fsec.count());
                     _counter++;
                     return false;
                 }
@@ -800,8 +800,8 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         
         std::cout << "Final solution has " << _q_vect.size() << " steps!" << std::endl;
 
-        _logger.reset();
-        _NSPG->_logger.reset();
+//         _logger.reset();
+//         _NSPG->_logger.reset();
         
         for(auto x : _q_vect)
         {

@@ -32,8 +32,8 @@ std::string env = getenv("ROBOTOLOGY_ROOT");
 XBot::MatLogger2::Ptr logger = XBot::MatLogger2::MakeLogger(env + "/external/cartesio_planning/log/cluttered_test");
 std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> rspub;
 
-ros::ServiceServer apply_planning_scene_srv, get_planning_scene_srv, start_srv;
-ros::Publisher contact_pub, mesh_viz_pub;
+ros::ServiceServer apply_planning_scene_srv, get_planning_scene_srv, start_srv, marker_srv;
+ros::Publisher contact_pub, mesh_viz_pub, marker_pub;
 
 Eigen::Matrix3d generalRotation(std::vector<double> normal, std::string axis)
 {
@@ -285,18 +285,29 @@ void generateConfigurations(std::vector<std::vector<Eigen::Affine3d>> stances,
         qList.clear();
     
     std::vector<std::string> all_tasks{"l_sole", "r_sole", "TCP_R", "TCP_L"};
+    std::vector<std::string> non_active_links;
+    std::map<std::string, std::string> map;
+    map.insert(std::make_pair("l_sole", "LFoot"));
+    map.insert(std::make_pair("r_sole", "RFoot"));
+    map.insert(std::make_pair("TCP_R", "RBall"));
+    map.insert(std::make_pair("TCP_L", "LBall"));
     auto NSPG = std::make_shared<XBot::Cartesian::Planning::NSPG>(solver, *vc_context); 
     
     cartesio_planning::SetContactFrames contacts;   
     for (int i = 0; i < stances.size(); i++)
     {
         std::cout << "processing stance " << i << std::endl;
+        if (non_active_links.size() > 0)
+            non_active_links.clear();
         
         for (auto task : all_tasks)
         {
             std::vector<std::string>::iterator it = std::find(active_links[i].begin(), active_links[i].end(), task);
             if (it == active_links[i].end())
+            {
                 solver->getCI()->getTask(task)->setActivationState(XBot::Cartesian::ActivationState::Disabled);
+                non_active_links.push_back(task);
+            }
             else
                 solver->getCI()->getTask(task)->setActivationState(XBot::Cartesian::ActivationState::Enabled);
         }
@@ -308,6 +319,12 @@ void generateConfigurations(std::vector<std::vector<Eigen::Affine3d>> stances,
         
         contacts.action = cartesio_planning::SetContactFrames::SET;
         contacts.frames_in_contact = active_links[i];
+        
+//         for (auto link : non_active_links) 
+//         {
+//             vc_context->planning_scene->acm.setEntry(map[link], "tiles", false);
+//         }
+        
         
         std::vector<geometry_msgs::Quaternion> rot;
         for (int j = 0; j < active_links[i].size(); j++)
@@ -340,6 +357,9 @@ void generateConfigurations(std::vector<std::vector<Eigen::Affine3d>> stances,
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         
+        for (auto link : non_active_links)
+            std::cout << link << std::endl;
+        
         if (!qList.empty())
         {
             model->setJointPosition(qList.back());
@@ -350,6 +370,7 @@ void generateConfigurations(std::vector<std::vector<Eigen::Affine3d>> stances,
 //        NSPG->getIKSolver()->getModel()->getRobotState("home", qhome);
 //        NSPG->getIKSolver()->getModel()->setJointPosition(qhome);
 //        NSPG->getIKSolver()->getModel()->update();
+
         auto tic = std::chrono::high_resolution_clock::now();
         if (qList.size() > 0)
         {
@@ -376,7 +397,9 @@ void generateConfigurations(std::vector<std::vector<Eigen::Affine3d>> stances,
             Eigen::VectorXd q(model->getJointNum());
             NSPG->getIKSolver()->getModel()->getJointPosition(q);
             qList.push_back(q);
-        }           
+        }        
+//         for (auto link : all_tasks)
+//             vc_context->planning_scene->acm.setEntry(map[link], "tiles", true);
     }
     
     std::cout << "All stances processed!" << std::endl;
@@ -453,6 +476,50 @@ void setTiles()
     vc_context->planning_scene->applyPlanningScene(planning_scene);
 }
 
+bool tiles_srv(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) 
+{
+    visualization_msgs::MarkerArray markers;
+    int counter = 0;
+    int old_counter = 0;
+    for (int i = 0; i < stances.size(); i++)
+    {
+        for (int k = 0; k < old_counter; k++)
+        {
+            markers.markers.at(k).color.r = 0.0;
+            markers.markers.at(k).color.g = 1.0;
+            markers.markers.at(k).color.b = 0.0;
+            markers.markers.at(k).color.a = 1.0;
+        }
+        
+        for (int j = 0; j < stances[i].size(); j++)
+        {            
+            visualization_msgs::Marker marker;
+            marker.header.frame_id = "world";
+            marker.header.stamp = ros::Time::now();
+            marker.color.r = 1.0;  marker.color.g = 0.0; marker.color.b = 0.0; marker.color.a = 1.0;
+            marker.id = counter;
+            marker.pose.position.x = stances[i][j].translation().x(); 
+            marker.pose.position.y = stances[i][j].translation().y();
+            marker.pose.position.z = stances[i][j].translation().z();
+            marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+            marker.mesh_resource = "file:///home/luca/src/MultiDoF-superbuild/external/cartesio_planning/examples/utils/simple_box.stl";
+            marker.scale.x = 0.2;  marker.scale.y = 0.1;  marker.scale.z = 0.01;
+            tf::quaternionEigenToMsg(Eigen::Quaternion<double>(stances[i][j].linear()), marker.pose.orientation);
+            markers.markers.push_back(marker);
+            counter ++;
+        }      
+               
+        old_counter = counter;
+        marker_pub.publish(markers);
+        
+        for (int n = 0; n < 100; n++)
+            ros::spinOnce();
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    
+    return true;
+}
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "cluttered_test");
@@ -463,6 +530,8 @@ int main(int argc, char** argv)
     start_srv = nh.advertiseService<std_srvs::Empty::Request, std_srvs::Empty::Response>("start_service", &start_service);
     auto normal_test_srv = nh.advertiseService<std_srvs::Empty::Request, std_srvs::Empty::Response>("normal_test", &normal_test_service);
     mesh_viz_pub = nh.advertise<moveit_msgs::CollisionObject>("planner/collision_objects", 10, true);
+    marker_pub = nh.advertise<visualization_msgs::MarkerArray>("tiles", 10, true);
+    marker_srv = nh.advertiseService<std_srvs::Empty::Request, std_srvs::Empty::Response>("tile_service", &tiles_srv);
     
     
     loadModel();

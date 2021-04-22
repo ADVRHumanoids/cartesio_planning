@@ -18,8 +18,8 @@ NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_con
         XBot::MatLogger2::Options opt;
         opt.default_buffer_size = 1e6;
         std::string environment = getenv("ROBOTOLOGY_ROOT");
-        _logger = XBot::MatLogger2::MakeLogger(environment + "/external/cartesio_planning/log/checks_log", opt);
-        _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+//         _logger = XBot::MatLogger2::MakeLogger(environment + "/external/cartesio_planning/log/checks_log", opt);
+//         _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
     }
     
 void NSPG::setIKSolver ( PositionCartesianSolver::Ptr new_ik_solver )
@@ -68,6 +68,8 @@ bool NSPG::sample ( double timeout )
         
         // Acquire colliding chains
         auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
+        for (auto chain : colliding_chains)
+            std::cout << chain << std::endl;
         
         // Generate a random velocity vector for colliding chains' joints only every n iterations
         if (iter % 10 == 0)
@@ -88,7 +90,7 @@ bool NSPG::sample ( double timeout )
         bool solved = _ik_solver->solve();
         auto toc_ik = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec_ik = toc_ik - tic_ik;
-        _logger->add("time_ik", fsec_ik.count());
+//         _logger->add("time_ik", fsec_ik.count());
         if (!solved)
         {
             auto toc = std::chrono::high_resolution_clock::now();
@@ -122,12 +124,12 @@ bool NSPG::sample ( double timeout )
         check1 = _vc_context.vc_aggregate.check("collisions");
         auto toc_coll = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec_coll = toc_coll - tic_coll;
-        _logger->add("collisions", fsec_coll.count());
+//         _logger->add("collisions", fsec_coll.count());
         auto tic_stab = std::chrono::high_resolution_clock::now();
         check2 = _vc_context.vc_aggregate.check("stability");
         auto toc_stab = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec_stab = toc_stab - tic_stab;
-        _logger->add("stability", fsec_stab.count());
+//         _logger->add("stability", fsec_stab.count());
 
         check = check1 && check2;
 
@@ -137,6 +139,11 @@ bool NSPG::sample ( double timeout )
             generateVelocityCollisions(coll_chains, random_map);
             _vel_check = true;
         }
+        
+//         if (!check1)
+//             std::cout << "collision check failed!" << std::endl;
+//         if (!check2)
+//             std::cout << "stability check failed!" << std::endl;
 //        if (check1)
 //        {
 //            for (auto& i : random_map)
@@ -218,6 +225,7 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
                 
             for (auto j : chain_map)
             {
+                std::cout << j.first << std::endl;
                 j.second = generateRandom() * velocityLim_map[j.first];
                 random_map.insert(std::make_pair(j.first, j.second));
             }
@@ -229,11 +237,11 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
 //        random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*10));
     }
     
-    // Add random velocities to the floating base when the convex hull check fails
+    // Add random velocities to the floating base when the centroidal statics check fails
     if (!check2)
     {
-        random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-        random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
+        random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*150));
+        random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*100));
         random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
     }
 
