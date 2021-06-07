@@ -1155,7 +1155,7 @@ ompl::control::DirectedControlSamplerPtr FootStepPlanner::getDirectedControlSamp
 }
 
 
-ompl::base::PlannerPtr FootStepPlanner::make_planner ( std::__cxx11::string plannerType ) 
+ompl::base::PlannerPtr FootStepPlanner::make_planner ( std::string plannerType )
 {
     if (plannerType == "RRT")
         return std::make_shared<ompl::control::RRT>(_space_info);
@@ -1251,6 +1251,8 @@ bool FootStepPlanner::publish_trajectory_service(std_srvs::Empty::Request& req, 
     
     _xbotcore_trj_publisher.publish(trj); 
     _trj_publisher.publish(trj);
+
+    return true;
 }
 
 bool FootStepPlanner::image_service ( std_srvs::Empty::Request& req, std_srvs::Empty::Response& res )
