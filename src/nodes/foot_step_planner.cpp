@@ -26,8 +26,10 @@ FootStepPlanner::FootStepPlanner ():
     else if (contact_type == "surface")
         _sw = std::make_shared<Planning::StateWrapper>(Planning::StateWrapper::StateSpaceType::SE2SPACE, 3);
 
-//     _logger = XBot::MatLogger2::MakeLogger("/home/luca/src/MultiDoF-superbuild/external/cartesio_planning/log/NSPG_log");
-//     _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+    XBot::MatLogger2::Options opt;
+    opt.default_buffer_size = 1e6;
+     _logger = XBot::MatLogger2::MakeLogger("/home/luca/MultiDoF-superbuild/external/cartesio_planning/log/NSPG_log", opt);
+     _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
     
     init_load_config();
     init_load_model();
@@ -82,17 +84,22 @@ void FootStepPlanner::init_load_model ()
     
     _model->getRobotState("home", _qhome);
     _model->setJointPosition(_qhome);
-    Eigen::VectorXd qhome(_model->getJointNum());
-    qhome << 0.0538123, -7.25856e-17,    0.0269701,  1.08748e-16, -7.87239e-07,  -1.2962e-17,  -0.00373849,    -0.393397,   4.8984e-07,     0.711108,    -0.317651,   0.00373866,   0.00373849, -0.393397,  -4.8984e-07,     0.711108,    -0.317651,  -0.00373866,            0, 0,     0.959931,     0.007266,            0,     -1.91986,            0,   -0.523599, 0,     0.959931,   -0.007266,            0,     -1.91986,            0,    -0.523599,            0;
-    _model->setJointPosition(qhome);
-    _model->update();
+//    Eigen::VectorXd qhome(_model->getJointNum());
+//    qhome << 0.0538123, -7.25856e-17,    0.0269701,  1.08748e-16, -7.87239e-07,  -1.2962e-17,  -0.00373849,    -0.393397,   4.8984e-07,     0.711108,    -0.317651,   0.00373866,   0.00373849, -0.393397,  -4.8984e-07,     0.711108,    -0.317651,  -0.00373866,            0, 0,     0.959931,     0.007266,            0,     -1.91986,            0,   -0.523599, 0,     0.959931,   -0.007266,            0,     -1.91986,            0,    -0.523599,            0;
+//    _model->setJointPosition(qhome);
+//    _model->update();
     
     // Define start model
-    _start_model->setJointPosition(qhome);
+    Eigen::VectorXd qS(_model->getJointNum());
+    qS = _qhome;
+    qS(0) += 0;
+    _start_model->setJointPosition(qS);
     _start_model->update();
     
     // Define goal model
-    _goal_model->setJointPosition(qhome);
+//    Eigen::VectorXd qgoal;
+//    qgoal = _qhome;
+    _goal_model->setJointPosition(_qhome);
     _goal_model->update();
     
     // Mesh_viz
@@ -167,7 +174,7 @@ void FootStepPlanner::init_load_position_cartesian_solver()
     _ci_goal = XBot::Cartesian::CartesianInterfaceImpl::MakeInstance("OpenSot",
                                                         ik_prob, ci_ctx);
     _goal_solver = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(_ci_goal);
-    _rsc = std::make_shared<RosServerClass>(_ci_goal);    
+    _rsc = std::make_shared<RosServerClass>(_ci);
 }
 
 void FootStepPlanner::init_load_planner() 
@@ -343,6 +350,9 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         {
             return false;
         }
+
+        _rsc->run();
+        std::cout << "rsc running" << std::endl;
         
         std::vector<Eigen::VectorXd> ee(_ee_number);  
         Eigen::Vector3d x_com = {0, 0, 0};
@@ -363,7 +373,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
             {
                 _sw->getState(state->as<ompl::base::CompoundStateSpace::StateType>()->as<ompl::base::SE2StateSpace::StateType>(i), ee[i]);
                 T.translation() << ee[i](0), ee[i](1), _z_wheel;
-                T.linear() = _EE_rot;
+                T.linear() << cos(ee[i](2)), -sin(ee[i](2)), 0, sin(ee[i](2)), cos(ee[i](2)), 0, 0, 0, 1;
                 T.rotate( Eigen::AngleAxis<double>( ee[i](2), Eigen::Vector3d(0,0,1) )); 
             }
             _solver->setDesiredPose(_ee_name[i], T);
@@ -471,13 +481,13 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                 _goalSampler_counter ++;
 //                goal_sampler = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);
                 
-                if (_NSPG->sample(1.5))
+                if (_NSPG->sample(1.0))
                 {
                     auto toc = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<float> fsec = toc - tic;
                     std::cout << "solution found in " << fsec.count() << " seconds" << std::endl;
-//                     _logger->add("success", 1);
-//                     _logger->add("time", fsec.count());
+                     _logger->add("success", 1);
+                     _logger->add("time", fsec.count());
                     _solver->getModel()->getJointPosition(x);
                 }
                 else
@@ -485,8 +495,8 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
                     auto toc = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<float> fsec = toc - tic;
                     std::cout << "solution not found" << std::endl;
-//                     _logger->add("success", 0);
-//                     _logger->add("time", fsec.count());
+                     _logger->add("success", 0);
+                     _logger->add("time", fsec.count());
                     _counter++;
                     return false;
                 }
@@ -608,7 +618,8 @@ bool FootStepPlanner::start_goal_service ( cartesio_planning::CartesioGoal::Requ
                 goal[3*i] = T.translation().x();
                 goal[3*i + 1] = T.translation().y();
                 auto rpy = T.linear().eulerAngles(0,1,2);
-                goal[3*i + 2] = rpy[2];
+//                goal[3*i + 2] = rpy[2];
+                goal[3*i + 2] = 0;
                 _start_model->getPose(_ee_name[i], T);
                 start[3*i] = T.translation().x();
                 start[3*i + 1] = T.translation().y();
@@ -656,7 +667,7 @@ bool FootStepPlanner::start_goal_service ( cartesio_planning::CartesioGoal::Requ
             res.status.val = cartesio_planning::CartesioPlannerGoalStatus::APPROXIMATE_SOLUTION;
             std::cout << "APPROXIMATE SOLUTION FOUND...setting start and goal states! (error = " << err << ")" << std::endl;
         }
-        _pdef->setStartAndGoalStates(start, goal, 2.0);
+        _pdef->setStartAndGoalStates(start, goal, 1.0);
         return true;
     }
     else
@@ -800,8 +811,8 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         
         std::cout << "Final solution has " << _q_vect.size() << " steps!" << std::endl;
 
-//         _logger.reset();
-//         _NSPG->_logger.reset();
+         _logger.reset();
+         _NSPG->_logger.reset();
         
         for(auto x : _q_vect)
         {
@@ -809,7 +820,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
             point.positions.assign(x.data(), x.data() + x.size());
             point.time_from_start = t;
             trj.points.push_back(point);
-            t += ros::Duration(1.);
+            t += ros::Duration(0.1);
         }
         
         trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
@@ -1151,7 +1162,7 @@ ompl::control::ControlSamplerPtr FootStepPlanner::getSampler ( const ompl::contr
 
 ompl::control::DirectedControlSamplerPtr FootStepPlanner::getDirectedControlSampler ( const ompl::control::SpaceInformation* space_info ) 
 {
-    return std::make_shared<ompl::control::SimpleDirectedControlSampler>(space_info, 20);
+    return std::make_shared<ompl::control::SimpleDirectedControlSampler>(space_info, 5);
 }
 
 

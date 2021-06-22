@@ -38,7 +38,7 @@ namespace XBot { namespace Cartesian { namespace Planning {
          */        
         
         ModelInterface::Ptr getModel() const;
-        bool sample(double timeout);
+        bool sample(double timeout, int max_counter = 0);
         
         double generateRandom();
         XBot::MatLogger2::Ptr _logger;
@@ -55,7 +55,6 @@ namespace XBot { namespace Cartesian { namespace Planning {
         
         bool check1, check2;
 
-        bool _vel_check;
-        
+        bool _vel_check;        
     };
 }}}

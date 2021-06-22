@@ -302,8 +302,8 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
         for (int i = 0; i < ee_number; i++)
         {
             model->getPose(end_effector[i], T);
-            auto rot = T.linear().eulerAngles(0, 1, 2);
-            ee[i] << T.translation().x(), T.translation().y(), rot(2);
+            auto rot = acos(T.linear()(0,0));
+            ee[i] << T.translation().x(), T.translation().y(), rot;
             
         }
         
@@ -312,19 +312,20 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
 
         if (x_diff > max_x_distance || y_diff > max_y_distance)
         {
-            std::cout << "relative distance" << std::endl;
             return false;
         }           
             
         // Check for relative orientation
         double res1 = (ee[0](2) - ee[1](2));
-        double res2 = (boost::math::constants::pi<double>()*2 - (ee[0](2) - ee[1](2))); 
+        double res2 = (boost::math::constants::pi<double>()*2 - (ee[0](2) - ee[1](2)));
         
 //         if (std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) > boost::math::constants::pi<double>()/6)
 //         {
+//             std::cout << ee[0](2) << "   " << ee[1](2) << std::endl;
+//             std::cout << "res1: " << res1 << "       res2: " << res2 << std::endl;
 //             std::cout << "relative orientation" << std::endl;
 //             return false;
-//         }           
+//         }
              
         // Check for feet crossing
         double xRel_w = ee[0](0) - ee[1](0);

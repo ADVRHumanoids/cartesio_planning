@@ -6,10 +6,19 @@ stack:
     - ["Wheel1", "Wheel2", "Wheel3", "Wheel4","Ankle1", "Ankle2", "Ankle3", "Ankle4"]
     - ["Postural"]
 
-constraints: ["JointLimits"]
+constraints: ["JointLimits"]#, "Collision"]
 
 JointLimits:
     type: "JointLimits"
+
+Collision:
+    type: CollisionConstraint
+    lib_name: libcartesio_collision_support.so
+    bound_scaling: 0.1
+    distance_threshold: 0.01
+    max_pairs: 500
+    collision_urdf_path: $(rospack find centauro_urdf)/urdf/centauro_capsules.rviz
+    collision_srdf_path: $(rospack find centauro_srdf)/srdf/centauro_capsules.srdf
 
 Wheel1:
     type: "Cartesian"

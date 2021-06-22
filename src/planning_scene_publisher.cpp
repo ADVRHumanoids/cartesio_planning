@@ -49,7 +49,7 @@
 #include <moveit/robot_state/conversions.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 
-ros::ServiceClient srv;
+ros::ServiceClient srv, srv_coll;
 
 void attached_collision_object_cb(const moveit_msgs::AttachedCollisionObjectConstPtr msg)
 {
@@ -74,6 +74,7 @@ void attached_collision_object_cb(const moveit_msgs::AttachedCollisionObjectCons
     msg2.request.scene = planning_scene;
 
     srv.call(msg2);
+    srv_coll.call(msg2);
 }
 
 
@@ -103,6 +104,7 @@ void collision_object_cb(const moveit_msgs::CollisionObjectConstPtr msg)
 
 
     srv.call(msg2);
+    srv_coll.call(msg2);
 }
 
 void octomap_collision_object_cb(const octomap_msgs::OctomapWithPose msg)
@@ -128,6 +130,7 @@ void octomap_collision_object_cb(const octomap_msgs::OctomapWithPose msg)
     msg2.request.scene.name = "octomap";
 
     srv.call(msg2);
+    srv_coll.call(msg2);
 }
 
 int main(int argc, char** argv)
@@ -143,6 +146,7 @@ int main(int argc, char** argv)
 
 
     srv = node_handle.serviceClient<moveit_msgs::ApplyPlanningScene>("planner/apply_planning_scene");
+    srv_coll = node_handle.serviceClient<moveit_msgs::ApplyPlanningScene>("cartesian/collision_avoidance/apply_planning_scene");
 
 
     ros::spin();

@@ -6,8 +6,11 @@
     <param name="contact_type" type="str" value="point"/>    
     <param name="goalSamplerType" type="str" value="NSPG"/>
                 
-    <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/centauro.urdf"/> -->
-    <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/centauro.srdf"/>  
+    <param name="robot_description" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/urdf/centauro.urdf"/>
+    <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/external/cartesio_planning/examples/utils/srdf/centauro.srdf"/>
+
+<!--    <param name="robot_description" textfile="$(find centauro_urdf)/urdf/centauro_capsules.rviz"/>-->
+<!--    <param name="robot_description_semantic" textfile="$(find centauro_srdf)/srdf/centauro_capsules.srdf"/>-->
       
     <param name="planner/problem_description"
             textfile="$(find cartesio_planning)/configs/problem/centauro_fp_stack.yaml"/>  
@@ -16,7 +19,7 @@
             textfile="$(find cartesio_planning)/configs/problem/centauro_fp_goal_stack.yaml"/> -->
     
         <!-- .bag file containing 2 boxes acquired using octomap -->
-     <!--node pkg="rosbag" type="play" name="bag_player" args="-l $(env ROBOTOLOGY_ROOT)/external/cartesio_planning/bagfiles/narrow_corridor_exp.bag" output="screen"/-->
+    <node pkg="rosbag" type="play" name="bag_player" args="-l $(env ROBOTOLOGY_ROOT)/external/cartesio_planning/bagfiles/narrow_corridor_exp.bag" output="screen"/>
     
     <node pkg="cartesio_planning" type="foot_step_planner" name="foot_step_planner" output="screen">
         <param name="solver" value=""/>
@@ -50,34 +53,34 @@
     <!-- single short and wide obstacle -->
     <!-- mesh_viz for obstacle generation -->
     
-    <node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
-        <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
-        <param name="scale_x" type="double" value="0.5"/>
-        <param name="scale_y" type="double" value="0.1"/>
-        <param name="scale_z" type="double" value="2.0"/>
-        <rosparam param="position"> [1.0, 0.45, 1.0] </rosparam>
-        <rosparam param="orientation"> [0.0, 0.0, 0.0, 1.0] </rosparam>
-        <param name="frame_id" value="world"/>
-        <param name="name_id" value="floor"/>
-        <param name="show_control_axis" type="bool" value="True"/>
-        <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
-    </node>
-    
-    <node name="mesh_viz_floor1" pkg="mesh_viz" type="mesh_viz_node" output="screen">
-        <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
-        <param name="scale_x" type="double" value="0.5"/>
-        <param name="scale_y" type="double" value="0.1"/>
-        <param name="scale_z" type="double" value="2"/>
-        <rosparam param="position"> [1.0, -0.45, 1.0] </rosparam>
-        <rosparam param="orientation"> [0.0, 0.0, 0.0, 1.0] </rosparam>
-        <param name="frame_id" value="world"/>
-        <param name="name_id" value="floor1"/>
-        <param name="show_control_axis" type="bool" value="True"/>
-        <remap from="mesh_viz_floor1/floor1" to="planner/collision_objects"/>
-    </node>
+<node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+    <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
+    <param name="scale_x" type="double" value="0.5"/>
+    <param name="scale_y" type="double" value="-1.0"/>
+    <param name="scale_z" type="double" value="2.0"/>
+    <rosparam param="position"> [1.5, 0.95, 1.0] </rosparam>
+    <rosparam param="orientation"> [0.0, 0.0, 0.0, 1.0] </rosparam>
+    <param name="frame_id" value="world"/>
+    <param name="name_id" value="floor"/>
+    <param name="show_control_axis" type="bool" value="True"/>
+    <remap from="mesh_viz_floor/floor" to="planner/collision_objects"/>
+</node>
+
+<node name="mesh_viz_floor1" pkg="mesh_viz" type="mesh_viz_node" output="screen">
+    <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
+    <param name="scale_x" type="double" value="0.5"/>
+    <param name="scale_y" type="double" value="1.0"/>
+    <param name="scale_z" type="double" value="2"/>
+    <rosparam param="position"> [1.5, -0.95, 1.0] </rosparam>
+    <rosparam param="orientation"> [0.0, 0.0, 0.0, 1.0] </rosparam>
+    <param name="frame_id" value="world"/>
+    <param name="name_id" value="floor1"/>
+    <param name="show_control_axis" type="bool" value="True"/>
+    <remap from="mesh_viz_floor1/floor1" to="planner/collision_objects"/>
+</node>
     
     <!-- Octomap converter -->
-    <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_converter" output="screen"/>
+<!--    <node pkg="cartesio_planning" type="octomap_collision_main" name="octomap_converter" output="screen"/>-->
     
     <!-- Planning scene -->
     <node pkg="cartesio_planning" type="planning_scene_publisher" name="planning_scene_publisher" output="screen"/> 

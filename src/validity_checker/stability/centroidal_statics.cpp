@@ -253,7 +253,7 @@ bool CentroidalStatics::checkStability(const double eps)
         if(res <= eps)
             return true;
     }
-    std::cout << "res: " << res << std::endl;
+//    std::cout << "res: " << res << std::endl;
 //     auto map = getForces();
 //         for (auto i : map)
 //             std::cout << i.second << std::endl;

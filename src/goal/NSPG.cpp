@@ -5,11 +5,11 @@ using namespace XBot::Cartesian::Planning;
 static std::default_random_engine randGenerator;
 static std::uniform_real_distribution<double> randDistribution(-1.0, 1.0);
 
-NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_context ):
+NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_context):
     _ik_solver(ik_solver),
     _vc_context(vc_context),
     _vel_check(false)
-    {
+{
         auto a = std::chrono::system_clock::now();
         time_t b = std::chrono::system_clock::to_time_t(a);
         randGenerator.seed(b);
@@ -18,8 +18,8 @@ NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_con
         XBot::MatLogger2::Options opt;
         opt.default_buffer_size = 1e6;
         std::string environment = getenv("ROBOTOLOGY_ROOT");
-//         _logger = XBot::MatLogger2::MakeLogger(environment + "/external/cartesio_planning/log/checks_log", opt);
-//         _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
+         _logger = XBot::MatLogger2::MakeLogger(environment + "/external/cartesio_planning/log/checks_log", opt);
+         _logger->set_buffer_mode(XBot::VariableBuffer::Mode::circular_buffer);
     }
     
 void NSPG::setIKSolver ( PositionCartesianSolver::Ptr new_ik_solver )
@@ -32,7 +32,7 @@ PositionCartesianSolver::Ptr NSPG::getIKSolver () const
     return _ik_solver;
 }
 
-bool NSPG::sample ( double timeout ) 
+bool NSPG::sample ( double timeout, int max_counter)
 {
     // BE SURE THAT _ik_solver AND _vc_context HAS THE SAME MODEL
     Eigen::VectorXd x, dqlimits;
@@ -56,20 +56,22 @@ bool NSPG::sample ( double timeout )
     double dt = 0.005;
     int iter = 0;
     unsigned int counter = 0;
-    unsigned int max_counter = 25;
     
+//    check1 = _vc_context.vc_aggregate.check("collisions");
     check1 = _vc_context.vc_aggregate.check("collisions");
     check2 = _vc_context.vc_aggregate.check("stability");
     bool check = check1 && check2;
+
+    int n_fail_coll = 0;
+    int n_fail_stab = 0;
+    int n_tot_call = 0;
         
-    while(!check)// || counter < max_counter)
+    while(!check || counter < max_counter)
     {
         auto tic = std::chrono::high_resolution_clock::now();
         
         // Acquire colliding chains
         auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
-        for (auto chain : colliding_chains)
-            std::cout << chain << std::endl;
         
         // Generate a random velocity vector for colliding chains' joints only every n iterations
         if (iter % 10 == 0)
@@ -90,7 +92,7 @@ bool NSPG::sample ( double timeout )
         bool solved = _ik_solver->solve();
         auto toc_ik = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec_ik = toc_ik - tic_ik;
-//         _logger->add("time_ik", fsec_ik.count());
+         _logger->add("time_ik", fsec_ik.count());
         if (!solved)
         {
             auto toc = std::chrono::high_resolution_clock::now();
@@ -104,10 +106,11 @@ bool NSPG::sample ( double timeout )
             continue;
         }
         
-//        if (_vc_context.vc_aggregate.checkAll())
-//            counter += 1;
-//        else
-//            counter = 0;
+        if (_vc_context.vc_aggregate.checkAll())
+            counter += 1;
+        else
+            counter = 0;
+
 
         _rspub->publishTransforms(ros::Time::now(), "");
                         
@@ -122,23 +125,31 @@ bool NSPG::sample ( double timeout )
 
         auto tic_coll = std::chrono::high_resolution_clock::now();
         check1 = _vc_context.vc_aggregate.check("collisions");
+        if (!check1)
+            n_fail_coll += 1;
+//        check1 = true;
         auto toc_coll = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec_coll = toc_coll - tic_coll;
-//         _logger->add("collisions", fsec_coll.count());
+         _logger->add("collisions", fsec_coll.count());
         auto tic_stab = std::chrono::high_resolution_clock::now();
         check2 = _vc_context.vc_aggregate.check("stability");
+        if(!check2)
+            n_fail_stab += 1;
         auto toc_stab = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec_stab = toc_stab - tic_stab;
-//         _logger->add("stability", fsec_stab.count());
+         _logger->add("stability", fsec_stab.count());
 
         check = check1 && check2;
 
-        if (!check1)// && !_vel_check)
-        {
-            auto coll_chains = _vc_context.planning_scene->getCollidingChains();
-            generateVelocityCollisions(coll_chains, random_map);
-            _vel_check = true;
-        }
+        if (!check1 || !check2)
+            n_tot_call += 1;
+
+//        if (!check1 && !_vel_check)
+//        {
+//            auto coll_chains = _vc_context.planning_scene->getCollidingChains();
+//            generateVelocityCollisions(coll_chains, random_map);
+//            _vel_check = true;
+//        }
         
 //         if (!check1)
 //             std::cout << "collision check failed!" << std::endl;
@@ -156,16 +167,20 @@ bool NSPG::sample ( double timeout )
 //            random_map.insert(std::make_pair("VIRTUALJOINT_3", 50*generateRandom()));
 //            _vel_check = true;
 //        }
-        if (check2)
-        {
-            random_map.insert(std::make_pair("VIRTUALJOINT_1", 0));
-            random_map.insert(std::make_pair("VIRTUALJOINT_2", 0));
-            random_map.insert(std::make_pair("VIRTUALJOINT_3", 0));
-        }
+//        if (check2)
+//        {
+//            random_map.insert(std::make_pair("VIRTUALJOINT_1", 0));
+//            random_map.insert(std::make_pair("VIRTUALJOINT_2", 0));
+//            random_map.insert(std::make_pair("VIRTUALJOINT_3", 0));
+//        }
 
 
     }
     
+    _logger->add("tot_calls", n_tot_call);
+    _logger->add("coll_fails", n_fail_coll);
+    _logger->add("stab_fails", n_fail_stab);
+
     return true;
 }
 
@@ -192,15 +207,15 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
 //             // Here you can add extra joints to the kinematic chains in collision.
              if (i.getChainName() == "front_right_leg" || i.getChainName() == "front_left_leg" || i.getChainName() == "rear_right_leg" || i.getChainName() == "rear_left_leg")
              {
-                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
-                 random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-                 random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
+                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*100));
+                 random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*100));
+                 random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*100));
              }
             
             if (i.getChainName() == "right_arm" || i.getChainName() == "left_arm")
             {
-//                random_map.insert(std::make_pair("torso_yaw", 2 * generateRandom() * velocityLim_map["torso_yaw"]));  // UNCOMMENT FOR CENTAURO
-                random_map.insert(std::make_pair("WaistYaw", 4 * generateRandom() * velocityLim_map["WaistYaw"]));   // UNCOMMENT THIS FOR COMANPLUS
+                random_map.insert(std::make_pair("torso_yaw", 4 * generateRandom() * velocityLim_map["torso_yaw"]));  // UNCOMMENT FOR CENTAURO
+//                random_map.insert(std::make_pair("WaistYaw", 4 * generateRandom() * velocityLim_map["WaistYaw"]));   // UNCOMMENT THIS FOR COMANPLUS
             }
 //             
 //             if (i.getChainName() == "arm_A" || i.getChainName() == "arm_B" || i.getChainName() == "arm_C")
@@ -225,7 +240,7 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
                 
             for (auto j : chain_map)
             {
-                std::cout << j.first << std::endl;
+//                std::cout << j.first << std::endl;
                 j.second = generateRandom() * velocityLim_map[j.first];
                 random_map.insert(std::make_pair(j.first, j.second));
             }
