@@ -8,6 +8,9 @@ average_ik = sum(time_ik)/length(time_ik);
 average_stability = sum(stability)/length(stability);
 average_collisions = sum(collisions)/length(collisions);
 
+% fails_coll = sum(coll_fails)/sum(tot_calls);
+% fails_stab = sum(stab_fails)/sum(tot_calls);
+
 figure
 plot([1:length(time)], time)
 
@@ -23,5 +26,9 @@ disp(["average: ", average])
 disp(["average IK: ", sum(time_ik)/length(time_ik)])
 disp(["average stability: ", sum(stability)/length(stability)])
 disp(["average collisions: ", sum(collisions)/length(collisions)])
-disp(["averagne #calls: ", average/(average_ik + average_stability + average_collisions)])
+disp(["average #calls: ", average/(average_ik + average_stability + average_collisions)])
+% disp(["% collision fails: ", fails_coll])
+% disp(["% stability fails: ", fails_stab])
 % disp(["total time: ", sum(time)])
+
+
