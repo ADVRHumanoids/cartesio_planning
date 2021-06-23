@@ -1105,7 +1105,7 @@ ompl::control::DirectedControlSamplerPtr FootStepPlanner::getDirectedControlSamp
 }
 
 
-ompl::base::PlannerPtr FootStepPlanner::make_planner ( std::__cxx11::string plannerType ) 
+ompl::base::PlannerPtr FootStepPlanner::make_planner ( std::string plannerType )
 {
     if (plannerType == "RRT")
         return std::make_shared<ompl::control::RRT>(_space_info);

@@ -7,7 +7,7 @@ MapConverter::MapConverter(nav_msgs::OccupancyGrid map):
 {}
 
 MapConverter::MapConverter(ros::NodeHandle& nh, 
-                           const std::__cxx11::string& topic_name):
+                           const std::string& topic_name):
     _nh(nh)
 {
     _sub = _nh.subscribe<nav_msgs::OccupancyGrid>(topic_name, 10, &MapConverter::callback, this);
