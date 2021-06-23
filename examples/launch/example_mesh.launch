@@ -1,8 +1,9 @@
 <launch>
   <node name="mesh_viz" pkg="mesh_viz" type="mesh_viz_node" output="screen">
-        <param name="mesh_path" value="$(find cartesio_planning)/utils/space_table.stl" />
+        <param name="mesh_path" value="$(find cartesio_planning)/examples/utils/space_table.stl" />
         <param name="scale" type="double" value="2.5e-2"/>
         <param name="frame_id" value="world"/>
+        <param name="name_id" value="tauli"/>
         <remap from="mesh_viz/space_table" to="planner/collision_objects"/>
   </node>
 </launch>
