@@ -3,16 +3,16 @@
      <arg name="use_goal_generator" default="false"/>
      
      <!-- send the teleop robot XML to param server -->
-     <param name="robot_description" command="$(find xacro)/xacro.py '$(find teleop_urdf)/urdf/teleop_fixed_base.urdf'" />
+     <param name="robot_description" command="$(find xacro)/xacro '$(find teleop_urdf)/urdf/teleop_fixed_base.urdf'" />
      <param name="robot_description_semantic" textfile="$(find teleop_srdf)/srdf/teleop_fixed_base.srdf" />   
 
      <!-- send problem description to param server: this is used by goal sampler -->
     <param name="planner/problem_description_goal"
-        textfile="$(find cartesio_planning)/configs/problem/teleop_goal_generation_stack.yaml"/>
+        textfile="$(find cartesio_planning)/examples/configs/problem/teleop_goal_generation_stack.yaml"/>
 
     <!-- problem description for manifold -->
     <param name="planner/problem_description_constraint"
-        textfile="$(find cartesio_planning)/configs/problem/teleop_constraint_stack.yaml"/>
+        textfile="$(find cartesio_planning)/examples/configs/problem/teleop_constraint_stack.yaml"/>
 
     <!-- start planner -->  
     <node pkg="cartesio_planning" type="planning_server" name="planning_server" output="screen">
@@ -21,7 +21,7 @@
         <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
         <param name="use_goal_generator" value="$(arg use_goal_generator)"/>
         <param name="planner_config"
-            textfile="$(find cartesio_planning)/configs/problem/teleop_config.yaml"/>
+            textfile="$(find cartesio_planning)/examples/configs/problem/teleop_config.yaml"/>
         <rosparam param="base_links">['teleop_link0']</rosparam>
         <rosparam param="distal_links">['TCP']</rosparam>
     </node>
@@ -54,7 +54,7 @@
     <!-- CARTESI/O to generate goal state -->
     <!-- send problem description to param server: this is used by CartesI/O for IK -->
     <param name="cartesian/problem_description"
-        textfile="$(find cartesio_planning)/configs/problem/teleop_cartesio_stack.yaml"/>
+        textfile="$(find cartesio_planning)/examples/configs/problem/teleop_cartesio_stack.yaml"/>
     <include unless="$(arg use_goal_generator)" file="$(find cartesian_interface)/launch/cartesio.launch">
         <arg name="tf_prefix" value="ci"/>
         <arg name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
@@ -69,7 +69,7 @@
 
     <!-- Obstacle with interactive marker -->     
       <node name="mesh_viz_floor" pkg="mesh_viz" type="mesh_viz_node" output="screen">
-        <param name="mesh_path" value="$(find cartesio_planning)/utils/simple_box.stl" />
+        <param name="mesh_path" value="$(find cartesio_planning)/examples/utils/simple_box.stl" />
         <param name="scale_x" type="double" value="2."/>
         <param name="scale_y" type="double" value="1.5"/>
         <param name="scale_z" type="double" value=".1"/>
@@ -82,6 +82,5 @@
 
 
  <node type="rviz" name="rviz" pkg="rviz"
-        args="-d $(find cartesio_planning)/configs/rviz/example_teleop.rviz" output="screen"/>
-    
+        args="-d $(find cartesio_planning)/examples/configs/rviz/example_teleop.rviz" output="screen"/>
 </launch>
