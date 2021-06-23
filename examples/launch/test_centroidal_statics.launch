@@ -11,7 +11,7 @@
         textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
 
     <param name="cartesian/problem_description"
-        textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
+        textfile="$(find cartesio_planning)/examples/configs/problem/comanplus_goal_generation_stack.yaml"/>
 
     
     <include file="$(find cartesian_interface)/launch/cartesio.launch">
