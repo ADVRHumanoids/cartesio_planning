@@ -13,13 +13,13 @@
         textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
 
     <param name="planner/problem_description_constraint"
-        textfile="$(find cartesio_planning)/configs/problem/comanplus_constraint_stack.yaml"/>
+        textfile="$(find cartesio_planning)/examples/configs/problem/comanplus_constraint_stack.yaml"/>
 
     <param name="cartesian/problem_description"
-        textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
+        textfile="$(find cartesio_planning)/examples/configs/problem/comanplus_goal_generation_stack.yaml"/>
 
     <param name="planner/problem_description_goal"
-        textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
+        textfile="$(find cartesio_planning)/examples/configs/problem/comanplus_goal_generation_stack.yaml"/>
 
 
     <node pkg="cartesio_planning" type="planning_server" name="planning_server" output="screen">
@@ -28,7 +28,7 @@
         <param name="is_model_floating_base" value="true"/>
         <param name="use_goal_generator" value="$(arg use_goal_generator)"/>
         <param name="planner_config"
-            textfile="$(find cartesio_planning)/configs/problem/comanplus_example_manipulation_config.yaml"/>
+            textfile="$(find cartesio_planning)/examples/configs/problem/comanplus_example_manipulation_config.yaml"/>
         <param name="world_frame_link" value="$(arg world_frame_link)"/>
     </node>
 
@@ -54,7 +54,7 @@
         args="0 0 0 0 0 0 world planner/goal_sampler/world 30"/>
 
     <node type="rviz" name="rviz" pkg="rviz"
-        args="-d $(find cartesio_planning)/configs/rviz/example_comanplus_manipulation.rviz" output="screen"/>
+        args="-d $(find cartesio_planning)/examples/configs/rviz/example_comanplus_manipulation.rviz" output="screen"/>
     
     <node if="$(arg use_goal_generator)" pkg="cartesian_interface" type="marker_spawner" name="goal_marker_spawner" output="screen">
         <param name="ns" value="planner/goal_sampler"/>
