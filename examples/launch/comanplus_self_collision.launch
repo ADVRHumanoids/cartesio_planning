@@ -8,9 +8,9 @@
         textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
 
     <param name="cartesian/problem_description"
-        textfile="$(find cartesio_planning)/configs/problem/comanplus_goal_generation_stack.yaml"/>
+        textfile="$(find cartesio_planning)/examples/configs/problem/comanplus_goal_generation_stack.yaml"/>
 
-    <node pkg="cartesio_planning" type="planning_scene_test" name="planning_scene_test" output="screen">
+    <node pkg="cartesio_planning" type="self_collision_robot" name="self_collision_robot" output="screen">
         <remap from="joint_states" to="cartesian/solution"/>
     </node>
 
