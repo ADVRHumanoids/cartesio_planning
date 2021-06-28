@@ -6,7 +6,7 @@ namespace XBot { namespace Cartesian { namespace Planning {
 
 ValidityCheckContext::ValidityCheckContext(YAML::Node config,
                                            ModelInterface::Ptr model,
-                                           ros::NodeHandle nh):
+                                           const ros::NodeHandle &nh):
     _model( model),
     _nh(nh)
 {
