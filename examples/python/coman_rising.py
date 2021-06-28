@@ -163,7 +163,7 @@ if __name__ == '__main__':
             rospy.sleep(0.1)
 
         if planner_client.solve(PLAN_MAX_ATTEMPTS=5, planner_type="RRTConnect", plan_time=30, interpolation_time=0.01, goal_threshold=1):
-            raw_input("Press a button for nex configuration")
+            input("Press a button for nex configuration")
         else:
             print("ERROR! PLANNER CAN NOT FIND A SOLUTION!")
             break
