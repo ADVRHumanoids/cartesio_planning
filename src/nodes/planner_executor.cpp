@@ -269,8 +269,7 @@ void PlannerExecutor::init_subscribe_start_goal()
     _start_sub = _nh.subscribe("start/joint_states", 1,
                                &PlannerExecutor::on_start_state_recv, this);
 
-    if(!_use_goal_generator)
-        _goal_sub = _nh.subscribe("goal/joint_states", 1,
+    _goal_sub = _nh.subscribe("goal/joint_states", 1,
                                   &PlannerExecutor::on_goal_state_recv, this);
 
     _start_viz = std::make_shared<Planning::RobotViz>(_model,
