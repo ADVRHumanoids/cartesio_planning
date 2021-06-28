@@ -107,7 +107,7 @@ void octomap_collision_object_cb(const octomap_msgs::OctomapWithPose msg)
 {
     octomap_msgs::OctomapWithPose attached_object;
     attached_object = msg;
-    attached_object.octomap.id = "octomap";
+    //attached_object.octomap.id = "octomap";
 
     // Add an object into the environment
     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -123,7 +123,7 @@ void octomap_collision_object_cb(const octomap_msgs::OctomapWithPose msg)
 
     moveit_msgs::ApplyPlanningScene msg2;
     msg2.request.scene = planning_scene;
-    msg2.request.scene.name = "octomap";
+    //msg2.request.scene.name = "octomap";
 
     srv.call(msg2);
 }

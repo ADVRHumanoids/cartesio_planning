@@ -28,8 +28,6 @@ int main ( int argc, char ** argv ) {
 
     ros::Rate rate ( 10 );
     while ( ros::ok() ) {
-        double res = 0.05;
-        double length = 0.3;
         std::vector<double> y {-0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15};
         std::vector<double> z {0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3};
 
@@ -44,9 +42,9 @@ int main ( int argc, char ** argv ) {
 
         for ( int i = 0; i < z.size(); i++ ) {
             for ( int k = 0; k < y.size(); k++ ) {
-                point_cloud->points[j].x = x;
+                point_cloud->points[j].x = x+0.05;
                 point_cloud->points[j].y = y[k];
-                point_cloud->points[j].z = z[i];
+                point_cloud->points[j].z = z[i]+0.1;
                 j++;
             }
         }
