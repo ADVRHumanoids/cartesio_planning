@@ -198,9 +198,9 @@ public:
         std::string tmp;
         if(_nh.getParam("tf_prefix", tmp))
             _tf_prefix = tmp;
-        double _eps;
-        if(nh.getParam("eps", _eps))
-            _eps = eps;
+        double _eps_;
+        if(_nh.getParam("eps", _eps_))
+            _eps = _eps_;
     }
 
     double getEps(){return _eps;}

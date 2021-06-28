@@ -141,7 +141,7 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
             yaml << YAML::Key << "type" << YAML::Value << "CoP";
             yaml << YAML::Key << "link" << YAML::Value << link;
             yaml << YAML::Key << "x_limits" << x;
-            yaml << YAML::Key << "y_limits" << x;
+            yaml << YAML::Key << "y_limits" << y;
             yaml << YAML::EndMap;
         }
     }
