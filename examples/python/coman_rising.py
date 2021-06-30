@@ -155,7 +155,7 @@ if __name__ == '__main__':
         goal_config = configs[0]
         config_contacts = configs_contacts.pop(0)
 
-        planner_client.updateManifold(config_contacts.keys())
+        planner_client.updateManifold(list(config_contacts.keys()))
 
         for i in range(10):
             planner_client.publishStartAndGoal(joint_names, start_config, goal_config)
