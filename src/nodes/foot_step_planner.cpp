@@ -764,8 +764,10 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
         
         trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
         
-        _trj_publisher.publish(trj);              
+        _trj_publisher.publish(trj);
+        return true;
     }
+    return false;
 }
 
 void FootStepPlanner::interpolate()
@@ -1118,6 +1120,7 @@ ompl::base::PlannerPtr FootStepPlanner::make_planner ( std::string plannerType )
     
     else 
         std::runtime_error("Selected planner does not exist!");
+        return NULL;
 }
 
 
@@ -1201,6 +1204,8 @@ bool FootStepPlanner::publish_trajectory_service(std_srvs::Empty::Request& req, 
     
     _xbotcore_trj_publisher.publish(trj); 
     _trj_publisher.publish(trj);
+
+    return true;
 }
 
 bool FootStepPlanner::image_service ( std_srvs::Empty::Request& req, std_srvs::Empty::Response& res )

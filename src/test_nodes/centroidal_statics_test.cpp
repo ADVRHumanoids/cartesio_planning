@@ -52,7 +52,7 @@ int main(int argc, char ** argv)
             Eigen::Affine3d T;
             model->getPose(contact.first, T);
             if(!cs.setContactRotationMatrix(contact.first, T.linear()))
-                ROS_ERROR("Can not set rotation for link %s", contact.first);
+                ROS_ERROR("Can not set rotation for link %s", contact.first.c_str());
         }
 
         csROS.publish();
