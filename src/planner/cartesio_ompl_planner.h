@@ -90,8 +90,6 @@ public:
 
     StateWrapper getStateWrapper() const;
     
-    void clearPlanner();
-
     void clearPlanner() {_planner->clear();}
 
 private:
