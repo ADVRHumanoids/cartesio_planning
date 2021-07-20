@@ -85,6 +85,7 @@
     <!--<include if="$(arg gazebo)" file="$(find cartesian_interface)/launch/cartesio.launch">
         <param name="visual_mode" value="true"/>
     </include>-->
+
     <group if="$(arg gazebo)">
         <node pkg="gazebo_ros" type="gazebo" name="gazebo"
             args="$(env ROBOTOLOGY_ROOT)/external/soap_bar_rrt/multi_contact_planning/examples/configs/world/cogimon_no_wall.world -namespace arc"/>
@@ -144,7 +145,7 @@
         <param name="scale_x" type="double" value="0.05"/>
         <param name="scale_y" type="double" value="1.15"/>
         <param name="scale_z" type="double" value="2.0"/>
-        <rosparam param="position"> [2.125, 0., 1.0] </rosparam>
+        <rosparam param="position"> [2.145, 0., 1.0] </rosparam>
         <rosparam param="orientation"> [0.0, 0.0, 0.0, 1.0] </rosparam>
         <param name="frame_id" value="world"/>
         <param name="name_id" value="floor3"/>

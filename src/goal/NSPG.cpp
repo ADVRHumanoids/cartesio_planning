@@ -74,7 +74,7 @@ bool NSPG::sample ( double timeout, int max_counter)
         auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
         
         // Generate a random velocity vector for colliding chains' joints only every n iterations
-        if (iter % 10 == 0)
+        if (iter % 50 == 0)
         {
             _ik_solver->getModel()->eigenToMap(x, joint_map);
             random_map = generateRandomVelocities(colliding_chains);
@@ -90,9 +90,13 @@ bool NSPG::sample ( double timeout, int max_counter)
         _ik_solver->getCI()->setReferencePosture(joint_map);
         auto tic_ik = std::chrono::high_resolution_clock::now();
         bool solved = _ik_solver->solve();
+        Eigen::VectorXd q(_ik_solver->getModel()->getJointNum());
+        _ik_solver->getModel()->getJointPosition(q);
+        std::cout << "q: " << q.transpose() << std::endl;
         auto toc_ik = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec_ik = toc_ik - tic_ik;
          _logger->add("time_ik", fsec_ik.count());
+         _rspub->publishTransforms(ros::Time::now(), "/NSPG");
         if (!solved)
         {
             auto toc = std::chrono::high_resolution_clock::now();

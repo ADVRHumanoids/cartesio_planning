@@ -286,6 +286,11 @@ void PlannerExecutor::init_load_validity_checker()
 
     _vc_context->planning_scene->startMonitor();
 
+//    _vc_context->planning_scene->acm.setEntry("TCP_R", "wall", true);
+//    _vc_context->planning_scene->acm.setEntry("TCP_L", "wall", true);
+//    _vc_context->planning_scene->acm.setEntry("l_sole", "wall", true);
+//    _vc_context->planning_scene->acm.setEntry("r_sole", "wall", true);
+
     auto validity_predicate = [this](const Eigen::VectorXd& q)
     {
         _model->setJointPosition(q);

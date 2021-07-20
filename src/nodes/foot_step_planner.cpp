@@ -1283,7 +1283,7 @@ bool FootStepPlanner::image_service ( std_srvs::Empty::Request& req, std_srvs::E
     XBot::JointNameMap velocityLim_map, jmap, velocity_map;
     
     int iter = 0;
-    double dt = 0.01;
+    double dt = 0.1;
     
     _model->eigenToMap(_qhome, jmap);
     _ci->setReferencePosture(jmap);
@@ -1295,39 +1295,53 @@ bool FootStepPlanner::image_service ( std_srvs::Empty::Request& req, std_srvs::E
     
     XBot::Cartesian::Planning::NSPG::Ptr goal_sampler;               
     goal_sampler = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);
-    /*
+
     for(int i = 1; i < 8; i++)
     {
-        std::string str = std::to_string(i);   
+        std::string str = std::to_string(i);
         double random = (double) (std::rand() - RAND_MAX/2) / (RAND_MAX/2);
-        velocity_map["j_arm1_" + str] = random * velocityLim_map["j_arm1_" + str];  
+        velocity_map["j_arm1_" + str] = random * velocityLim_map["j_arm1_" + str];
+        velocity_map["j_arm2_" + str] = random * velocityLim_map["j_arm2_" + str];
     }
     
     double random = (double) (std::rand() - RAND_MAX/2) / (RAND_MAX/2);
     
-    velocity_map["torso_yaw"] = random * velocityLim_map["torso_yaw"];*/
+    velocity_map["torso_yaw"] = random * velocityLim_map["torso_yaw"];
     
-    for(int i = 1; i < 4; i++)
-    {
-        std::string str = std::to_string(i);   
-        double random = (double) (std::rand() - RAND_MAX/2) / (RAND_MAX/2);
-        velocity_map["VIRTUALJOINT_" + str] = random * 100;  
-    }
+//    for(int i = 1; i < 4; i++)
+//    {
+//        std::string str = std::to_string(i);
+//        double random = (double) (std::rand() - RAND_MAX/2) / (RAND_MAX/2);
+//        velocity_map["VIRTUALJOINT_" + str] = random * 100;
+//    }
     
     while(!check_state_valid(_start_model) && iter < 10)
     {
-//         for (int i = 1; i < 8; i++)
-//         {
-//             std::string str = std::to_string(i);
-//             jmap["j_arm1_" + str] += velocity_map["j_arm1_" + str] * dt;
-//         }
-//         jmap["torso_yaw"] += 2 * velocity_map["torso_yaw"] * dt;
+        auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
+
+         for (int i = 1; i < 8; i++)
+         {
+             for (auto chain : colliding_chains)
+             {
+                 if(chain.getChainName() == "left_arm")
+                 {
+                     std::string str = std::to_string(i);
+                     jmap["j_arm1_" + str] += velocity_map["j_arm1_" + str] * dt;
+                 }
+                 else if(chain.getChainName() == "right_arm")
+                 {
+                     std::string str = std::to_string(i);
+                     jmap["j_arm2_" + str] += velocity_map["j_arm2_" + str] * dt;
+                 }
+             }
+         }
+         jmap["torso_yaw"] += 2 * velocity_map["torso_yaw"] * dt;
         
-        for (int i = 1; i < 4; i++)
-        {
-            std::string str = std::to_string(i);
-            jmap["VIRTUALJOINT_" + str] += velocity_map["VIRTUALJOINT_" + str] * dt;
-        }
+//        for (int i = 1; i < 4; i++)
+//        {
+//            std::string str = std::to_string(i);
+//            jmap["VIRTUALJOINT_" + str] += velocity_map["VIRTUALJOINT_" + str] * dt;
+//        }
         
         _ci->setReferencePosture(jmap);
         _solver->solve();
