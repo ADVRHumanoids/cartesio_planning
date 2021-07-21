@@ -174,7 +174,7 @@ if __name__ == '__main__':
 
         for i in range(10):
             planner_client.publishStartAndGoal(joint_names, start_config, goal_config)
-            planner_client.publishContacts(config_contacts)
+            planner_client.publishContacts(config_contacts, True)
             rospy.sleep(0.1)
 
         if planner_client.solve(PLAN_MAX_ATTEMPTS=5, planner_type="RRTConnect", plan_time=30, interpolation_time=0.01, goal_threshold=1):
