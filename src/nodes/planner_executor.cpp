@@ -198,7 +198,7 @@ void PlannerExecutor::init_load_planner()
 
     if(_model->isFloatingBase())
     {
-        qmax.head<6>() << 1.0, 1.0, 1.0, 2*M_PI, 2*M_PI, 2*M_PI;
+        qmax.head<6>() << 1.0, 1.0, 1.0, 100*M_PI, 100*M_PI, 100*M_PI;
         qmin.head<6>() << -qmax.head<6>();
 
         YAML_PARSE_OPTION(_planner_config["state_space"],
@@ -665,7 +665,7 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     }
     res.status.msg.data = _planner->getPlannerStatus().asString();
 
-    if(res.status.val)
+    if(res.status.val == 6 || res.status.val == 5)
     {
         trajectory_msgs::JointTrajectory msg;
         msg.joint_names = _model->getEnabledJointNames();
@@ -774,7 +774,7 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
 
 
     std::vector<Eigen::VectorXd> raw_trajectory;
-    if(_planner->getPlannerStatus())
+    if(_planner->getPlannerStatus() == ompl::base::PlannerStatus::APPROXIMATE_SOLUTION || _planner->getPlannerStatus() == ompl::base::PlannerStatus::EXACT_SOLUTION)
     {
         auto t = ros::Duration(0.);
         trajectory_msgs::JointTrajectory msg;
@@ -788,15 +788,16 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
             t += ros::Duration(0.01);
         }
         _raw_trj_pub.publish(msg);
+        _interpolator->compute(raw_trajectory);
+        double time = 0.;
+        while(time <= _interpolator->getTrajectoryEndTime())
+        {
+            trajectory.push_back(_interpolator->evaluate(time));
+            time += interpolation_time;
+        }
     }
 
-    _interpolator->compute(raw_trajectory);
-    double t = 0.;
-    while(t <= _interpolator->getTrajectoryEndTime())
-    {
-        trajectory.push_back(_interpolator->evaluate(t));
-        t += interpolation_time;
-    }
+
 
     return ompl::base::PlannerStatus::StatusType(_planner->getPlannerStatus());
 }
