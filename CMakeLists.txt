@@ -131,10 +131,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    #INCLUDE_DIRS include
+    INCLUDE_DIRS include
     LIBRARIES cartesio_planning
     CATKIN_DEPENDS roscpp message_runtime
-    DEPENDS
+    DEPENDS ompl
     )
 
 ###########
@@ -170,6 +170,7 @@ add_library(cartesio_planning SHARED
     src/validity_checker/stability/stability_detection.cpp
     src/validity_checker/stability/centroidal_statics.cpp
     src/validity_checker/collisions/planning_scene_wrapper.cpp
+    src/validity_checker/collisions/ground_collision.cpp
     src/validity_checker/validity_checker_factory.cpp
     src/validity_checker/validity_predicate_aggregate.cpp
     src/nodes/goal_generation.cpp
@@ -423,6 +424,12 @@ install(TARGETS foot_step_planner
 install(DIRECTORY launch/
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
     FILES_MATCHING PATTERN "*.launch"
+    PATTERN ".svn" EXCLUDE
+    )
+
+install(DIRECTORY include/${PROJECT_NAME}/
+    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+    FILES_MATCHING PATTERN "*.h"
     PATTERN ".svn" EXCLUDE
     )
 
