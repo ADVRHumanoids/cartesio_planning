@@ -1,4 +1,4 @@
-#include "planning_scene_wrapper.h"
+#include <cartesio_planning/validity_checker/planning_scene_wrapper.h>
 
 
 namespace

@@ -3,9 +3,9 @@
 #include <cartesian_interface/utils/LoadConfig.h>
 #include <std_srvs/Trigger.h>
 #include <validity_checker/stability/stability_detection.h>
-#include <validity_checker/validity_predicate_aggregate.h>
+#include <cartesio_planning/validity_checker/validity_predicate_aggregate.h>
 #include <functional>
-#include <validity_checker/collisions/planning_scene_wrapper.h>
+#include <cartesio_planning/validity_checker/planning_scene_wrapper.h>
 #include <nodes/goal_generation.h>
 
 #include "cartesio_planning/CartesioGoal.h"

@@ -4,10 +4,9 @@
 #include <pybind11/functional.h>
 
 #include <cartesio_planning/planner/cartesio_ompl_planner.h>
-#include "validity_checker/collisions/planning_scene_wrapper.h"
+#include <cartesio_planning/validity_checker/planning_scene_wrapper.h>
 #include "validity_checker/stability/centroidal_statics.h"
 #include <cartesio_planning/validity_checker/validity_checker_context.h>
-
 
 #include <ros/serialization.h>
 #include <eigen_conversions/eigen_msg.h>

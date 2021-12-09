@@ -1,5 +1,4 @@
-#include "validity_predicate_aggregate.h"
-#include <iostream>
+#include <cartesio_planning/validity_checker/validity_predicate_aggregate.h>
 
 using namespace XBot::Cartesian::Planning;
 

@@ -1,7 +1,5 @@
 #include <type_traits>
 
-
-
 #include <ompl/geometric/planners/rrt/BiTRRT.h>
 #include <ompl/geometric/planners/rrt/InformedRRTstar.h>
 #include <ompl/geometric/planners/rrt/LazyLBTRRT.h>
@@ -29,7 +27,6 @@
 #include <ompl/geometric/planners/kpiece/LBKPIECE1.h>
 
 #include <ompl/control/planners/rrt/RRT.h>
-
 
 #include <cartesio_planning/planner/cartesio_ompl_planner.h>
 #include "utils/parse_yaml_utils.h"
@@ -426,11 +423,6 @@ void OmplPlanner::getControlBounds(Eigen::VectorXd& control_min, Eigen::VectorXd
     }
     control_min = control_min.Map(_cbounds->low.data(), _cbounds->low.size());
     control_max = control_max.Map(_cbounds->high.data(), _cbounds->high.size());
-}
-
-StateWrapper OmplPlanner::getStateWrapper() const
-{
-    return *_sw;
 }
 
 void OmplPlanner::setStateValidityPredicate(StateValidityPredicate svp)

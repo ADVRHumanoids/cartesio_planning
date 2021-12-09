@@ -1,4 +1,4 @@
-#include "validity_checker/collisions/planning_scene_wrapper.h"
+#include <cartesio_planning/validity_checker/planning_scene_wrapper.h>
 #include <sensor_msgs/JointState.h>
 #include <XBotInterface/ModelInterface.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>

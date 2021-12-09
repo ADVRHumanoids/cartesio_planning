@@ -1,6 +1,6 @@
 #include "validity_checker_factory.h"
 
-#include "validity_checker/collisions/planning_scene_wrapper.h"
+#include <cartesio_planning/validity_checker/planning_scene_wrapper.h>
 #include "validity_checker/stability/stability_detection.h"
 #include "validity_checker/stability/centroidal_statics.h"
 #include "validity_checker/collisions/ground_collision.h"

@@ -5,9 +5,9 @@
 #include <iostream>
 #include <yaml-cpp/yaml.h>
 
-#include "validity_checker/validity_predicate_aggregate.h"
-#include "validity_checker/collisions/planning_scene_wrapper.h"
-#include "validity_checker/stability/centroidal_statics.h"
+#include <cartesio_planning/validity_checker/planning_scene_wrapper.h>
+#include <cartesio_planning/validity_checker/validity_predicate_aggregate.h>
+
 
 namespace XBot { namespace Cartesian { namespace Planning {
 
