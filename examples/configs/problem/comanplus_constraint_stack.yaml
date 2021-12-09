@@ -3,7 +3,7 @@ solver_options:
     back_end: "qpoases"
 
 stack:
-    - ["l_sole", "r_sole", "l_ball_tip", "r_ball_tip"]
+    - ["l_sole", "r_sole", "l_ball_tip_d", "r_ball_tip_d"] #"l_ball_tip", "r_ball_tip"]
     #- ["Waist"]
 
 constraints: ["JointLimits"]
@@ -43,6 +43,18 @@ l_ball_tip:
 r_ball_tip:
     type: "Cartesian"
     distal_link: "r_ball_tip"
+    lambda: 1.0
+    indices: [0, 1, 2]
+
+l_ball_tip_d:
+    type: "Cartesian"
+    distal_link: "l_ball_tip_d"
+    lambda: 1.0
+    indices: [0, 1, 2]
+
+r_ball_tip_d:
+    type: "Cartesian"
+    distal_link: "r_ball_tip_d"
     lambda: 1.0
     indices: [0, 1, 2]
 

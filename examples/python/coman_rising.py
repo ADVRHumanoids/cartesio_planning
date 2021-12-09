@@ -44,11 +44,11 @@ class planner_client(object):
         gc_msg.active = active
         self.__gc_pub.publish(gc_msg)
 
-    def publishContacts(self, contact_dict, optimize_torques):
+    def publishContacts(self, contact_dict, optimize_torques, friction_coefficient):
         """
         configs_contacts.append({"r_ball_tip": [0, 0, 0, 1] , "l_sole": [0, 0, 0, 1] , "r_sole": [0, 0, 0, 1]})
         """
-        contact_msg = self.__createContactFrameMsg(contact_dict, optimize_torques)
+        contact_msg = self.__createContactFrameMsg(contact_dict, optimize_torques, friction_coefficient)
         self.__contact_pub.publish(contact_msg)
 
     def updateManifold(self, new_manifold):
@@ -114,7 +114,7 @@ class planner_client(object):
 
         return start_pose, goal_pose
 
-    def __createContactFrameMsg(self, contact_dict, optimize_torques):
+    def __createContactFrameMsg(self, contact_dict, optimize_torques, friction_coefficient):
         """
         To create message for static stability check
         """
@@ -129,7 +129,7 @@ class planner_client(object):
             quat.w = contact_dict[key][3]
             contact_msg.rotations.append(quat)
         contact_msg.optimize_torque = optimize_torques
-        contact_msg.friction_coefficient = 0.5*np.sqrt(2.)
+        contact_msg.friction_coefficient = friction_coefficient*np.sqrt(2.)
         return contact_msg
 
 

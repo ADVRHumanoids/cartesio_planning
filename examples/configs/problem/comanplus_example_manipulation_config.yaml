@@ -2,11 +2,11 @@ manifold:
     param_name: "problem_description_constraint"
 
 state_validity_check:
-    - self_collision
+    - collision
     - stability
     - ground_collision
 
-self_collision:
+collision:
     type: "CollisionCheck"
     include_environment: true
 
@@ -15,16 +15,19 @@ stability:
     links: 
       - "l_sole"
       - "r_sole"
-      - "l_ball_tip"
-      - "r_ball_tip"
-    friction_coefficient: 0.71
+      #- "l_ball_tip"
+      #- "r_ball_tip"
+      - "l_ball_tip_d"
+      - "r_ball_tip_d"
+    friction_coefficient: 0.8
     eps: 5e-2
     x_lim_cop:
-      - -0.025
-      - 0.065
+      - -0.1
+      - 0.1
     y_lim_cop:
-      - -0.025
-      - 0.025
+      - -0.05
+      - 0.05
+    optimize_torque: true
 
 ground_collision:
     type: "GroundCollisionAvoidance"
@@ -63,6 +66,6 @@ state_space:
     floating_base_pos_max: [ 10,  10,  10]
     type: "Atlas"
     alpha: 0.5233
-    rho: 0.1
-    epsilon: 0.1
+    rho: 0.5
+    epsilon: 0.5
     exploration: 0.5

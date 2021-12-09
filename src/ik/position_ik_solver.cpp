@@ -76,7 +76,7 @@ bool PositionCartesianSolver::solve()
 
         iter++;
 
-        _iter_callback();
+//        _iter_callback();
 
     }
 
