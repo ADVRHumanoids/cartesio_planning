@@ -34,16 +34,18 @@ void PlannerExecutor::planner_init()
 {
     //If exists, the actual planning scene in temporary stored
     std::unique_ptr<moveit_msgs::PlanningScene> tmp_scene;
-    if(_vc_context.planning_scene)
+    if (_vc_context)
     {
-        moveit_msgs::GetPlanningScene::Request req;
-        moveit_msgs::GetPlanningScene::Response res;
-        _vc_context.planning_scene->getPlanningScene(req, res);
-        tmp_scene = std::make_unique<moveit_msgs::PlanningScene>(res.scene);
+        if(_vc_context->planning_scene)
+        {
+            moveit_msgs::GetPlanningScene::Request req;
+            moveit_msgs::GetPlanningScene::Response res;
+            _vc_context->planning_scene->getPlanningScene(req, res);
+            tmp_scene = std::make_unique<moveit_msgs::PlanningScene>(res.scene);
+        }
     }
 
 
-    _manifold.reset();
     _planner.reset();
 
     init_load_planner();
@@ -51,20 +53,28 @@ void PlannerExecutor::planner_init()
 
     //If exists a templorary planning scene is set to resetted vc_context
     if(tmp_scene)
-        _vc_context.planning_scene->applyPlanningScene(*tmp_scene);
+        _vc_context->planning_scene->applyPlanningScene(*tmp_scene);
 
 
     // new validity checker needs to be set to goal generator,
     // however the following call is used only when the planner is reset since the first run
     // already initialize the goal generator with the correct vc_context
     if(_goal_generator)
-        _goal_generator->setValidityChecker(_vc_context);
+        _goal_generator->setValidityChecker(*_vc_context);
 }
 
 bool PlannerExecutor::update_manifold_from_param(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
     ROS_INFO("Requested update manifold from param");
     planner_init();
+    return true;
+}
+
+bool PlannerExecutor::reset_planner(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+{
+    ROS_INFO("Requested reset planner");
+    planner_init();
+    //init_load_planner();
     return true;
 }
 
@@ -161,6 +171,7 @@ void PlannerExecutor::init_load_planner()
             throw std::runtime_error("problem_description '" + param_name + "' parameter missing");
         }
 
+        _manifold.reset();
         _manifold = make_manifold(problem_description_string);
 
         ompl_constraint = _manifold;
@@ -187,7 +198,7 @@ void PlannerExecutor::init_load_planner()
 
     if(_model->isFloatingBase())
     {
-        qmax.head<6>() << 1.0, 1.0, 1.0, 2*M_PI, 2*M_PI, 2*M_PI;
+        qmax.head<6>() << 1.0, 1.0, 1.0, 100*M_PI, 100*M_PI, 100*M_PI;
         qmin.head<6>() << -qmax.head<6>();
 
         YAML_PARSE_OPTION(_planner_config["state_space"],
@@ -268,18 +279,23 @@ void PlannerExecutor::init_load_planner()
 
 void PlannerExecutor::init_load_validity_checker()
 {
-    _vc_context = Planning::ValidityCheckContext(_planner_config,
-                                                 _model, _nhpr);
+    _vc_context.reset();
+    _vc_context = std::make_unique<Planning::ValidityCheckContext>(_planner_config, _model, _nh);
 
-    _vc_context.planning_scene->startMonitor();
+    _vc_context->planning_scene->startMonitor();
 
-    _vc_context.planning_scene->startMonitor();
+    _vc_context->planning_scene->startMonitor();
+
+//    _vc_context->planning_scene->acm.setEntry("TCP_R", "wall", true);
+//    _vc_context->planning_scene->acm.setEntry("TCP_L", "wall", true);
+//    _vc_context->planning_scene->acm.setEntry("l_sole", "wall", true);
+//    _vc_context->planning_scene->acm.setEntry("r_sole", "wall", true);
 
     auto validity_predicate = [this](const Eigen::VectorXd& q)
     {
         _model->setJointPosition(q);
         _model->update();
-        return _vc_context.vc_aggregate.checkAll();
+        return _vc_context->vc_aggregate.checkAll();
     };
 
     _planner->setStateValidityPredicate(validity_predicate);
@@ -290,7 +306,8 @@ void PlannerExecutor::init_subscribe_start_goal()
     _start_sub = _nh.subscribe("start/joint_states", 1,
                                &PlannerExecutor::on_start_state_recv, this);
 
-    _goal_sub = _nh.subscribe("goal/joint_states", 1,
+    if(!_use_goal_generator)
+        _goal_sub = _nh.subscribe("goal/joint_states", 1,
                                   &PlannerExecutor::on_goal_state_recv, this);
 
     _start_viz = std::make_shared<Planning::RobotViz>(_model,
@@ -338,12 +355,14 @@ void PlannerExecutor::init_trj_publisiher()
     }
 
     _trj_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("joint_trajectory", 1, true);
+    _raw_trj_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("raw_trajectory", 1, true);
 }
 
 void PlannerExecutor::init_planner_srv()
 {
     _planner_srv = _nh.advertiseService("compute_plan", &PlannerExecutor::planner_service, this);
     _reset_manifold_srv = _nh.advertiseService("reset_manifold", &PlannerExecutor::update_manifold_from_param, this);
+    _reset_planner_srv = _nh.advertiseService("reset_planner", &PlannerExecutor::reset_planner, this);
 
     _get_planning_scene_srv = _nh.advertiseService("get_planning_scene",
                                                    &PlannerExecutor::get_planning_scene_service, this);
@@ -379,7 +398,7 @@ void PlannerExecutor::init_goal_generator()
                                                        ik_prob, ci_ctx);
 
 
-        _goal_generator = std::make_shared<GoalGenerator>(ci, _vc_context);
+        _goal_generator = std::make_shared<GoalGenerator>(ci, *_vc_context);
 
         int max_iterations;
         if(_nhpr.getParam("goal_generator_max_iterations", max_iterations))
@@ -472,7 +491,7 @@ bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
     bool valid = true;
 
     std::vector<std::string> failed_checks;
-    if(!_vc_context.vc_aggregate.checkAll(&failed_checks))
+    if(!_vc_context->vc_aggregate.checkAll(&failed_checks))
     {
         valid = false;
 
@@ -646,7 +665,7 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     }
     res.status.msg.data = _planner->getPlannerStatus().asString();
 
-    if(res.status.val)
+    if(res.status.val == 6 || res.status.val == 5)
     {
         trajectory_msgs::JointTrajectory msg;
         msg.joint_names = _model->getEnabledJointNames();
@@ -755,16 +774,30 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
 
 
     std::vector<Eigen::VectorXd> raw_trajectory;
-    if(_planner->getPlannerStatus())
-        raw_trajectory = _planner->getSolutionPath();
-
-    _interpolator->compute(raw_trajectory);
-    double t = 0.;
-    while(t <= _interpolator->getTrajectoryEndTime())
+    if(_planner->getPlannerStatus() == ompl::base::PlannerStatus::APPROXIMATE_SOLUTION || _planner->getPlannerStatus() == ompl::base::PlannerStatus::EXACT_SOLUTION)
     {
-        trajectory.push_back(_interpolator->evaluate(t));
-        t += interpolation_time;
+        auto t = ros::Duration(0.);
+        trajectory_msgs::JointTrajectory msg;
+        raw_trajectory = _planner->getSolutionPath();
+        for(auto x : raw_trajectory)
+        {
+            trajectory_msgs::JointTrajectoryPoint point;
+            point.positions.assign(x.data(), x.data() + x.size());
+            point.time_from_start = t;
+            msg.points.push_back(point);
+            t += ros::Duration(0.01);
+        }
+        _raw_trj_pub.publish(msg);
+        _interpolator->compute(raw_trajectory);
+        double time = 0.;
+        while(time <= _interpolator->getTrajectoryEndTime())
+        {
+            trajectory.push_back(_interpolator->evaluate(time));
+            time += interpolation_time;
+        }
     }
+
+
 
     return ompl::base::PlannerStatus::StatusType(_planner->getPlannerStatus());
 }
@@ -772,14 +805,14 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
 bool PlannerExecutor::get_planning_scene_service(moveit_msgs::GetPlanningScene::Request& req,
                                                  moveit_msgs::GetPlanningScene::Response& res)
 {
-    _vc_context.planning_scene->getPlanningScene(req, res);
+    _vc_context->planning_scene->getPlanningScene(req, res);
     return true;
 }
 
 bool PlannerExecutor::apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request & req,
                                                    moveit_msgs::ApplyPlanningScene::Response & res)
 {
-    _vc_context.planning_scene->applyPlanningScene(req.scene);
+    _vc_context->planning_scene->applyPlanningScene(req.scene);
     return true;
 }
 
@@ -796,7 +829,7 @@ void PlannerExecutor::publish_and_check_start_and_goal_models(ros::Time time)
         ROS_WARN("START state is NOT valid!");
     }
 
-    std::vector<std::string> red_links = _vc_context.planning_scene->getCollidingLinks();
+    std::vector<std::string> red_links = _vc_context->planning_scene->getCollidingLinks();
 
     for(unsigned int i = 0; i < red_links.size(); ++i)
         ROS_WARN("start robot: colliding link %i --> %s",i ,red_links[i].c_str());
@@ -815,7 +848,7 @@ void PlannerExecutor::publish_and_check_start_and_goal_models(ros::Time time)
         ROS_WARN("GOAL state is NOT valid!");
     }
 
-    red_links = _vc_context.planning_scene->getCollidingLinks();
+    red_links = _vc_context->planning_scene->getCollidingLinks();
 
     for(unsigned int i = 0; i < red_links.size(); ++i)
         ROS_WARN("goal robot: colliding link %i --> %s",i ,red_links[i].c_str());

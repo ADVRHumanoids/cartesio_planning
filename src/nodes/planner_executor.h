@@ -13,11 +13,11 @@
 #include <cartesian_interface/utils/RobotStatePublisher.h>
 
 #include "constraints/cartesian_constraint.h"
-#include <cartesio_planning/planner/cartesio_ompl_planner.h>
+#include "planner/cartesio_ompl_planner.h"
 #include "utils/robot_viz.h"
 #include "validity_checker/validity_predicate_aggregate.h"
 #include "validity_checker/collisions/planning_scene_wrapper.h"
-#include <cartesio_planning/validity_checker/validity_checker_context.h>
+#include "validity_checker/validity_checker_context.h"
 
 #include "cartesio_planning/CartesioPlanner.h"
 
@@ -114,7 +114,7 @@ private:
                               cartesio_planning::CartesioGoal::Response& res);
     bool update_manifold_from_param(std_srvs::Empty::Request& req,
                                     std_srvs::Empty::Response& res);
-    bool clear_planner(std_srvs::Empty::Request& req,
+    bool reset_planner(std_srvs::Empty::Request& req,
                        std_srvs::Empty::Response& res);
 
 
@@ -128,13 +128,14 @@ private:
     XBot::ModelInterface::Ptr _model;
     Planning::OmplPlanner::UniquePtr _planner;
     Planning::CartesianConstraint::Ptr _manifold;
-    Planning::ValidityCheckContext _vc_context;
+    Planning::ValidityCheckContext::UniquePtr _vc_context;
 
     ros::Subscriber _goal_sub, _start_sub;
     XBot::ModelInterface::Ptr _start_model, _goal_model;
     XBot::Cartesian::Planning::RobotViz::Ptr _start_viz, _goal_viz;
 
     ros::Publisher _trj_pub;
+    ros::Publisher _raw_trj_pub;
     std::vector<ros::Publisher> _cartesian_trajectory_publishers;
     std::vector<std::string> _base_links, _distal_links;
 
@@ -142,7 +143,7 @@ private:
     ros::ServiceServer _get_planning_scene_srv;
     ros::ServiceServer _apply_planning_scene_srv;
     ros::ServiceServer _reset_manifold_srv;
-    ros::ServiceServer _clear_planner_srv;
+    ros::ServiceServer _reset_planner_srv;
 
     GoalGenerator::Ptr _goal_generator;
     bool _use_goal_generator;
