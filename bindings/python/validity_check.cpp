@@ -119,7 +119,7 @@ auto set_optimize_torque = [](CentroidalStatics& self, bool optimize_torque, boo
 PYBIND11_MODULE(validity_check, m)
 {
 
-    py::class_<PlanningSceneWrapper>(m, "PlanningSceneWrapper")
+    py::class_<PlanningSceneWrapper, PlanningSceneWrapper::Ptr>(m, "PlanningSceneWrapper")
             .def(py::init<ModelInterface::ConstPtr>())
             .def("startMonitor", &PlanningSceneWrapper::startMonitor)
             .def("stopMonitor", &PlanningSceneWrapper::stopMonitor)
@@ -162,5 +162,6 @@ PYBIND11_MODULE(validity_check, m)
     py::class_<ValidityCheckContext>(m, "ValidityCheckContext")
             .def(py::init(create_validity_check_context),
                  py::arg("vc_node"),
-                 py::arg("model"));
+                 py::arg("model"))
+            .def("setPlanningScene", &ValidityCheckContext::setPlanningScene);
 }
