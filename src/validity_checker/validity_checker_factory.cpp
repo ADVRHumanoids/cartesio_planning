@@ -82,7 +82,7 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
         y_lim_cop_eig[0] = y_lim_cop[0];
         y_lim_cop_eig[1] = y_lim_cop[1];}
 
-    auto cs = std::make_shared<CentroidalStatics>(model, links, friction_coefficient,
+    auto cs = std::make_shared<CentroidalStatics>(model, links, friction_coefficient*sqrt(2),
                                                   optimize_torque, x_lim_cop_eig, y_lim_cop_eig, false);
 
     // set rotations

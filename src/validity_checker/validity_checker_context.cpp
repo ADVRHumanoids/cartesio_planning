@@ -43,7 +43,6 @@ ValidityCheckContext::ValidityCheckContext(YAML::Node config,
         vc_aggregate.add(vc_fun, vc_name);
 
     }
-
 }
 
 std::function<bool ()> ValidityCheckContext::make_collision_checker(YAML::Node vc_node)
@@ -81,6 +80,11 @@ std::function<bool ()> ValidityCheckContext::make_collision_checker(YAML::Node v
 XBot::Cartesian::Planning::ValidityCheckContext::ValidityCheckContext()
 {
 
+}
+
+void ValidityCheckContext::setPlanningScene(PlanningSceneWrapper::Ptr ps)
+{
+    planning_scene = ps;
 }
 
 } } }

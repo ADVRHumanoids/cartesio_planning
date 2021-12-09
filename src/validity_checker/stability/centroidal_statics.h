@@ -13,6 +13,9 @@
 #include <cartesio_acceleration_support/Force.h>
 #include <cartesio_acceleration_support/NormalTorque.h>
 
+#include <thread>
+#include <chrono>
+
 
 
 namespace XBot {
@@ -62,7 +65,7 @@ public:
      * if contact moments are optimized ([0,0]) default (we consider a single limit for all the contacts in the constructor)
      */
     CentroidalStatics(XBot::ModelInterface::ConstPtr model, const std::vector<std::string>& contact_links,
-                      const double friction_coeff, const bool optimize_torque = false,
+                      const double friction_coeff, const bool optimize_torque = true,
                       const Eigen::Vector2d& xlims_cop = Eigen::Vector2d::Zero(2),
                       const Eigen::Vector2d& ylims_cop = Eigen::Vector2d::Zero(2),
                       bool log = false);
@@ -405,6 +408,16 @@ private:
 public: void set_contacts(cartesio_planning::SetContactFrames::ConstPtr msg)
     {
         bool call_init = false;
+
+//        std::cout << "active links: " << std::endl;
+//        for (auto link : msg->frames_in_contact)
+//            std::cout << link << std::endl;
+//        std::cout << "rotations: " << std::endl;
+//        for (auto rot : msg->rotations)
+//            std::cout << rot << std::endl;
+//        std::cout << "optimize torque: " << msg->optimize_torque << std::endl;
+//        std::cout << "friction coefficient: " << msg->friction_coefficient << std::endl;
+//        std::this_thread::sleep_for(std::chrono::seconds(5));
 
         //1. we check if we have to change optimize torque option
         if(msg->optimize_torque != _cs->isTorqueOptimized())

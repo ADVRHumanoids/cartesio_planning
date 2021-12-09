@@ -23,6 +23,8 @@ public:
                          ModelInterface::Ptr model, 
                          ros::NodeHandle nh = ros::NodeHandle());
 
+    void setPlanningScene(PlanningSceneWrapper::Ptr ps);
+
     PlanningSceneWrapper::Ptr planning_scene;
     ValidityPredicateAggregate vc_aggregate;
 
