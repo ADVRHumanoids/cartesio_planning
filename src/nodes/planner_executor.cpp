@@ -45,7 +45,6 @@ void PlannerExecutor::planner_init()
         }
     }
 
-
     _planner.reset();
 
     init_load_planner();
