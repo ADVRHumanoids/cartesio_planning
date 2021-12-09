@@ -29,7 +29,7 @@ auto add_box = [](PlanningSceneWrapper& self,
 
     shape_msgs::SolidPrimitive solid;
     solid.type = solid.BOX;
-    solid.dimensions = {size.x(), size.y(), size.z()};
+    solid.dimensions = {size.x(), size.y(), size.z()};  
     co.primitives.push_back(solid);
 
     geometry_msgs::Pose pose;
@@ -96,21 +96,30 @@ auto create_validity_check_context = [](std::string vc_node, ModelInterface::Ptr
     return vc_context;
 };
 
-auto set_contact_links = [](CentroidalStatics& self, const std::vector<std::string>& active_links)
+auto set_contact_links = [](CentroidalStatics& self, const std::vector<std::string>& active_links, bool log = false)
 {
     self.setContactLinks(active_links);
+    self.init(log);
 };
 
 auto set_contact_links_and_optimize_torque = [](CentroidalStatics& self,
-    const std::vector<std::string>& active_links, bool optimize_torque)
+    const std::vector<std::string>& active_links, bool optimize_torque, bool log = false)
 {
-    self.setContactLinks(active_links, optimize_torque);
+    self.setContactLinks(active_links);
+    self.setOptimizeTorque(optimize_torque);
+    self.init(log);
+};
+
+auto set_optimize_torque = [](CentroidalStatics& self, bool optimize_torque, bool log = false)
+{
+    self.setOptimizeTorque(optimize_torque);
+    self.init(log);
 };
 
 PYBIND11_MODULE(validity_check, m)
 {
 
-    py::class_<PlanningSceneWrapper>(m, "PlanningSceneWrapper")
+    py::class_<PlanningSceneWrapper, PlanningSceneWrapper::Ptr>(m, "PlanningSceneWrapper")
             .def(py::init<ModelInterface::ConstPtr>())
             .def("startMonitor", &PlanningSceneWrapper::startMonitor)
             .def("stopMonitor", &PlanningSceneWrapper::stopMonitor)
@@ -130,26 +139,29 @@ PYBIND11_MODULE(validity_check, m)
                          const double,
                          const bool,
                          const Eigen::Vector2d&,
-                         const Eigen::Vector2d&>(),
+                         const Eigen::Vector2d&,
+                         bool>(),
                  py::arg("model"),
                  py::arg("contact_links"),
                  py::arg("friction_coeff"),
                  py::arg("optimize_torque") = false,
                  py::arg("xlims_cop") = Eigen::Vector2d::Zero(2),
-                 py::arg("ylims_cop") = Eigen::Vector2d::Zero(2))
+                 py::arg("ylims_cop") = Eigen::Vector2d::Zero(2),
+                 py::arg("log") = false)
             .def("checkStability", &CentroidalStatics::checkStability, py::arg("eps") = 1e-3)
-            .def("setContactLinks", set_contact_links)
-            .def("setContactLinks", set_contact_links_and_optimize_torque)
-            .def("addContactLinks", &CentroidalStatics::addContactLinks)
+            .def("setContactLinks", set_contact_links, py::arg("active_links"), py::arg("log") = false)
+            .def("setContactLinks", set_contact_links_and_optimize_torque, py::arg("active_links"), py::arg("optimize_torque"), py::arg("log") = false)
             .def("getContactLinks", &CentroidalStatics::getContactLinks)
             .def("setContactRotationMatrix", &CentroidalStatics::setContactRotationMatrix)
             .def("getContactFrame", &CentroidalStatics::getContactFrame)
             .def("setForces", &CentroidalStatics::setForces)
             .def("getForces", &CentroidalStatics::getForces)
-            .def("setOptimizeTorque", &CentroidalStatics::setOptimizeTorque);
+            .def("setOptimizeTorque", set_optimize_torque, py::arg("optimize_torque"), py::arg("log") = false)
+            .def("isTorqueOptimized", &CentroidalStatics::isTorqueOptimized);
             
     py::class_<ValidityCheckContext>(m, "ValidityCheckContext")
             .def(py::init(create_validity_check_context),
                  py::arg("vc_node"),
-                 py::arg("model"));
+                 py::arg("model"))
+            .def("setPlanningScene", &ValidityCheckContext::setPlanningScene);
 }

@@ -11,6 +11,10 @@
 #include <cartesio_acceleration_support/DynamicFeasibility.h>
 #include <cartesio_acceleration_support/FrictionCone.h>
 #include <cartesio_acceleration_support/Force.h>
+#include <cartesio_acceleration_support/NormalTorque.h>
+
+#include <thread>
+#include <chrono>
 
 
 
@@ -21,6 +25,7 @@ namespace Planning {
 class CentroidalStatics{
 
 public:
+    typedef std::shared_ptr<CentroidalStatics> Ptr;
     /**
      * @brief CentroidalStatics checks if the robot is statically stable with given contacts.
      * The problem which is optimized depends if the contact moments are optimized or not.
@@ -60,13 +65,14 @@ public:
      * if contact moments are optimized ([0,0]) default (we consider a single limit for all the contacts in the constructor)
      */
     CentroidalStatics(XBot::ModelInterface::ConstPtr model, const std::vector<std::string>& contact_links,
-                      const double friction_coeff, const bool optimize_torque = false,
+                      const double friction_coeff, const bool optimize_torque = true,
                       const Eigen::Vector2d& xlims_cop = Eigen::Vector2d::Zero(2),
-                      const Eigen::Vector2d& ylims_cop = Eigen::Vector2d::Zero(2));
+                      const Eigen::Vector2d& ylims_cop = Eigen::Vector2d::Zero(2),
+                      bool log = false);
 
     /**
      * @brief setOptimizeTorque permits to enable or disable the optimization of contact moments
-     * NOTE: init() is called
+     * NOTE: needs to call init() after set
      * @param optimize_torque
      */
     void setOptimizeTorque(const bool optimize_torque);
@@ -80,18 +86,10 @@ public:
 
     /**
      * @brief setContactLinks permits to set a new vector of contact links (rotations are initialized as identity)
-     * NOTE: init() is called
+     * NOTE: needs to call init() after set
      * @param contact_links
      */
     void setContactLinks(const std::vector<std::string>& contact_links);
-    /**
-     * @brief setContactLinks ermits to set a new vector of contact links (rotations are initialized as identity)
-     * and optimize torque.
-     * NOTE: init() is called once ins this case
-     * @param contact_links
-     * @param optimize_torque
-     */
-    void setContactLinks(const std::vector<string> &contact_links, const bool optimize_torque);
     
     /**
      * @brief getContactLinks retrieve the list of set contact links
@@ -100,20 +98,9 @@ public:
     const std::vector<std::string>& getContactLinks();
 
     /**
-     * @brief addContactLinks add contact links to existing once (rotations are initialized as identity)
-     * @param contact_links
-     */
-    void addContactLinks(const std::vector<std::string>& contact_links);
-
-    /**
-     * @brief removeContactLinks remove contact links from existing once
-     * @param contact_links
-     */
-    void removeContactLinks(const std::vector<std::string>& contact_links);
-
-    /**
      * @brief setContactRotationMatrix permits to change contact rotation matrix for a particular friciton cone constraint
      * associated to a contact link
+     * NOTE: needs to call init() after set
      * @param contact_link
      * @param w_R_c
      * @return false if no friction cones are associated to that contact link
@@ -156,13 +143,18 @@ public:
     
     void setForces(std::map<std::string, Eigen::Vector6d> forces);
 
+    /**
+     * @brief init creates and initialize the optimization problem
+     */
+    void init(bool enable_log = true);
+
+    bool isTorqueOptimized(){ return _optimize_torque;}
+
 
 private:
     YAML::Node createYAMLProblem(const std::vector<std::string>& contact_links,
                            const double friction_coeff,
                            const bool optimize_torque);
-
-    void init();
 
     bool compute();
 
@@ -170,6 +162,7 @@ private:
     XBot::ModelInterface::Ptr _model_internal;
 
     std::map<std::string, XBot::Cartesian::acceleration::FrictionCone::Ptr> _fcs;
+    std::map<std::string, XBot::Cartesian::acceleration::NormalTorque::Ptr> _nts;
     std::map<std::string, XBot::Cartesian::acceleration::ForceTask::Ptr> _fs;
     bool _optimize_torque;
     double _friction_coeff;
@@ -195,22 +188,24 @@ class CentroidalStaticsROS
 public:
     typedef std::shared_ptr<CentroidalStaticsROS> Ptr;
 
-    CentroidalStaticsROS(XBot::ModelInterface::ConstPtr model, CentroidalStatics& cs, ros::NodeHandle& nh, double eps=1e-3):
+    CentroidalStaticsROS(XBot::ModelInterface::ConstPtr model,
+                         CentroidalStatics::Ptr cs, ros::NodeHandle& nh, double eps=1e-3):
         _cs(cs),
         _model(*model),
         _nh(nh),
-        _tf_prefix(""),
+        _tf_prefix("ci/"),
         _eps(eps)
     {
         _contact_sub = _nh.subscribe("contacts", 10, &CentroidalStaticsROS::set_contacts, this);
+
         _vis_pub = _nh.advertise<visualization_msgs::Marker>("centroidal_statics/forces", 0);
 
         std::string tmp;
         if(_nh.getParam("tf_prefix", tmp))
             _tf_prefix = tmp;
-        double _eps_;
-        if(_nh.getParam("eps", _eps_))
-            _eps = _eps_;
+        double _eps;
+        if(nh.getParam("eps", _eps))
+            _eps = eps;
     }
 
     double getEps(){return _eps;}
@@ -218,13 +213,13 @@ public:
 
     void publish()
     {
-        _fcs = _cs.getFrictionCones();
+        _fcs = _cs->getFrictionCones();
 
         if(_fcs.size() > 0)
         {
-            bool check_stability =  _cs.checkStability(_eps);
+            bool check_stability =  _cs->checkStability(_eps);
 
-            std::map<std::string, Eigen::Vector6d> Fcs = _cs.getForces();
+            std::map<std::string, Eigen::Vector6d> Fcs = _cs->getForces();
 
             int i = 0; int k = 0;
             ros::Time t = ros::Time::now();
@@ -345,7 +340,7 @@ public:
                 static const double DELTA_THETA = M_PI/16.0;
                 double theta = 0.;
                 double scale = 0.09;
-                double angle = M_PI_2-std::atan(_cs.getFricitonCoefficient());
+                double angle = M_PI_2-std::atan(_cs->getFricitonCoefficient());
                 for (std::size_t i = 0; i < 32; i++)
                 {
                    pp[0].x = 0;
@@ -406,27 +401,45 @@ public:
 private:
     /**
      * @brief set_contacts
-     * NOTE: when SET and ADD are used, the friction coefficient is updated with the one of the message which is the same for
+     * NOTE: when SET is used, the friction coefficient is updated with the one of the message which is the same for
      * all the contacts
      * @param msg
      */
 public: void set_contacts(cartesio_planning::SetContactFrames::ConstPtr msg)
     {
+        bool call_init = false;
+
+//        std::cout << "active links: " << std::endl;
+//        for (auto link : msg->frames_in_contact)
+//            std::cout << link << std::endl;
+//        std::cout << "rotations: " << std::endl;
+//        for (auto rot : msg->rotations)
+//            std::cout << rot << std::endl;
+//        std::cout << "optimize torque: " << msg->optimize_torque << std::endl;
+//        std::cout << "friction coefficient: " << msg->friction_coefficient << std::endl;
+//        std::this_thread::sleep_for(std::chrono::seconds(5));
+
+        //1. we check if we have to change optimize torque option
+        if(msg->optimize_torque != _cs->isTorqueOptimized())
+        {
+            _cs->setOptimizeTorque(msg->optimize_torque);
+            call_init = true;
+        }
+
+        //2. we check if we set, add or remove contacts
         if(msg->action.data() == msg->SET)
         {
-            _cs.setContactLinks(msg->frames_in_contact);
-            _cs.setFrictionCoeff(msg->friction_coefficient);
+            _cs->setContactLinks(msg->frames_in_contact);
+            _cs->setFrictionCoeff(msg->friction_coefficient);
+            call_init = true;
         }
-        else if(msg->action.data() == msg->ADD)
-        {
-            _cs.addContactLinks(msg->frames_in_contact);
-            _cs.setFrictionCoeff(msg->friction_coefficient);
-        }
-        else if(msg->action.data() == msg->REMOVE)
-            _cs.removeContactLinks(msg->frames_in_contact);
 
 
-        if(!msg->rotations.empty() && (msg->action.data() == msg->ADD || msg->action.data() == msg->SET))
+        if(call_init)
+            _cs->init();
+
+        //3. we change cotacts
+        if(!msg->rotations.empty())
         {
             if(msg->rotations.size() != msg->frames_in_contact.size())
                 ROS_ERROR("msg->rotations.size() != msg->frames_in_contact.size(), rotations will not be applied!");
@@ -437,17 +450,18 @@ public: void set_contacts(cartesio_planning::SetContactFrames::ConstPtr msg)
                     Eigen::Quaterniond q;
                     tf::quaternionMsgToEigen(msg->rotations[i], q);
 
-                    _cs.setContactRotationMatrix(msg->frames_in_contact[i], q.toRotationMatrix());
+                    _cs->setContactRotationMatrix(msg->frames_in_contact[i], q.toRotationMatrix());
                 }
             }
         }
 
-        _cs.setOptimizeTorque(msg->optimize_torque);
+
+
 
     }
 
 private:
-    CentroidalStatics& _cs;
+    CentroidalStatics::Ptr _cs;
     const XBot::ModelInterface& _model;
     ros::NodeHandle _nh;
     ros::Subscriber _contact_sub;

@@ -11,7 +11,8 @@ CentroidalStatics::CentroidalStatics(XBot::ModelInterface::ConstPtr model, const
                                      const double friction_coeff,
                                      const bool optimize_torque,
                                      const Eigen::Vector2d& xlims_cop,
-                                     const Eigen::Vector2d& ylims_cop):
+                                     const Eigen::Vector2d& ylims_cop,
+                                     bool log):
     _model(model),
     _friction_coeff(friction_coeff),
     _optimize_torque(optimize_torque),
@@ -19,28 +20,38 @@ CentroidalStatics::CentroidalStatics(XBot::ModelInterface::ConstPtr model, const
     _x_lims_cop(xlims_cop),
     _y_lims_cop(ylims_cop)
 {
-    init();
+    init(log);
 }
 
-void CentroidalStatics::init()
+void CentroidalStatics::init(bool enable_log)
 {
-    auto yaml_problem = createYAMLProblem(_contact_links, _friction_coeff, _optimize_torque);
+    if(_model_internal)
+        _model_internal.reset();
+    if(_fcs.size() > 0)
+        _fcs.clear();
+    if(_fs.size() > 0)
+        _fs.clear();
+
+    if(_dyn_feas)
+        _dyn_feas.reset();
+
+    YAML::Node yaml_problem = createYAMLProblem(_contact_links, _friction_coeff, _optimize_torque);
 
     _model_internal = ModelInterface::getModel(_model->getConfigOptions());
     _model_internal->syncFrom(*_model);
-    auto ctx = std::make_shared<Context>(std::make_shared<Parameters>(1.), _model_internal);
+    auto params = std::make_shared<Parameters>(1.);
+    params->setLogEnabled(enable_log);
+    std::shared_ptr<Context> ctx = std::make_shared<Context>(params, _model_internal);
 
     ProblemDescription pb(yaml_problem, ctx);
 
+    if(_ci)
+        _ci.reset();
     _ci = CartesianInterfaceImpl::MakeInstance("OpenSot", pb, ctx);
 
     _dyn_feas = std::dynamic_pointer_cast<acceleration::DynamicFeasibility>(_ci->getTask("dynamic_feasibility"));
-    if(_fcs.size() > 0)
-        _fcs.clear();
     for(auto link : _contact_links)
         _fcs[link] = std::dynamic_pointer_cast<acceleration::FrictionCone>(_ci->getTask(link + "_fc"));
-    if(_fs.size() > 0)
-        _fs.clear();
     for(auto link : _contact_links)
         _fs[link] = std::dynamic_pointer_cast<acceleration::ForceTask>(_ci->getTask(link));
 }
@@ -70,8 +81,14 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
         yaml << link + "_fc" << link + "_lims";
     if(_optimize_torque)
     {
-        for(auto link : contact_links)
+        for(auto link : contact_links) // FIXME
+        {
+            if (link == "TCP_R" || link == "TCP_L" || link == "l_ball_tip_d" || link == "r_ball_tip_d")
+                continue;
             yaml << link + "_cop";
+            yaml << link + "_nt";
+        }
+
     }
     yaml << YAML::EndSeq;
 
@@ -94,12 +111,17 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
         yaml << YAML::Key << "lib_name" << YAML::Value << libname;
         yaml << YAML::Key << "type" << YAML::Value << "FrictionCone";
         yaml << YAML::Key << "link" << YAML::Value << link;
-        yaml << YAML::Key << "friction_coeff" << YAML::Value << friction_coeff;
+        if (link == "l_sole" || link == "r_sole")
+            yaml << YAML::Key << "friction_coeff" << YAML::Value << 1.15;
+        else
+            yaml << YAML::Key << "friction_coeff" << YAML::Value << friction_coeff;
         yaml << YAML::EndMap;
     }
 
-    std::vector<double> f_max(6,1000.);
-    std::vector<double> f_min(6,-1000.);
+    std::vector<double> f_max = {1000., 1000., 1000., 1000., 1000., 1000.};
+    std::vector<double> f_min = {-1000., -1000., -1000., -1000., -1000., -1000.};
+    std::vector<double> f_max_hands = {1000., 1000., 1000., 0., 0., 0.};
+    std::vector<double> f_min_hands = {-1000., -1000., -1000., 0., 0., 0.};
     if(!optimize_torque)
         f_max[3] = f_max[4] = f_max[5] = f_min[3] = f_min[4] = f_min[5] = 0.;
 
@@ -111,10 +133,19 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
         yaml << YAML::Key << "lib_name" << YAML::Value << libname;
         yaml << YAML::Key << "type" << YAML::Value << "ForceLimits";
         yaml << YAML::Key << "link" << YAML::Value << link;
-        yaml << YAML::Key << "min" << YAML::Value << f_min;
-        yaml << YAML::Key << "max" << YAML::Value << f_max;
+        if (link == "TCP_R" || link == "TCP_L" || link == "l_ball_tip" || link == "r_ball_tip")
+        {
+            yaml << YAML::Key << "min" << YAML::Value << f_min_hands;
+            yaml << YAML::Key << "max" << YAML::Value << f_max_hands;
+        }
+        else
+        {
+            yaml << YAML::Key << "min" << YAML::Value << f_min;
+            yaml << YAML::Key << "max" << YAML::Value << f_max;
+        }
         yaml << YAML::EndMap;
     }
+
 
     for(auto link : contact_links)
     {
@@ -124,14 +155,18 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
         yaml << YAML::Key << "lib_name" << YAML::Value << libname;
         yaml << YAML::Key << "type" << YAML::Value << "Force";
         yaml << YAML::Key << "link" << YAML::Value << link;
+//        std::vector<double> weight = {1e-2, 1e-2, 1e-2, 1, 1, 1};
+//        yaml << YAML::Key << "weight" << YAML::Value << weight;
         yaml << YAML::EndMap;
     }
 
     if(_optimize_torque)
     {
-        std::vector<double> x,y;
+        std::vector<double> x,y,x_nt,y_nt;
         x.push_back(_x_lims_cop[0]); x.push_back(_x_lims_cop[1]);
         y.push_back(_y_lims_cop[0]); y.push_back(_y_lims_cop[1]);
+        x_nt = {-0.05, 0.05};
+        y_nt = {-0.025, 0.025};
         for(auto link : contact_links)
         {
             yaml << YAML::Key << link + "_cop";
@@ -141,13 +176,24 @@ YAML::Node CentroidalStatics::createYAMLProblem(const std::vector<std::string>& 
             yaml << YAML::Key << "type" << YAML::Value << "CoP";
             yaml << YAML::Key << "link" << YAML::Value << link;
             yaml << YAML::Key << "x_limits" << x;
-            yaml << YAML::Key << "y_limits" << y;
+            yaml << YAML::Key << "y_limits" << x;
+            yaml << YAML::EndMap;
+
+            yaml << YAML::Key << link + "_nt";
+            yaml << YAML::BeginMap;
+            yaml << YAML::Key << "name" << YAML::Value << link + "_nt";
+            yaml << YAML::Key << "lib_name" << YAML::Value << libname;
+            yaml << YAML::Key << "type" << YAML::Value << "NormalTorque";
+            yaml << YAML::Key << "link" << YAML::Value << link;
+            yaml << YAML::Key << "x_limits" << x_nt;
+            yaml << YAML::Key << "y_limits" << y_nt;
+            yaml << YAML::Key << "friction_coeff" << YAML::Value << 0.4;
             yaml << YAML::EndMap;
         }
     }
 
     yaml << YAML::EndMap;
-    std::cout<<yaml.c_str()<<std::endl;
+    std::cout << yaml.c_str() << std::endl;
 
     return YAML::Load(yaml.c_str());
 }
@@ -167,68 +213,20 @@ bool CentroidalStatics::setFrictionCoeff(const double friction_coeff)
 void CentroidalStatics::setOptimizeTorque(const bool optimize_torque)
 {
     _optimize_torque = optimize_torque;
-
-    init();
 }
 
 void CentroidalStatics::setContactLinks(const std::vector<std::string>& contact_links)
 {
     _contact_links.clear();
     _contact_links = contact_links;
-
-    init();
 }
 
-void CentroidalStatics::setContactLinks(const std::vector<string> &contact_links, const bool optimize_torque)
-{
-    _optimize_torque = optimize_torque;
-    _contact_links.clear();
-    _contact_links = contact_links;
-
-    init();
-}
 
 const std::vector< std::string >& CentroidalStatics::getContactLinks()
 {
     return _contact_links;
 }
 
-void CentroidalStatics::addContactLinks(const std::vector<std::string>& contact_links)
-{
-    std::map<std::string, Eigen::Matrix3d> rotations;
-    for(auto fc : _fcs)
-        rotations[fc.first] = fc.second->getContactFrame();
-
-    for(auto contact_link : contact_links)
-        _contact_links.push_back(contact_link);
-
-    init();
-
-    for(auto R : rotations)
-        setContactRotationMatrix(R.first, R.second);
-}
-
-void CentroidalStatics::removeContactLinks(const std::vector<std::string>& contact_links)
-{
-    std::map<std::string, Eigen::Matrix3d> rotations;
-    for(auto fc : _fcs)
-        rotations[fc.first] = fc.second->getContactFrame();
-
-    for(auto link : contact_links)
-    {
-        std::vector<std::string>::iterator it = std::find(_contact_links.begin(), _contact_links.end(), link);
-        if(it != _contact_links.end())
-        {
-            _contact_links.erase(it);
-            rotations.erase(link);
-        }
-    }
-
-    init();
-
-    for(auto R : rotations)
-        setContactRotationMatrix(R.first, R.second);
-}
 
 bool CentroidalStatics::setContactRotationMatrix(const std::string& contact_link,
                                                  const Eigen::Matrix3d& w_R_c)
@@ -247,15 +245,21 @@ bool CentroidalStatics::compute()
 
 bool CentroidalStatics::checkStability(const double eps)
 {
+    double res;
     if(compute())
     {   
         Eigen::VectorXd error;
         if(!_dyn_feas->getTaskError(error))
             return false;
-        double res = error.norm();
+        res = error.norm();
+//         std::cout << "res: " << res << std::endl;
         if(res <= eps)
             return true;
     }
+//    std::cout << "res: " << res << std::endl;
+//     auto map = getForces();
+//         for (auto i : map)
+//             std::cout << i.second << std::endl;
     return false;
 }
 

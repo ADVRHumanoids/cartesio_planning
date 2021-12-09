@@ -3,6 +3,7 @@
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "validity_checker/stability/stability_detection.h"
 #include "validity_checker/stability/centroidal_statics.h"
+#include "validity_checker/collisions/ground_collision.h"
 #include "utils/parse_yaml_utils.h"
 
 #include <boost/math/constants/constants.hpp>
@@ -66,7 +67,7 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
     YAML_PARSE_OPTION(vc_node, eps, double, 1e-3);
     YAML_PARSE_OPTION(vc_node, links, std::vector<std::string>, {});
     YAML_PARSE_OPTION(vc_node, friction_coefficient, double, 0.5);
-    YAML_PARSE_OPTION(vc_node, optimize_torque, bool, false);
+    YAML_PARSE_OPTION(vc_node, optimize_torque, bool, true);
     YAML_PARSE_OPTION(vc_node, rotations, std::vector<std::vector<double>>, {});
     YAML_PARSE_OPTION(vc_node, x_lim_cop, std::vector<double>, {});
     YAML_PARSE_OPTION(vc_node, y_lim_cop, std::vector<double>, {});
@@ -81,8 +82,8 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
         y_lim_cop_eig[0] = y_lim_cop[0];
         y_lim_cop_eig[1] = y_lim_cop[1];}
 
-    auto cs = std::make_shared<CentroidalStatics>(model, links, friction_coefficient,
-                                                  optimize_torque, x_lim_cop_eig, y_lim_cop_eig);
+    auto cs = std::make_shared<CentroidalStatics>(model, links, friction_coefficient*sqrt(2),
+                                                  optimize_torque, x_lim_cop_eig, y_lim_cop_eig, false);
 
     // set rotations
     for (int i = 0; i < rotations.size(); i++)
@@ -91,7 +92,7 @@ std::function<bool ()> MakeCentroidalStaticsChecker(YAML::Node vc_node,
         cs->setContactRotationMatrix(links[i], quat.toRotationMatrix());
     }
 
-    auto cs_ros = std::make_shared<CentroidalStaticsROS>(model, *cs, nh, eps);
+    auto cs_ros = std::make_shared<CentroidalStaticsROS>(model, cs, nh, eps);
 
     double ros_eps = cs_ros->getEps();
 
@@ -178,6 +179,24 @@ std::function<bool ()> MakeDistanceCheck_tripod(YAML::Node planner_config,
     
     return validity_checker;
     
+}
+
+std::function<bool ()> MakeGroundCollisionAvoidance(YAML::Node vc_node, 
+                                                    XBot::ModelInterface::Ptr model,
+                                                    ros::NodeHandle nh)
+{
+    YAML_PARSE_OPTION(vc_node, link, std::string, "");
+    YAML_PARSE_OPTION(vc_node, axis, std::vector<double>, {});
+
+    auto gc = std::make_shared<XBot::Cartesian::Planning::GroundCollision>(model);
+    auto gc_ros = std::make_shared<XBot::Cartesian::Planning::GroundCollisionROS>(gc, model, nh);
+    
+    auto validity_checker = [gc_ros, gc]()
+    {
+        return gc->check();
+    };
+    
+    return validity_checker;
 }
 
 }
@@ -270,6 +289,8 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
     
     YAML_PARSE_OPTION(vc_node, max_x_distance, double, 0.0);
     YAML_PARSE_OPTION(vc_node, max_y_distance, double, 0.0);
+    YAML_PARSE_OPTION(vc_node, min_x_distance, double, 0.0);
+    YAML_PARSE_OPTION(vc_node, min_y_distance, double, 0.0);
     YAML_PARSE_OPTION(planner_config["state_space"], ee_number, int, 2);
     YAML_PARSE_OPTION(planner_config["state_space"], end_effector, std::vector<std::string>, {});
        
@@ -281,8 +302,8 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
         for (int i = 0; i < ee_number; i++)
         {
             model->getPose(end_effector[i], T);
-            auto rot = T.linear().eulerAngles(0, 1, 2);
-            ee[i] << T.translation().x(), T.translation().y(), rot(2);
+            auto rot = acos(T.linear()(0,0));
+            ee[i] << T.translation().x(), T.translation().y(), rot;
             
         }
         
@@ -291,28 +312,30 @@ std::function<bool ()> MakeDistanceCheck_comanplus(YAML::Node planner_config,
 
         if (x_diff > max_x_distance || y_diff > max_y_distance)
         {
-            std::cout << "x_diff = " << x_diff << "    y_diff = " << y_diff << std::endl;
             return false;
         }           
             
         // Check for relative orientation
         double res1 = (ee[0](2) - ee[1](2));
-        double res2 = (boost::math::constants::pi<double>()*2 - (ee[0](2) - ee[1](2))); 
+        double res2 = (boost::math::constants::pi<double>()*2 - (ee[0](2) - ee[1](2)));
         
-        if (std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) > boost::math::constants::pi<double>()/6)
-        {
-            std::cout << "orientation foot 1: " << ee[0](2) << "    orientation foot 2:" << ee[1](2) << std::endl;
-            std::cout << "res = " << std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) << std::endl;
-            return false;
-        }           
+//         if (std::min<double>(sqrt(res1*res1), sqrt(res2*res2)) > boost::math::constants::pi<double>()/6)
+//         {
+//             std::cout << ee[0](2) << "   " << ee[1](2) << std::endl;
+//             std::cout << "res1: " << res1 << "       res2: " << res2 << std::endl;
+//             std::cout << "relative orientation" << std::endl;
+//             return false;
+//         }
              
         // Check for feet crossing
         double xRel_w = ee[0](0) - ee[1](0);
         double yRel_w = ee[0](1) - ee[1](1);
+//         std::cout << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
     
-        if (-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) > 0.20)                
+        if (abs(-xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2))) < 0.15)
         {
-            std::cout << "relative orientation = " << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
+            std::cout << "feet crossing" << std::endl;
+            std::cout << -xRel_w * sin(ee[1](2)) + yRel_w * cos(ee[1](2)) << std::endl;
             return false;        
         }           
         
@@ -362,6 +385,10 @@ std::function<bool ()> XBot::Cartesian::Planning::MakeValidityChecker(YAML::Node
         else if(vc_type == "CentroidalStatics")
         {
             return MakeCentroidalStaticsChecker(vc_node, model, nh);
+        }
+        else if(vc_type == "GroundCollisionAvoidance")
+        {
+            return MakeGroundCollisionAvoidance(vc_node, model, nh);
         }
         else
         {
