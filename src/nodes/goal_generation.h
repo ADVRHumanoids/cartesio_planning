@@ -3,7 +3,7 @@
 
 #include <XBotInterface/ModelInterface.h>
 #include <ros/node_handle.h>
-#include <validity_checker/validity_checker_context.h>
+#include <cartesio_planning/validity_checker/validity_checker_context.h>
 #include <goal/goal_sampler.h>
 #include <cartesian_interface/ros/RosServerClass.h>
 #include <cartesio_planning/CartesioGoal.h>

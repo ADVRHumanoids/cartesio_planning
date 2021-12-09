@@ -13,7 +13,7 @@
  #include <ompl/control/SimpleSetup.h>
  #include <ompl/config.h>
  #include <iostream>
- #include "state_wrapper.h"
+ #include <cartesio_planning/utils/state_wrapper.h>
  
  namespace ob = ompl::base;
  namespace oc = ompl::control;

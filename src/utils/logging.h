@@ -4,7 +4,7 @@
 #include <ompl/base/PlannerData.h>
 #include <matlogger2/mat_data.h>
 #include <matlogger2/matlogger2.h>
-#include "state_wrapper.h"
+#include <cartesio_planning/utils/state_wrapper.h>
 
 XBot::matlogger2::MatData PlannerDataToMatMata(const ompl::base::PlannerData& pdata,
                                                const XBot::Cartesian::Planning::StateWrapper& sw)

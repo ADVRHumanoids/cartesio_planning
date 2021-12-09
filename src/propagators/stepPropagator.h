@@ -7,7 +7,7 @@
 #include <thread>
 #include <chrono>
 
-#include "state_wrapper.h"
+#include <cartesio_planning/utils/state_wrapper.h>
 
 namespace XBot { namespace Cartesian { namespace Planning { namespace Propagators{
     

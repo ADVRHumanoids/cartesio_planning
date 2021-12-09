@@ -1,4 +1,4 @@
-#include "validity_checker_context.h"
+#include <cartesio_planning/validity_checker/validity_checker_context.h>
 #include "utils/parse_yaml_utils.h"
 #include "validity_checker/validity_checker_factory.h"
 

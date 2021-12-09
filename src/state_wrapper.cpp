@@ -1,5 +1,4 @@
-#include "state_wrapper.h"
-
+#include <cartesio_planning/utils/state_wrapper.h>
 using namespace XBot::Cartesian::Planning;
 
 StateWrapper::StateWrapper(StateSpaceType state_space_type,

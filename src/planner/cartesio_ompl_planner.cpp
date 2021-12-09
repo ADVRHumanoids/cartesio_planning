@@ -31,7 +31,7 @@
 #include <ompl/control/planners/rrt/RRT.h>
 
 
-#include "cartesio_ompl_planner.h"
+#include <cartesio_planning/planner/cartesio_ompl_planner.h>
 #include "utils/parse_yaml_utils.h"
 #include "utils/logging.h"
 #include "propagators/RK1.h"

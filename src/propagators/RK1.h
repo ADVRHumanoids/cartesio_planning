@@ -1,4 +1,4 @@
-#include "state_wrapper.h"
+#include <cartesio_planning/utils/state_wrapper.h>
 #include <ompl/base/State.h>
 #include <ompl/control/Control.h>
 #include <ompl/control/StatePropagator.h>

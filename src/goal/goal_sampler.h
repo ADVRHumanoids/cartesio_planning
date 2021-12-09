@@ -4,7 +4,7 @@
 #include <ompl/base/goals/GoalSampleableRegion.h>
 
 #include "ik/position_ik_solver.h"
-#include "state_wrapper.h"
+#include <cartesio_planning/utils/state_wrapper.h>
 #include <functional>
 
 namespace XBot { namespace Cartesian { namespace Planning {
