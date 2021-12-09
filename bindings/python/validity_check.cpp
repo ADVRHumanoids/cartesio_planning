@@ -3,10 +3,10 @@
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 
-#include "planner/cartesio_ompl_planner.h"
+#include <cartesio_planning/planner/cartesio_ompl_planner.h>
 #include "validity_checker/collisions/planning_scene_wrapper.h"
 #include "validity_checker/stability/centroidal_statics.h"
-#include "validity_checker/validity_checker_context.h"
+#include <cartesio_planning/validity_checker/validity_checker_context.h>
 
 
 #include <ros/serialization.h>

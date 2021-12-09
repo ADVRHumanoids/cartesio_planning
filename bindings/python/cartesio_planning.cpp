@@ -3,7 +3,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 
-#include "planner/cartesio_ompl_planner.h"
+#include <cartesio_planning/planner/cartesio_ompl_planner.h>
 #include "goal/goal_sampler.h"
 #include <ros/ros.h>
 
