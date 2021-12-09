@@ -66,7 +66,7 @@
 #include "goal/NSPG.h"
 #include "utils/map_converter.h"
 #include "utils/hash.h"
-#include "planner/cartesian_trajectory_interpolation.h"
+#include <cartesio_planning/interpolator/cartesian_trajectory_interpolation.h>
 
 
 namespace XBot { namespace Cartesian { 

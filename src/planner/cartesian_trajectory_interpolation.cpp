@@ -1,4 +1,4 @@
-#include "planner/cartesian_trajectory_interpolation.h"
+#include <cartesio_planning/interpolator/cartesian_trajectory_interpolation.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>
 
 CartesianTrajectoryInterpolation::CartesianTrajectoryInterpolation()
