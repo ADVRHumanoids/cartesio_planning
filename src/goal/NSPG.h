@@ -8,7 +8,7 @@
 
 #include <XBotInterface/ModelInterface.h>
 #include <cartesio_planning/validity_checker/validity_checker_context.h>
-#include "utils/robot_viz.h"
+#include <cartesio_planning/utils/robot_viz.h>
 #include <cartesian_interface/utils/RobotStatePublisher.h>
 
 namespace XBot { namespace Cartesian { namespace Planning {

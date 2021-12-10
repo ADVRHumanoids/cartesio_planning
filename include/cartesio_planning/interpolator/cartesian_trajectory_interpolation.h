@@ -1,8 +1,9 @@
 #ifndef CARTESIAN_TRAJECTORY_INTERPOLATION_H
 #define CARTESIAN_TRAJECTORY_INTERPOLATION_H
 
-#include "planner/trajectory_interpolation.h"
 #include <XBotInterface/ModelInterface.h>
+
+class TrajectoryInterpolation;
 
 class CartesianTrajectoryInterpolation
 {
@@ -31,7 +32,7 @@ public:
                    const Eigen::VectorXd& qddot_max);
 private:
     XBot::ModelInterface::Ptr _model;
-    TrajectoryInterpolation::Ptr _interpolator;
+    std::shared_ptr<TrajectoryInterpolation> _interpolator;
 };
 
 #endif // CARTESIAN_TRAJECTORY_INTERPOLATION_H

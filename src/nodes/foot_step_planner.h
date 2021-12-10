@@ -59,7 +59,7 @@
 #include "samplers/stepSampler.h"
 #include "propagators/stepPropagator.h"
 #include <cartesio_planning/validity_checker/validity_checker_context.h>
-#include "utils/robot_viz.h"
+#include <cartesio_planning/utils/robot_viz.h>
 #include <cartesio_planning/validity_checker/planning_scene_wrapper.h>
 #include "nodes/goal_generation.h"
 #include "goal/goal_sampler.h"

@@ -2,7 +2,7 @@
 #include <sensor_msgs/JointState.h>
 #include <XBotInterface/ModelInterface.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>
-#include <utils/robot_viz.h>
+#include <cartesio_planning/utils/robot_viz.h>
 
 using namespace XBot::Cartesian;
 

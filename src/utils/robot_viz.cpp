@@ -1,4 +1,4 @@
-#include "robot_viz.h"
+#include <cartesio_planning/utils/robot_viz.h>
 
 XBot::Cartesian::Planning::RobotViz::RobotViz(const XBot::ModelInterface::ConstPtr model, const std::string & topic_name, ros::NodeHandle & nh, const XBot::Cartesian::Planning::RobotViz::color & rgba):
     _model(model),

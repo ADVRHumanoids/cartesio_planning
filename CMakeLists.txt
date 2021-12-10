@@ -132,7 +132,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES cartesio_planning
+    LIBRARIES cartesio_planning cartesian_trajectory_interpolation
     CATKIN_DEPENDS roscpp message_runtime
     DEPENDS ompl
     )
@@ -151,8 +151,17 @@ include_directories( SYSTEM
     ${EIGEN3_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS} # note: must be the last in the include list
     ${cartesian_interface_INCLUDE_DIRS}
+    ${casadi_INCLUDE_DIRS}
     )
 
+add_library(centroidal_statics SHARED src/validity_checker/stability/centroidal_statics.cpp)
+target_link_libraries(centroidal_statics PRIVATE ${cartesio_acceleration_support_LIBRARIES} ${OpenSoT_LIBRARIES} ${cartesian_interface_LIBRARIES})
+
+add_library(trajectory_interpolation SHARED src/planner/trajectory_interpolation.cpp)
+target_link_libraries( trajectory_interpolation PRIVATE casadi)
+
+add_library(cartesian_trajectory_interpolation SHARED src/planner/cartesian_trajectory_interpolation.cpp)
+target_link_libraries(cartesian_trajectory_interpolation PRIVATE trajectory_interpolation ${XBotInterface_LIBRARIES})
 
 # Main library
 add_library(cartesio_planning SHARED
@@ -183,28 +192,20 @@ target_link_libraries(cartesio_planning
     ${catkin_LIBRARIES}
     yaml-cpp
     matlogger2::matlogger2
+    cartesian_trajectory_interpolation
     PRIVATE
     ${PCL_LIBRARIES}
     centroidal_statics
     )
 
-add_library(centroidal_statics SHARED src/validity_checker/stability/centroidal_statics.cpp)
-target_link_libraries(centroidal_statics PRIVATE ${cartesio_acceleration_support_LIBRARIES} ${OpenSoT_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
-add_library(trajectory_interpolation SHARED src/planner/trajectory_interpolation.cpp)
-target_link_libraries( trajectory_interpolation PRIVATE casadi)
-
-add_library(cartesian_trajectory_interpolation SHARED src/planner/cartesian_trajectory_interpolation.cpp)
-target_link_libraries(cartesian_trajectory_interpolation PRIVATE trajectory_interpolation ${XBotInterface_LIBRARIES})
 
 # Stability test exe
 add_executable(stability_test src/test_nodes/stability_test.cpp)
 target_link_libraries(stability_test cartesio_planning ${XBotInterface_LIBRARIES} matlogger2::matlogger2 ${catkin_LIBRARIES})
 
 # ompl_test_control exe
-add_executable(ompl_control_test
-    src/ompl_test_control.cpp
-    )
+add_executable(ompl_control_test src/ompl_test_control.cpp)
 target_link_libraries(ompl_control_test cartesio_planning ${XBotInterface_LIBRARIES} matlogger2::matlogger2 ${catkin_LIBRARIES})
 
 
@@ -424,6 +425,12 @@ install(TARGETS foot_step_planner
 install(DIRECTORY launch/
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
     FILES_MATCHING PATTERN "*.launch"
+    PATTERN ".svn" EXCLUDE
+    )
+
+install(DIRECTORY configs
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/configs
+    FILES_MATCHING PATTERN "*.yaml"
     PATTERN ".svn" EXCLUDE
     )
 

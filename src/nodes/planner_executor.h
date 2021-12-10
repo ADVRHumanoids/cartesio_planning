@@ -14,7 +14,7 @@
 
 #include "constraints/cartesian_constraint.h"
 #include <cartesio_planning/planner/cartesio_ompl_planner.h>
-#include "utils/robot_viz.h"
+#include <cartesio_planning/utils/robot_viz.h>
 #include <cartesio_planning/validity_checker/validity_predicate_aggregate.h>
 #include <cartesio_planning/validity_checker/planning_scene_wrapper.h>
 #include <cartesio_planning/validity_checker/validity_checker_context.h>

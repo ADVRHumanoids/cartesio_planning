@@ -193,6 +193,8 @@ std::function<bool ()> MakeGroundCollisionAvoidance(YAML::Node vc_node,
     
     auto validity_checker = [gc_ros, gc]()
     {
+        if(!gc->check())
+            std::cout << "GroundCollisionAvoidance failed" << std::endl;
         return gc->check();
     };
     

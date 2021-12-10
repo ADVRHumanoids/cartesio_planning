@@ -4,7 +4,7 @@
 #include <pybind11/functional.h>
 
 #include <cartesio_planning/planner/cartesio_ompl_planner.h>
-#include "utils/robot_viz.h"
+#include <cartesio_planning/utils/robot_viz.h>
 
 #include <ros/serialization.h>
 #include <eigen_conversions/eigen_msg.h>

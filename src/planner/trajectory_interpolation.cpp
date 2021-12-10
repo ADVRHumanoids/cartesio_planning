@@ -1,4 +1,4 @@
-#include "trajectory_interpolation.h"
+#include "planner/trajectory_interpolation.h"
 #include <casadi/casadi.hpp>
 
 namespace
