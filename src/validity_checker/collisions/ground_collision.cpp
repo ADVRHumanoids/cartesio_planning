@@ -4,17 +4,26 @@
 
 using namespace XBot::Cartesian::Planning;
 
-GroundCollision::GroundCollision(XBot::ModelInterface::Ptr model):
+GroundCollision::GroundCollision(XBot::ModelInterface::Ptr model, std::string link, Eigen::Vector3d axis):
     _model(model),
     _tol(1e-2),
+    _axis(axis),
+    _link(link),
     _active(false)
-{}
+{
+    if (_axis != Eigen::Vector3d::Zero())
+    {
+        _active = true;
+        init();
+    }
+}
 
 void GroundCollision::init()
 {
     Eigen::Affine3d T;
     _model->getPose(_link, T);
     _h = (T.translation().transpose() * _axis).value();
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 bool GroundCollision::setAxis(const Eigen::Vector3d axis)
@@ -55,7 +64,7 @@ bool GroundCollision::check()
     
     if (!_h)
     {
-        std::cout << "GroundCollision not initialized! Set link and/or axis" << std::endl;
+        std::runtime_error("GroundCollision not initialized! Set link and/or axis");
         return false;
     }
     

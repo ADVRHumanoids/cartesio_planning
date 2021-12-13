@@ -17,7 +17,9 @@ class GroundCollision {
 public:
     typedef std::shared_ptr<GroundCollision> Ptr;
 
-    GroundCollision(XBot::ModelInterface::Ptr model);
+    GroundCollision(XBot::ModelInterface::Ptr model,
+                    std::string link = "",
+                    Eigen::Vector3d axis = Eigen::Vector3d::Zero());
 
     bool setLiftedLink(const std::string link);
 
