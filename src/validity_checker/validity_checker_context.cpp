@@ -69,13 +69,11 @@ std::function<bool ()> ValidityCheckContext::make_collision_checker(YAML::Node v
         if(include_environment)
         {
             if (planning_scene_capture->checkCollisions())
-                std::cout << "collision detected!" << std::endl;
             return !planning_scene_capture->checkCollisions();
         }
         else
         {
             if (planning_scene_capture->checkSelfCollisions())
-                std::cout << "self-collision detected!" << std::endl;
             return !planning_scene_capture->checkSelfCollisions();
         }
 
