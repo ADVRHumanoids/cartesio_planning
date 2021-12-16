@@ -10,6 +10,12 @@ CartesianTrajectoryInterpolation::CartesianTrajectoryInterpolation()
     _interpolator = std::make_shared<TrajectoryInterpolation>(_model->getJointNum());
 }
 
+CartesianTrajectoryInterpolation::CartesianTrajectoryInterpolation(XBot::ModelInterface::Ptr model):
+_model(model)
+{
+    _interpolator = std::make_shared<TrajectoryInterpolation>(_model->getJointNum());
+}
+
 double CartesianTrajectoryInterpolation::compute(const std::vector<Eigen::VectorXd>& trajectory, std::vector<double> * time_point_vec)
 {
     return _interpolator->compute(trajectory, time_point_vec);

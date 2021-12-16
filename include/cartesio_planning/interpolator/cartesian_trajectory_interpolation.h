@@ -11,6 +11,7 @@ public:
     typedef std::shared_ptr<CartesianTrajectoryInterpolation> Ptr;
 
     CartesianTrajectoryInterpolation();
+    CartesianTrajectoryInterpolation(XBot::ModelInterface::Ptr model);
 
     double compute(const std::vector<Eigen::VectorXd>& trajectory,
                    std::vector<double> * time_point_vec = nullptr);
