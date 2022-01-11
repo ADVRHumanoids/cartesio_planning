@@ -185,7 +185,6 @@ std::function<bool ()> MakeGroundCollisionAvoidance(YAML::Node vc_node,
                                                     XBot::ModelInterface::Ptr model,
                                                     ros::NodeHandle nh)
 {
-    std::cout << "CREATING GroundCollisionAvoidance CHECK!" << std::endl;
     YAML_PARSE_OPTION(vc_node, link, std::string, "");
     YAML_PARSE_OPTION(vc_node, axis, std::vector<double>, {});
 
@@ -194,7 +193,6 @@ std::function<bool ()> MakeGroundCollisionAvoidance(YAML::Node vc_node,
     
     auto validity_checker = [gc_ros, gc]()
     {
-        if(!gc->check())
         return gc->check();
     };
     

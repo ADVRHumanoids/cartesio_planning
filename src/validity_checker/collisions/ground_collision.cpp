@@ -23,7 +23,6 @@ void GroundCollision::init()
     Eigen::Affine3d T;
     _model->getPose(_link, T);
     _h = (T.translation().transpose() * _axis).value();
-    std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 bool GroundCollision::setAxis(const Eigen::Vector3d axis)
