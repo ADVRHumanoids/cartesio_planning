@@ -91,7 +91,7 @@ public:
 
     StateWrapper getStateWrapper() const;
     
-    void clearPlanner() {_planner->clear();}
+    void clearPlanner() {_planner->clear(); _planner->clearQuery();}
 
 private:
 
