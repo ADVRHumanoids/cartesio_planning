@@ -30,7 +30,7 @@ find_package(casadi REQUIRED)
 
 find_package(Eigen3 REQUIRED)
 
-find_package(ompl 1.5.0 REQUIRED)
+find_package(ompl REQUIRED)
 
 find_package(cartesian_interface REQUIRED)
 
@@ -132,10 +132,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    INCLUDE_DIRS include
+    INCLUDE_DIRS include ${OMPL_INLCUDE_DIRS}
     LIBRARIES cartesio_planning cartesian_trajectory_interpolation
     CATKIN_DEPENDS roscpp message_runtime
-    DEPENDS ompl
+    DEPENDS OMPL
     )
 
 ###########
@@ -200,7 +200,7 @@ target_link_libraries(cartesio_planning
     centroidal_statics
     )
 
-
+target_include_directories(cartesio_planning PUBLIC ${OMPL_INCLUDE_DIRS})
 
 # Stability test exe
 add_executable(stability_test src/test_nodes/stability_test.cpp)
