@@ -257,10 +257,9 @@ std::vector<XBot::ModelChain> PlanningSceneWrapper::getCollidingChains() const
             if (std::any_of(colliding_links.begin(), colliding_links.end(), [j](std::string k){ return k == j; }))
             {
                colliding_chains.push_back(_model->chain(i.name_));
-               goto cnt;
+               break;
             }
         }
-        cnt:;
     }
     return colliding_chains;
 }

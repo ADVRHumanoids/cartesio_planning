@@ -162,5 +162,8 @@ PYBIND11_MODULE(validity_check, m)
             .def(py::init(create_validity_check_context),
                  py::arg("vc_node"),
                  py::arg("model"))
-            .def("setPlanningScene", &ValidityCheckContext::setPlanningScene);
+            .def("setPlanningScene", &ValidityCheckContext::setPlanningScene)
+            .def("checkAll", &ValidityCheckContext::checkAll)
+            .def_readwrite("planning_scene", &ValidityCheckContext::planning_scene)
+            .def_readwrite("vc_aggregate", &ValidityCheckContext::vc_aggregate);
 }

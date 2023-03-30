@@ -68,18 +68,21 @@ std::function<bool ()> ValidityCheckContext::make_collision_checker(YAML::Node v
 
         if(include_environment)
         {
-            if (planning_scene_capture->checkCollisions())
             return !planning_scene_capture->checkCollisions();
         }
         else
         {
-            if (planning_scene_capture->checkSelfCollisions())
             return !planning_scene_capture->checkSelfCollisions();
         }
 
     };
 
     return validity_checker;
+}
+
+bool ValidityCheckContext::checkAll()
+{
+    return vc_aggregate.checkAll();
 }
 
 XBot::Cartesian::Planning::ValidityCheckContext::ValidityCheckContext()

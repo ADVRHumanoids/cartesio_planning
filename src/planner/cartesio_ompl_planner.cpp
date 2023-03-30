@@ -268,7 +268,7 @@ void OmplPlanner::setup_problem_definition(std::shared_ptr<ompl::base::SpaceInfo
 
     space_info->setValidStateSamplerAllocator(vss_alloc);
     _pdef = std::make_shared<ompl::base::ProblemDefinition>(space_info);
-    _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(space_info));
+//    _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(space_info));
 }
 
 
@@ -360,11 +360,13 @@ ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
     YAML_PARSE_OPTION(_options["state_space"], alpha, double, boost::math::constants::pi<double>()/16);
     YAML_PARSE_OPTION(_options["state_space"], epsilon, double, 0.1);
     YAML_PARSE_OPTION(_options["state_space"], rho, double, 0.1);
+    YAML_PARSE_OPTION(_options["state_space"], delta, double, 0.1);
 
     auto atlas_space = std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, _constraint);
     atlas_space->setAlpha(alpha);
     atlas_space->setEpsilon(epsilon);
     atlas_space->setRho(rho);
+    atlas_space->setDelta(delta);
 
     return atlas_space;
 }

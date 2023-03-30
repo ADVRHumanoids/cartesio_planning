@@ -140,6 +140,7 @@ bool GoalSamplerBase::sampleGoalPostural(Eigen::VectorXd &q, const unsigned int 
         if(T >= time_out_sec)
             return false;
     }
+    return goal_found;
 }
 
 PositionCartesianSolver::Ptr GoalSamplerBase::getIkSolver()

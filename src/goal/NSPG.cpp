@@ -46,6 +46,8 @@ bool NSPG::sample ( double timeout )
     float T = 0.0;
     double dt = 0.01;
     int iter = 0;
+
+    _ik_solver->solve();
     
     while(!_vc_context.vc_aggregate.checkAll())
     {
@@ -140,7 +142,6 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
                 j.second = generateRandom() * velocityLim_map[j.first];
                 random_map.insert(std::make_pair(j.first, j.second));
             }
-            
         }
     }
     
@@ -152,7 +153,6 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
          random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
      }
 
-    
     return random_map;
 }
 
