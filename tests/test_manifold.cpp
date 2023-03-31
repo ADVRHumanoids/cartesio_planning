@@ -2,7 +2,7 @@
 #include <matlogger2/matlogger2.h>
 
 #include "constraints/cartesian_constraint.h"
-#include "planner/cartesio_ompl_planner.h"
+#include <cartesio_planning/planner/cartesio_ompl_planner.h>
 
 using namespace XBot;
 using namespace XBot::Cartesian;
@@ -21,6 +21,7 @@ protected:
         opt.generate_jidmap();
         opt.set_parameter("is_model_floating_base", false);
         opt.set_parameter<std::string>("model_type", "RBDL");
+        opt.make_floating_base(false);
         _model = XBot::ModelInterface::getModel(opt);
 
         // nonzero joint configuration
@@ -107,7 +108,7 @@ TEST_F(TestManifold, testStartGoal)
     _constr->function(goal, err);
     ASSERT_LE(err.norm(), 1e-4);
 
-    std::string planner_type = "RRTstar";
+    std::string planner_type = "RRTConnect";
     double timeout = 3.0;
     double threshold = 0.0;
 

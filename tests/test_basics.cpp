@@ -2,8 +2,8 @@
 
 #include <matlogger2/matlogger2.h>
 
-#include "planner/cartesio_ompl_planner.h"
-#include "state_wrapper.h"
+#include <cartesio_planning/planner/cartesio_ompl_planner.h>
+#include <cartesio_planning/utils/state_wrapper.h>
 
 using namespace  XBot::Cartesian::Planning;
 namespace ob = ompl::base;
