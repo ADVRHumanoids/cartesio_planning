@@ -34,6 +34,8 @@ find_package(ompl REQUIRED)
 
 find_package(cartesian_interface REQUIRED)
 
+find_package(cartesio_acceleration_support REQUIRED)
+
 find_package(matlogger2 REQUIRED)
 
 FIND_PACKAGE(PCL 1.7 QUIET COMPONENTS   common
@@ -150,9 +152,10 @@ include_directories( SYSTEM
     ${OMPL_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
-    ${catkin_INCLUDE_DIRS} # note: must be the last in the include list
     ${cartesian_interface_INCLUDE_DIRS}
+    ${cartesio_acceleration_support_INCLUDE_DIRS}
     ${casadi_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS} # note: must be the last in the include list
     )
 
 add_library(centroidal_statics SHARED src/validity_checker/stability/centroidal_statics.cpp)

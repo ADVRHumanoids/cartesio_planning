@@ -77,6 +77,8 @@ PlanningSceneWrapper::PlanningSceneWrapper(ModelInterface::ConstPtr model):
     _monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>(rml);
 
     _srdf = _model->getSrdf();
+
+    computeChainToLinks();
 }
 
 void PlanningSceneWrapper::startMonitor()
@@ -248,19 +250,19 @@ std::vector<std::string> PlanningSceneWrapper::getCollidingLinks() const
 std::vector<XBot::ModelChain> PlanningSceneWrapper::getCollidingChains() const 
 {
     std::vector<std::string> colliding_links = getCollidingLinks();
-    std::vector<XBot::ModelChain> colliding_chains;
-    for (auto i:_srdf.getGroups())
+    std::set<std::string> colliding_chain_names;
+
+    for(auto cl : colliding_links)
     {
-        auto link  = i.links_;
-        for (auto j : link)
-        {
-            if (std::any_of(colliding_links.begin(), colliding_links.end(), [j](std::string k){ return k == j; }))
-            {
-               colliding_chains.push_back(_model->chain(i.name_));
-               break;
-            }
-        }
+        colliding_chain_names.insert(_link_to_chain.at(cl));
     }
+
+    std::vector<XBot::ModelChain> colliding_chains;
+    for(auto cc : colliding_chain_names)
+    {
+        colliding_chains.push_back(_model->chain(cc));
+    }
+
     return colliding_chains;
 }
 
@@ -286,6 +288,54 @@ bool PlanningSceneWrapper::getPlanningScene(moveit_msgs::GetPlanningScene::Reque
     ps->getPlanningSceneMsg(res.scene, req.components.components ? req.components : all_components);
 
     return true;
+
+}
+
+void PlanningSceneWrapper::computeChainToLinks()
+{
+    const auto& urdf = _model->getUrdf();
+
+    auto chain_names = _model->getChainNames();
+
+    for(auto ch : chain_names)
+    {
+        if(ch == "virtual_chain")
+        {
+            continue;
+        }
+
+        std::cout << "[" << ch << "] started traversal \n";
+
+        std::set<std::string> links;
+
+        auto base_name = _model->chain(ch).getBaseLinkName();
+
+        auto link_name = _model->chain(ch).getTipLinkName();
+        auto link = urdf.getLink(link_name);
+
+        while(link->parent_joint)
+        {
+            link_name = link->parent_joint->parent_link_name;
+            links.insert(link_name);
+            std::cout << "[" << ch << "] adding link " << link_name << "\n";
+
+            _link_to_chain[link_name] = ch;
+
+            if(link_name == base_name)
+            {
+                break;
+            }
+
+            link = urdf.getLink(link_name);
+        }
+
+        if(link_name != base_name)
+        {
+            throw std::runtime_error("invalid base link name for chain '" + ch + "'");
+        }
+
+        _chain_to_links[ch] = links;
+    }
 
 }
 

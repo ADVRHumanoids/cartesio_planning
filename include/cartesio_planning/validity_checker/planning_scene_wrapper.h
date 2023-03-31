@@ -82,6 +82,11 @@ public:
 
 private:
 
+    void computeChainToLinks();
+
+    std::map<std::string, std::set<std::string>> _chain_to_links;
+    std::map<std::string, std::string> _link_to_chain;
+
     ModelInterface::ConstPtr _model;
 
     planning_scene_monitor::PlanningSceneMonitorPtr _monitor;

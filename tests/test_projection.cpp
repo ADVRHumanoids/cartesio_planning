@@ -2,6 +2,7 @@
 #include <matlogger2/matlogger2.h>
 
 #include "ik/position_ik_solver.h"
+#include "constraints/cartesian_constraint.h"
 
 using namespace XBot::Cartesian;
 
@@ -18,6 +19,7 @@ protected:
         opt.set_srdf_path(config_path + "cogimon.srdf");
         opt.generate_jidmap();
         opt.set_parameter("is_model_floating_base", true);
+        opt.make_floating_base(true);
         opt.set_parameter<std::string>("model_type", "RBDL");
         _model = XBot::ModelInterface::getModel(opt);
 
@@ -105,6 +107,11 @@ TEST_F(TestProjection, testJacobian)
 
     EXPECT_NEAR((J-J_diff).norm(), 0.0, 1e-4);
 };
+
+TEST_F(TestProjection, testPlanner)
+{
+    auto constr = std::make_shared<XBot::Cartesian::Planning::CartesianConstraint>(_solver);
+}
 
 
 int main(int argc, char **argv) {
