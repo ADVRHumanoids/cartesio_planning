@@ -42,5 +42,5 @@ PYBIND11_MODULE(visual_tools, m)
                  py::arg("color") = Eigen::Vector4d(0.0, 1.0, 0.0, 0.5),
                  py::arg("tf_prefix") = "")
             .def("publishMarkers", pub_markers, py::arg("red_links") = std::vector<std::string>())
-            ;
+            .def("setRGBA", &RobotViz::setRGBA);
 }
