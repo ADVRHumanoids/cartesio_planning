@@ -254,7 +254,15 @@ std::vector<XBot::ModelChain> PlanningSceneWrapper::getCollidingChains() const
 
     for(auto cl : colliding_links)
     {
-        colliding_chain_names.insert(_link_to_chain.at(cl));
+        try
+        {
+            auto cname = _link_to_chain.at(cl);
+            colliding_chain_names.insert(cname);
+        }
+        catch(std::out_of_range& e)
+        {
+            std::cerr << "[PlanningSceneWrapper::getCollidingChains] could not find chain for link " << cl << "\n";
+        }
     }
 
     std::vector<XBot::ModelChain> colliding_chains;
@@ -304,14 +312,13 @@ void PlanningSceneWrapper::computeChainToLinks()
             continue;
         }
 
-        std::cout << "[" << ch << "] started traversal \n";
-
-        std::set<std::string> links;
-
         auto base_name = _model->chain(ch).getBaseLinkName();
 
         auto link_name = _model->chain(ch).getTipLinkName();
         auto link = urdf.getLink(link_name);
+
+        std::cout << "[" << ch << "] started traversal from tip link " << link_name << "\n";
+        std::set<std::string> links = {link_name};
 
         while(link->parent_joint)
         {
