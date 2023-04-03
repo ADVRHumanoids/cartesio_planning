@@ -261,7 +261,7 @@ std::vector<XBot::ModelChain> PlanningSceneWrapper::getCollidingChains() const
         }
         catch(std::out_of_range& e)
         {
-//            std::cerr << "[PlanningSceneWrapper::getCollidingChains] could not find chain for link " << cl << "\n";
+            std::cerr << "[PlanningSceneWrapper::getCollidingChains] could not find chain for link " << cl << "\n";
         }
     }
 
@@ -343,6 +343,50 @@ void PlanningSceneWrapper::computeChainToLinks()
         }
 
         _chain_to_links[ch] = links;
+    }
+
+    // complete mapping with all fixed links
+    std::vector<urdf::LinkSharedPtr> urdf_links;
+    urdf.getLinks(urdf_links);
+    for(auto link : urdf_links)
+    {
+        // link already present, skip
+        if(_link_to_chain.count(link->name) > 0)
+        {
+            continue;
+        }
+
+        // don't chech root link
+        if(!link->parent_joint)
+        {
+            continue;
+        }
+
+        // go up the tree
+        urdf::LinkConstSharedPtr current_link = link;
+
+        bool ok = false;
+
+        while(!ok && current_link->parent_joint)
+        {
+            current_link = urdf.getLink(current_link->parent_joint->parent_link_name);
+
+            // known link found, add link to its chain
+            if(_link_to_chain.count(current_link->name) > 0)
+            {
+                std::string ch = _link_to_chain.at(current_link->name);
+                _link_to_chain[link->name] = ch;
+                _chain_to_links.at(ch).insert(link->name);
+                ok = true;
+            }
+        }
+
+        // failure
+        if(!ok)
+        {
+            throw std::runtime_error("unable to find chain for link '" + link->name + "'");
+        }
+
     }
 
 }
