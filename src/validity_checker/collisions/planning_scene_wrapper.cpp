@@ -261,7 +261,7 @@ std::vector<XBot::ModelChain> PlanningSceneWrapper::getCollidingChains() const
         }
         catch(std::out_of_range& e)
         {
-            std::cerr << "[PlanningSceneWrapper::getCollidingChains] could not find chain for link " << cl << "\n";
+//            std::cerr << "[PlanningSceneWrapper::getCollidingChains] could not find chain for link " << cl << "\n";
         }
     }
 
@@ -319,6 +319,7 @@ void PlanningSceneWrapper::computeChainToLinks()
 
         std::cout << "[" << ch << "] started traversal from tip link " << link_name << "\n";
         std::set<std::string> links = {link_name};
+        _link_to_chain[link_name] = ch;
 
         while(link->parent_joint)
         {
