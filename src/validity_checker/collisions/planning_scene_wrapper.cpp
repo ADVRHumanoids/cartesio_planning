@@ -214,10 +214,6 @@ bool PlanningSceneWrapper::checkCollisions() const
     
     _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
 
-//     std::cout << "colliding links: " << std::endl;
-//     for (auto i : getCollidingLinks())
-//         std::cout << i<< std::endl;
-
     return collision_result.collision;
 }
 
@@ -229,10 +225,6 @@ bool PlanningSceneWrapper::checkSelfCollisions() const
     collision_detection::CollisionResult collision_result;
 
     _monitor->getPlanningScene()->checkSelfCollision(collision_request, collision_result);
-
-//         std::cout << "colliding links: " << std::endl;
-//         for (auto i : getCollidingLinks())
-//             std::cout << i<< std::endl;
 
     return collision_result.collision;
 }
@@ -272,6 +264,15 @@ std::vector<XBot::ModelChain> PlanningSceneWrapper::getCollidingChains() const
     }
 
     return colliding_chains;
+}
+
+void PlanningSceneWrapper::setPadding(double padding)
+{
+    MonitorLockguardWrite lock_rw(_monitor);
+
+    _monitor->getPlanningScene()->getCollisionEnvNonConst()->setPadding(padding);
+    _monitor->getPlanningScene()->propogateRobotPadding();
+
 }
 
 

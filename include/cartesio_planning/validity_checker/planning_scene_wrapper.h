@@ -73,8 +73,24 @@ public:
      */
     std::vector<XBot::ModelChain> getCollidingChains() const;
 
+    /**
+     * @brief set padding around the robot links for more conservative
+     * collision detection
+     */
+    void setPadding(double padding);
+
+    /**
+     * @brief applyPlanningScene
+     * @param scene
+     */
     void applyPlanningScene(const moveit_msgs::PlanningScene& scene);
 
+    /**
+     * @brief getPlanningScene
+     * @param req
+     * @param res
+     * @return
+     */
     bool getPlanningScene(moveit_msgs::GetPlanningScene::Request& req,
                           moveit_msgs::GetPlanningScene::Response& res);
     
