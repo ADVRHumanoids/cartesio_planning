@@ -13,7 +13,13 @@ NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_con
         time_t b = std::chrono::system_clock::to_time_t(a);
         randGenerator.seed(b);
         
-        _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_ik_solver->getModel());
+        ros::NodeHandle rviz_nh("~");
+        _rviz = std::make_shared<RobotViz>(ik_solver->getModel(),
+                                           "nspg",
+                                           rviz_nh,
+                                           Eigen::Vector4d(1.0, 1.0, 0.1, 1.0)
+                                           );
+        _rviz->setPrefix("planner/");
     }
     
 void NSPG::setIKSolver ( PositionCartesianSolver::Ptr new_ik_solver )
@@ -44,7 +50,7 @@ bool NSPG::sample ( double timeout )
     _ik_solver->getModel()->eigenToMap(dqlimits, velocity_map);
     
     float T = 0.0;
-    double dt = 0.01;
+    double dt = 0.005;
     int iter = 0;
 
     _ik_solver->solve();
@@ -72,7 +78,7 @@ bool NSPG::sample ( double timeout )
         _ik_solver->getCI()->setReferencePosture(joint_map);
         _ik_solver->solve();
 
-        _rspub->publishTransforms(ros::Time::now(), "/NSPG");
+        _rviz->publishMarkers(ros::Time::now(), {});
                         
         auto toc = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec = toc-tic;
@@ -107,13 +113,13 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
     {
         for (auto i:colliding_chains)
         {
-//             // Here you can add extra joints to the kinematic chains in collision.
-//             if (i.getChainName() == "front_right_leg" || i.getChainName() == "front_left_leg" || i.getChainName() == "rear_right_leg" || i.getChainName() == "rear_left_leg")
-//             {
-//                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
-//                 random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-//                 random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-//             }
+             // Here you can add extra joints to the kinematic chains in collision.
+             if (i.getChainName() == "front_right_leg" || i.getChainName() == "front_left_leg" || i.getChainName() == "rear_right_leg" || i.getChainName() == "rear_left_leg")
+             {
+                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
+                 random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
+                 random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
+             }
 //             
 //             if (i.getChainName() == "right_arm" || i.getChainName() == "left_arm")
 //             {
