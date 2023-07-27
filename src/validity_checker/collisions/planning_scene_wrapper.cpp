@@ -112,9 +112,11 @@ void PlanningSceneWrapper::startGetPlanningSceneServer()
     ros::NodeHandle nh("~");
     nh.setCallbackQueue(&_queue);
 
-    _get_ps_srv = nh.advertiseService("get_planning_scene",
-                                      &PlanningSceneWrapper::getPlanningScene,
-                                      this);
+//    _get_ps_srv = nh.advertiseService("get_planning_scene",
+//                                      &PlanningSceneWrapper::getPlanningScene,
+//                                      this);
+
+    _monitor->providePlanningSceneService();
 
     _async_spinner.start();
 
@@ -357,7 +359,7 @@ void PlanningSceneWrapper::computeChainToLinks()
             continue;
         }
 
-        // don't chech root link
+        // don't check root link
         if(!link->parent_joint)
         {
             continue;
@@ -369,7 +371,17 @@ void PlanningSceneWrapper::computeChainToLinks()
         bool ok = false;
 
         while(!ok && current_link->parent_joint)
+
         {
+            std::cout << "trying to connect link " << current_link->name << ".. \n";
+
+            // hack: skip base link
+            if(current_link->name == "base_link")
+            {
+                ok = true;
+                break;
+            }
+
             current_link = urdf.getLink(current_link->parent_joint->parent_link_name);
 
             // known link found, add link to its chain
