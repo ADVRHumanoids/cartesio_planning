@@ -22,7 +22,8 @@ auto add_box = [](PlanningSceneWrapper& self,
                   const Eigen::Vector3d& size,
                   const Eigen::Affine3d& T,
                   std::string frame_id,
-                  std::string attach_to_link)
+                  std::string attach_to_link,
+                  std::vector<std::string> touch_links)
 {
     moveit_msgs::CollisionObject co;
     co.id = id;
@@ -48,6 +49,7 @@ auto add_box = [](PlanningSceneWrapper& self,
         moveit_msgs::AttachedCollisionObject ao;
         ao.object = co;
         ao.link_name = attach_to_link;
+        ao.touch_links = touch_links;
 
         ps.robot_state.is_diff = true;
         ps.robot_state.attached_collision_objects = {ao};
@@ -57,8 +59,6 @@ auto add_box = [](PlanningSceneWrapper& self,
     {
         ps.world.collision_objects.push_back(co);
     }
-
-    std::cout << ps << std::endl;
 
     self.applyPlanningScene(ps);
 
@@ -165,7 +165,7 @@ PYBIND11_MODULE(validity_check, m)
         .def("checkCollisions", &PlanningSceneWrapper::checkCollisions)
         .def("checkSelfCollisions", &PlanningSceneWrapper::checkSelfCollisions)
         .def("getCollidingLinks", &PlanningSceneWrapper::getCollidingLinks)
-        .def("addBox", add_box, py::arg("id"), py::arg("size"), py::arg("pose"), py::arg("frame_id") = "world", py::arg("attach_to_link") = "")
+        .def("addBox", add_box, py::arg("id"), py::arg("size"), py::arg("pose"), py::arg("frame_id") = "world", py::arg("attach_to_link") = "", py::arg("touch_links") = std::vector<std::string>())
         .def("addSphere", add_ellipse,py::arg("id"), py::arg("size"), py::arg("pose"), py::arg("frame_id") = "world", py::arg("attach_to_link") = "")
         .def("removeCollisionObject", remove_collision_object)
         .def("update", &PlanningSceneWrapper::update)
