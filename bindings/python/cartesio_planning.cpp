@@ -33,9 +33,9 @@ auto ompl_planner_print = [](OmplPlanner& self)
     self.print();
 };
 
-auto goal_sampler_construct = [](CartesianInterfaceImpl::Ptr ci)
+auto goal_sampler_construct = [](CartesianInterfaceImpl::Ptr ci, ValidityCheckContext vc_ctx)
 {
-    return GoalSamplerBase(std::make_shared<PositionCartesianSolver>(ci));
+    return GoalSamplerBase(std::make_shared<PositionCartesianSolver>(ci), vc_ctx);
 };
 
 auto goal_sampler_setref = [](GoalSamplerBase& self,
@@ -110,12 +110,12 @@ PYBIND11_MODULE(planning, m)
             .def("solve", &OmplPlanner::solve)
             .def("clearPlanner", &OmplPlanner::clearPlanner);
 
-    py::class_<GoalSamplerBase>(m, "GoalSampler")
-            .def(py::init(goal_sampler_construct))
-            .def("sampleGoal", goal_sample)
-            .def("setValidityChecker", &GoalSamplerBase::setValidityCheker)
-            .def("setMaxIterations", goal_sampler_set_maxiter)
-            .def("setDesiredPose", goal_sampler_setref);
+//    py::class_<GoalSamplerBase>(m, "GoalSampler")
+//            .def(py::init(goal_sampler_construct))
+//            .def("sampleGoal", goal_sample)
+////            .def("setValidityChecker", &GoalSamplerBase::setValidityCheker)
+//            .def("setMaxIterations", goal_sampler_set_maxiter)
+//            .def("setDesiredPose", goal_sampler_setref);
 
     py::class_<PositionCartesianSolver, PositionCartesianSolver::Ptr>(m, "PositionCartesianSolver")
             .def(py::init<CartesianInterfaceImpl::Ptr>())

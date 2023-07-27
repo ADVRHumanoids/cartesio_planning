@@ -7,7 +7,7 @@ namespace XBot { namespace Cartesian { namespace Planning {
 GoalSampler::GoalSampler(ompl::base::SpaceInformationPtr space_info,
                          PositionCartesianSolver::Ptr ik_solver,
                          StateWrapper state_wrapper):
-    ompl::base::GoalSampleableRegion(space_info), GoalSamplerBase(ik_solver),
+    ompl::base::GoalSampleableRegion(space_info), GoalSamplerBase(ik_solver, ValidityCheckContext()),
     _state_wrapper(state_wrapper)
 {
     setThreshold(ik_solver->getErrorThreshold());
@@ -25,7 +25,8 @@ double GoalSampler::distanceGoal(const ompl::base::State * st) const
 void GoalSampler::sampleGoal(ompl::base::State * st) const
 {
     Eigen::VectorXd q;
-    GoalSamplerBase::sampleGoal(q, std::numeric_limits<int>::max());
+
+    const_cast<GoalSampler*>(this)->GoalSamplerBase::sampleGoal(q, std::numeric_limits<int>::max());
     _state_wrapper.setState(st, q);
 
     if(!isSatisfied(st))
@@ -40,15 +41,11 @@ unsigned int GoalSampler::maxSampleCount() const
     return std::numeric_limits<unsigned int>::max();
 }
 
-GoalSamplerBase::GoalSamplerBase(PositionCartesianSolver::Ptr ik_solver):
-    _ik_solver(ik_solver)
+GoalSamplerBase::GoalSamplerBase(PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_ctx):
+    _ik_solver(ik_solver),
+    _validity_check(vc_ctx)
 {
     ik_solver->getModel()->getJointLimits(_qmin, _qmax);
-}
-
-void GoalSamplerBase::setValidityCheker(const std::function<bool ()> &validity_check)
-{
-    _validity_check = validity_check;
 }
 
 double GoalSamplerBase::distanceGoal(const Eigen::VectorXd &q) const
@@ -63,60 +60,87 @@ double GoalSamplerBase::distanceGoal(const Eigen::VectorXd &q) const
     Eigen::VectorXd error;
     _ik_solver->getError(error);
 
-    return error.norm();
+    return error.squaredNorm();
 }
 
-bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q, const unsigned int time_out_sec) const
+bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q, double time_out_sec)
 {
     // obtain model
     auto model = _ik_solver->getModel();
 
     bool goal_found = false;
 
-    double T = 0.0;
+    auto tstart = std::chrono::high_resolution_clock::now();
+
+    Eigen::VectorXd qrand;
+    model->getJointPosition(qrand);
+
     while(!goal_found)
     {
-        auto tic = std::chrono::high_resolution_clock::now();
+
+        // query ik
+        goal_found = _ik_solver->solve();
+
+        if(!goal_found)
+        {
+            Eigen::VectorXd err;
+            _ik_solver->getError(err);
+            printf("ik failed: error = %f > %f \n", err.lpNorm<Eigen::Infinity>(), _ik_solver->getErrorThreshold());
+        }
+
+        // if goal found, check state validity
+        if(goal_found && !_validity_check.checkAll())
+        {
+            printf("found invalid goal state with colliding links: \n  ");
+            auto cl = _validity_check.planning_scene->getCollidingLinks();
+            std::copy(cl.begin(), cl.end(), std::ostream_iterator<std::string>(std::cout, ", "));
+            std::cout << std::endl;
+
+            goal_found = false;
+        }
+
+        // update output
+        model->getJointPosition(q);
+
+        if(goal_found)
+        {
+            return true;
+        }
 
         // generate random configuration
         auto qrand = generateRandomSeed();
-
-        // set it to the model
         model->setJointPosition(qrand);
         model->update();
 
-        goal_found = _ik_solver->solve();
+        // check timeout
+        auto now = std::chrono::high_resolution_clock::now();
 
-        if(_validity_check)
-            goal_found = goal_found && _validity_check();
+        std::chrono::duration<float> elapsed = now - tstart;
 
-        model->getJointPosition(q);
-
-        auto toc = std::chrono::high_resolution_clock::now();
-
-        std::chrono::duration<float> fsec = toc-tic;
-        T += fsec.count();
-        if(T >= time_out_sec)
+        if(elapsed.count() >= time_out_sec)
+        {
             return false;
+        }
+
     }
 
     return true;
 }
 
-bool GoalSamplerBase::sampleGoalPostural(Eigen::VectorXd &q, const unsigned int time_out_sec) const
+bool GoalSamplerBase::sampleGoalPostural(Eigen::VectorXd &q, const unsigned int time_out_sec)
 {
     auto model = _ik_solver->getModel();
     
     bool goal_found = false;
     
-    double T = 0.0;
+    auto tstart = std::chrono::high_resolution_clock::now();
+
     XBot::JointNameMap jmap;
     _ik_solver->getCI()->getReferencePosture(jmap);
     
     double neck_velodyne = jmap["neck_velodyne"];
     while (!goal_found)
     {
-        auto tic = std::chrono::high_resolution_clock::now();
         
         // generate random configuration
         auto qrand = generateRandomSeed();
@@ -126,19 +150,29 @@ bool GoalSamplerBase::sampleGoalPostural(Eigen::VectorXd &q, const unsigned int 
         jmap["neck_velodyne"] = neck_velodyne;
         _ik_solver->getCI()->setReferencePosture(jmap);
         
+        // query ik
         goal_found = _ik_solver->solve();
-        
-        if (_validity_check)
-            goal_found = goal_found && _validity_check();
-        
+
+        // if goal found, check state validity
+        goal_found = goal_found && _validity_check.checkAll();
+
+        // update output
         model->getJointPosition(q);
 
-        auto toc = std::chrono::high_resolution_clock::now();
+        if(goal_found)
+        {
+            return true;
+        }
 
-        std::chrono::duration<float> fsec = toc-tic;
-        T += fsec.count();
-        if(T >= time_out_sec)
+        // check timeout
+        auto now = std::chrono::high_resolution_clock::now();
+
+        std::chrono::duration<float> elapsed = now - tstart;
+
+        if(elapsed.count() >= time_out_sec)
+        {
             return false;
+        }
     }
     return goal_found;
 }
@@ -148,23 +182,29 @@ PositionCartesianSolver::Ptr GoalSamplerBase::getIkSolver()
     return _ik_solver;
 }
 
-Eigen::VectorXd GoalSamplerBase::generateRandomSeed() const
+Eigen::VectorXd GoalSamplerBase::generateRandomSeed()
 {
     // obtain model
     auto model = _ik_solver->getModel();
 
     // generate random configuration
-    Eigen::VectorXd qrand;
+    Eigen::VectorXd qrand, qcurr;
+
+    model->getJointPosition(qcurr);
+
     qrand.setRandom(model->getJointNum()); // uniform in -1 < x < 1
     qrand = (qrand.array() + 1)/2.0; // uniform in 0 < x < 1
-
     qrand = _qmin + qrand.cwiseProduct(_qmax - _qmin); // uniform in qmin < x < qmax
 
     if(model->isFloatingBase())
     {
         qrand.head<6>().setRandom(); // we keep virtual joints between -1 and 1 (todo: improve)
+        qrand.head<3>() += qcurr.head<3>();
         qrand.head<6>().tail<3>() *= M_PI;
     }
+
+    qrand.head<6>().setZero();
+
 
     return qrand;
 }

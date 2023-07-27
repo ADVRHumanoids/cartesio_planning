@@ -6,39 +6,41 @@
 #include "ik/position_ik_solver.h"
 #include <cartesio_planning/utils/state_wrapper.h>
 #include <functional>
+#include <cartesio_planning/validity_checker/validity_checker_context.h>
 
 namespace XBot { namespace Cartesian { namespace Planning {
 class GoalSamplerBase
 {
 public:
+
     typedef std::shared_ptr<GoalSamplerBase> Ptr;
 
-    GoalSamplerBase(PositionCartesianSolver::Ptr ik_solver);
+    GoalSamplerBase(PositionCartesianSolver::Ptr ik_solver,
+                    ValidityCheckContext vc_ctx);
 
-    /**
-     * @brief setValidityCheker to set a function which expected result is true
-     * @param validity_check
-     */
-    void setValidityCheker(const std::function<bool()> &validity_check);
 
     double distanceGoal(const Eigen::VectorXd& q) const;
 
-    bool sampleGoal(Eigen::VectorXd& q, const unsigned int time_out_sec) const;
+    bool sampleGoal(Eigen::VectorXd& q, double time_out_sec);
 
-    bool sampleGoalPostural(Eigen::VectorXd& q, const unsigned int time_out_sec) const;
+    bool sampleGoalPostural(Eigen::VectorXd& q, const unsigned int time_out_sec);
     
     PositionCartesianSolver::Ptr getIkSolver();
 
 protected:
-    std::function<bool()> _validity_check;
+
+    ValidityCheckContext _validity_check;
     PositionCartesianSolver::Ptr _ik_solver;
     Eigen::VectorXd _qmin, _qmax;
+    Eigen::MatrixXd _J;
+    Eigen::JacobiSVD<Eigen::MatrixXd> _Jsvd;
 
-    Eigen::VectorXd generateRandomSeed() const;
+    Eigen::VectorXd generateRandomSeed();
 };
 
 
-class GoalSampler : public ompl::base::GoalSampleableRegion, GoalSamplerBase
+class GoalSampler : public ompl::base::GoalSampleableRegion,
+                    public GoalSamplerBase
 {
 
 public:
