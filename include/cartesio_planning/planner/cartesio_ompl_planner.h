@@ -83,6 +83,7 @@ public:
     std::vector<Eigen::VectorXd> getSolutionPath() const;
 
     ompl::base::SpaceInformationPtr getSpaceInfo() const;
+
     ompl::control::SpaceInformationPtr getControlSpaceInfo() const;
 
     void getBounds(Eigen::VectorXd& qmin, Eigen::VectorXd& qmax) const;
@@ -91,7 +92,7 @@ public:
 
     StateWrapper getStateWrapper() const;
     
-    void clearPlanner() {_planner->clear(); _planner->clearQuery();}
+    void clearPlanner();
 
 private:
 

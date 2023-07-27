@@ -6,23 +6,19 @@ GoalGenerator::GoalGenerator(XBot::Cartesian::CartesianInterfaceImpl::Ptr ci,
     _vc_context(vc_context)
 {
     _ik = std::make_shared<XBot::Cartesian::Planning::PositionCartesianSolver>(_ci);
-    _goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSamplerBase>(_ik);
+    _goal_sampler = std::make_shared<XBot::Cartesian::Planning::GoalSamplerBase>(_ik, vc_context);
 
     XBot::Cartesian::RosServerClass::Options opt;
     opt.tf_prefix = "planner/goal_sampler";
     opt.ros_namespace = "planner/goal_sampler";
     _ros_server = std::make_shared<XBot::Cartesian::RosServerClass>(_ci, opt);
 
-    _goal_sampler->setValidityCheker(
-                std::bind(&XBot::Cartesian::Planning::ValidityPredicateAggregate::checkAll, &_vc_context.vc_aggregate, nullptr));
-
     _ik->setRosServerClass(_ros_server);
 }
 
 void GoalGenerator::setValidityChecker(XBot::Cartesian::Planning::ValidityCheckContext& vc_contex)
 {
-    _goal_sampler->setValidityCheker(
-                std::bind(&XBot::Cartesian::Planning::ValidityPredicateAggregate::checkAll, &_vc_context.vc_aggregate, nullptr));
+    throw std::runtime_error("not impl");
 }
 
 void GoalGenerator::update()

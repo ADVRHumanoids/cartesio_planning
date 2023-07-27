@@ -55,8 +55,8 @@ bool PositionCartesianSolver::solve()
     const double step_size = 1.0;
     while(!tol_satisfied && iter < _max_iter)
     {
-
         double dt = 1.0; // dummy dt
+
         if(!_ci->update(0.0, dt))
         {
             return false;
@@ -64,6 +64,8 @@ bool PositionCartesianSolver::solve()
 
         _model->getJointPosition(q);
         _model->getJointVelocity(dq);
+
+
         q += step_size*dq;
         _model->setJointPosition(q);
         _model->update();
@@ -80,7 +82,6 @@ bool PositionCartesianSolver::solve()
 
     }
 
-//    printf("Error at iter #%d is %f \n", iter, error.norm());
     return tol_satisfied;
 
 }
@@ -94,6 +95,8 @@ void PositionCartesianSolver::getError(Eigen::VectorXd& error) const
     {
         auto t = pair.second;
         t->update(_ci, _model); // tbd: optimize
+
+//        std::cout << pair.first << ": err = " << t->error.transpose() << "\n";
 
         error.segment(error_idx, t->size) = t->error;
         error_idx += t->size;
