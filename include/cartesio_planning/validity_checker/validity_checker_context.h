@@ -15,7 +15,9 @@ class ValidityCheckContext
 {
 
 public:
+
     typedef std::unique_ptr<ValidityCheckContext> UniquePtr;
+    typedef std::shared_ptr<ValidityCheckContext> Ptr;
 
     ValidityCheckContext();
 
