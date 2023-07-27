@@ -268,7 +268,7 @@ void OmplPlanner::setup_problem_definition(std::shared_ptr<ompl::base::SpaceInfo
 
     space_info->setValidStateSamplerAllocator(vss_alloc);
     _pdef = std::make_shared<ompl::base::ProblemDefinition>(space_info);
-//    _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(space_info));
+    //    _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(space_info));
 }
 
 
@@ -331,9 +331,9 @@ ompl::base::StateSpacePtr OmplPlanner::make_constrained_space()
     std::cout << "Valid constrained state spaces are \n";
     std::for_each(valid_css.begin(), valid_css.end(),
                   [](std::string p)
-    {
-        std::cout << " - " << p << "\n";
-    });
+                  {
+                      std::cout << " - " << p << "\n";
+                  });
     std::cout.flush();
 
     throw std::runtime_error("Planner type '" + css_type + "' not valid!");
@@ -342,7 +342,7 @@ ompl::base::StateSpacePtr OmplPlanner::make_constrained_space()
 ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
 {
     _on_set_start_goal = [this](const ompl::base::State* start,
-            const ompl::base::State* goal)
+                                const ompl::base::State* goal)
     {
         auto atlas_ss = std::dynamic_pointer_cast<ompl::base::AtlasStateSpace>(_space);
 
@@ -361,12 +361,14 @@ ompl::base::StateSpacePtr OmplPlanner::make_atlas_space()
     YAML_PARSE_OPTION(_options["state_space"], epsilon, double, 0.1);
     YAML_PARSE_OPTION(_options["state_space"], rho, double, 0.1);
     YAML_PARSE_OPTION(_options["state_space"], delta, double, 0.1);
+    YAML_PARSE_OPTION(_options["state_space"], exploration, double, 0.5);
 
     auto atlas_space = std::make_shared<ompl::base::AtlasStateSpace>(_ambient_space, _constraint);
     atlas_space->setAlpha(alpha);
     atlas_space->setEpsilon(epsilon);
     atlas_space->setRho(rho);
     atlas_space->setDelta(delta);
+    atlas_space->setExploration(exploration);
 
     return atlas_space;
 }
@@ -385,8 +387,6 @@ ompl::base::StateSpacePtr OmplPlanner::make_projected_space()
 
 std::vector<Eigen::VectorXd> OmplPlanner::getSolutionPath() const
 {
-    _pdef->getSolutionPath()->print(std::cout);
-
     auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
     std::vector<Eigen::VectorXd> path(geom_path->getStateCount());
@@ -427,6 +427,12 @@ void OmplPlanner::getControlBounds(Eigen::VectorXd& control_min, Eigen::VectorXd
     control_max = control_max.Map(_cbounds->high.data(), _cbounds->high.size());
 }
 
+void OmplPlanner::clearPlanner()
+{
+    _planner->clear();
+    _planner->clearQuery();
+}
+
 void OmplPlanner::setStateValidityPredicate(StateValidityPredicate svp)
 {
     auto sw = _sw;
@@ -464,15 +470,8 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
     _sw->setState(ompl_start.get(), start);
     _sw->setState(ompl_goal.get(), goal);
 
-    // this resets problem definition
-    if(_cspace_info)
-        setup_problem_definition(_cspace_info);
-    else
-        setup_problem_definition(_space_info);
-
     // set start and goal
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal, threshold);
-
 
     // trigger callback
     if(_on_set_start_goal)
@@ -518,43 +517,44 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
     }
 }
 
-bool OmplPlanner::solve(const double timeout, const std::string& planner_type)
+bool OmplPlanner::solve(const double timeout,
+                        const std::string& planner_type)
 {
-
-    _planner = make_planner(planner_type);
-
-
-    if(_planner)
+    if(!_planner)
     {
-        _planner->setProblemDefinition(_pdef);
-        _planner->setup();
-
-        print();
-
-        _solved = _planner->ompl::base::Planner::solve(timeout);
-
-        if(_solved)
-        {
-            auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
-
-            geom_path->interpolate();
-
-            if(!geom_path->check())
-                return false;
-        }
-
-        ompl::base::PlannerData pdata(_space_info);
-        _planner->getPlannerData(pdata);
-
-        auto pdata_mat = PlannerDataToMatMata(pdata, *_sw);
-        auto logger = MatLogger2::MakeLogger("/tmp/cartesio_ompl_planner");
-        logger->save("planner_data", pdata_mat);
-        logger.reset();
-
-
-        return _solved;
+        _planner = make_planner(planner_type);
+        _planner->printProperties(std::cout);
+        _planner->printSettings(std::cout);
     }
-    return false;
+
+    _planner->setProblemDefinition(_pdef);
+    _planner->setup();
+
+    print();
+
+    _solved = _planner->ompl::base::Planner::solve(timeout);
+
+    if(_solved)
+    {
+        auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+
+        geom_path->interpolate();
+
+        if(!geom_path->check())
+            return false;
+    }
+
+    ompl::base::PlannerData pdata(_space_info);
+    _planner->getPlannerData(pdata);
+
+    auto pdata_mat = PlannerDataToMatMata(pdata, *_sw);
+    auto logger = MatLogger2::MakeLogger("/tmp/cartesio_ompl_planner");
+    logger->save("planner_data", pdata_mat);
+    logger.reset();
+
+
+    return _solved;
+
 }
 
 
@@ -706,9 +706,9 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
     std::cout << "Valid planners are \n";
     std::for_each(valid_planners.begin(), valid_planners.end(),
                   [](std::string p)
-    {
-        std::cout << " - " << p << "\n";
-    });
+                  {
+                      std::cout << " - " << p << "\n";
+                  });
     std::cout.flush();
 
     throw std::runtime_error("Planner type '" + planner_type + "' not valid!");
