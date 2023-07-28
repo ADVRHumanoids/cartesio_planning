@@ -24,6 +24,7 @@ struct ProjectionFailure : std::runtime_error
 auto cc_project = [](ompl::base::Constraint& self, const Eigen::VectorXd& q)
 {
     Eigen::VectorXd qproj = q;
+
     if(!self.project(qproj))
     {
         throw ProjectionFailure("project() failed");

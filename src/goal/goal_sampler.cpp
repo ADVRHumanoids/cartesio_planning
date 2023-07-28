@@ -91,7 +91,7 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q, double time_out_sec)
         // if goal found, check state validity
         if(goal_found && !_validity_check.checkAll())
         {
-            printf("found invalid goal state with colliding links: \n  ");
+            printf("found invalid goal state with colliding links: ");
             auto cl = _validity_check.planning_scene->getCollidingLinks();
             std::copy(cl.begin(), cl.end(), std::ostream_iterator<std::string>(std::cout, ", "));
             std::cout << std::endl;
