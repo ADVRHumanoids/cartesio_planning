@@ -59,6 +59,17 @@ auto set_optimize_torque = [](CentroidalStatics& self, bool optimize_torque, boo
     self.init(log);
 };
 
+auto add_checker = [](ValidityCheckContext& self, std::string id, std::function<bool()> fn)
+{
+    return self.vc_aggregate.add(fn, id);
+};
+
+auto rm_checker = [](ValidityCheckContext& self, std::string id)
+{
+    return self.vc_aggregate.remove(id);
+};
+
+
 PYBIND11_MODULE(validity_check, m)
 {
 
@@ -110,6 +121,8 @@ PYBIND11_MODULE(validity_check, m)
              py::arg("model"))
         .def("setPlanningScene", &ValidityCheckContext::setPlanningScene)
         .def("checkAll", &ValidityCheckContext::checkAll)
+        .def("addChecker", add_checker)
+        .def("removeChecker", rm_checker)
         .def_readwrite("planning_scene", &ValidityCheckContext::planning_scene)
         .def_readwrite("vc_aggregate", &ValidityCheckContext::vc_aggregate);
 }
