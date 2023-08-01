@@ -578,9 +578,11 @@ void OmplPlanner::interpolateSolutionPath(int count)
 {
     auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
+    geom_path->interpolate();
+
     geom_path->interpolate(count);
 
-    std::cout << "states after interpolation: " << geom_path->getStateCount() << "\n";
+    std::cout << "states after interpolation: " << geom_path->getStateCount() << ", requested " << count << "\n";
 
 }
 
