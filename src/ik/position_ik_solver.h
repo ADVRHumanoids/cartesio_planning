@@ -46,6 +46,9 @@ public:
     void setDesiredPose(std::string distal_frame,
                         const Eigen::Affine3d& pose);
 
+
+    Eigen::Affine3d getDesiredPose(std::string distal_frame) const;
+
     /**
      * @brief solve
      * @return

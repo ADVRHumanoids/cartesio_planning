@@ -4,7 +4,7 @@ using namespace XBot;
 using namespace XBot::Cartesian::Planning;
 
 const double PositionCartesianSolver::DEFAULT_ERR_TOL = 1e-4;
-const int PositionCartesianSolver::DEFAULT_MAX_ITER = 1000;//60;
+const int PositionCartesianSolver::DEFAULT_MAX_ITER = 100;//60;
 
 PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci):
     _n_task(0),
@@ -43,6 +43,12 @@ void PositionCartesianSolver::setDesiredPose(std::string distal_frame,
     }
 }
 
+Eigen::Affine3d PositionCartesianSolver::getDesiredPose(std::string distal_frame) const
+{
+    Eigen::Affine3d T;
+    _ci->getPoseReferenceRaw(distal_frame, T);
+    return T;
+}
 
 
 bool PositionCartesianSolver::solve()
@@ -85,8 +91,8 @@ bool PositionCartesianSolver::solve()
 
             if(step_size < _min_step_size)
             {
-                fprintf(stderr, "warn: step too small (error = %f > %f) \n",
-                        error.lpNorm<Eigen::Infinity>(), _err_tol);
+                // fprintf(stderr, "warn: step too small (error = %f > %f) \n",
+                //         error.lpNorm<Eigen::Infinity>(), _err_tol);
                 break;
             }
 
