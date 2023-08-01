@@ -12,7 +12,8 @@ PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci)
     _model(ci->getModel()),
     _max_iter(DEFAULT_MAX_ITER),
     _err_tol(DEFAULT_ERR_TOL),
-    _iter_callback([](){})
+    _iter_callback([](){}),
+    _min_step_size(1e-3)
 {
     for(auto t : ci->getIkProblem().getTask(0))
     {
@@ -47,39 +48,80 @@ void PositionCartesianSolver::setDesiredPose(std::string distal_frame,
 bool PositionCartesianSolver::solve()
 {
     // allocate variables
-    Eigen::VectorXd q, dq, error;
+    Eigen::VectorXd q, qcurr, dq, error;
+
+    // initial q
+    _model->getJointPosition(qcurr);
+
+    // initial cost
+    getError(error);
+    double current_cost = error.squaredNorm();
 
     // main solver loop
-    bool tol_satisfied = false;
+    bool tol_satisfied = error.lpNorm<Eigen::Infinity>() < _err_tol;
     int iter = 0;
-    const double step_size = 1.0;
+
     while(!tol_satisfied && iter < _max_iter)
     {
         double dt = 1.0; // dummy dt
 
+        // compute search direction dq
         if(!_ci->update(0.0, dt))
         {
             return false;
         }
 
-        _model->getJointPosition(q);
         _model->getJointVelocity(dq);
 
+        // line search
+        double step_size = 1.0;
+        double achieved_cost = std::numeric_limits<double>::max();
 
-        q += step_size*dq;
-        _model->setJointPosition(q);
-        _model->update();
+        // todo: armijo rule
+        while(achieved_cost >= current_cost)
+        {
+            printf("cost %4.3e >= %4.3e, try alpha = %f \n",
+                   achieved_cost, current_cost, step_size);
+
+            if(step_size < _min_step_size)
+            {
+                fprintf(stderr, "ik failed: step too small (error = %f > %f) \n",
+                        error.lpNorm<Eigen::Infinity>(), _err_tol);
+                return false;
+            }
+
+            q = qcurr + step_size*dq;
+            _model->setJointPosition(q);
+            _model->update();
+            getError(error);
+            achieved_cost = error.squaredNorm();
+
+            step_size *= 0.5;
+        }
+
+        printf("cost %4.3e < %4.3e, ok \n",
+               achieved_cost, current_cost);
+
+        current_cost = achieved_cost;
+        qcurr = q;
 
         if(_ros_server)
+        {
             _ros_server->run();
+        }
 
-        getError(error);
-        tol_satisfied = error.cwiseAbs().maxCoeff() < _err_tol;
+        tol_satisfied = error.lpNorm<Eigen::Infinity>() < _err_tol;
 
         iter++;
 
         _iter_callback();
 
+    }
+
+    if(!tol_satisfied)
+    {
+        fprintf(stderr, "ik failed: max iteration reached (error = %f > %f) \n",
+                error.lpNorm<Eigen::Infinity>(), _err_tol);
     }
 
     return tol_satisfied;

@@ -161,6 +161,7 @@ private:
     std::map<std::string, TaskData::Ptr> _task_map;
     int _max_iter;
     double _err_tol;
+    double _min_step_size;
 
     std::function<void(void)> _iter_callback;
 
