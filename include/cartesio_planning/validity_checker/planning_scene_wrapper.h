@@ -86,6 +86,70 @@ public:
     void applyPlanningScene(const moveit_msgs::PlanningScene& scene);
 
     /**
+     * @brief addCollisionObject
+     * @param co
+     * @param attach_to_link
+     * @param touch_links
+     * @return
+     */
+    bool addCollisionObject(moveit_msgs::CollisionObject co,
+                            std::string attach_to_link = "",
+                            std::vector<std::string> touch_links = std::vector<std::string>{});
+
+    /**
+     * @brief addBox
+     * @param id
+     * @param size
+     * @param T
+     * @param frame_id
+     * @param attach_to_link
+     * @param touch_links
+     * @return
+     */
+    bool addBox(std::string id,
+                const Eigen::Vector3d& size,
+                const Eigen::Affine3d& T,
+                std::string frame_id = "world",
+                std::string attach_to_link = "",
+                std::vector<std::string> touch_links = std::vector<std::string>{});
+
+    /**
+     * @brief addSphere
+     * @param id
+     * @param radius
+     * @param T
+     * @param frame_id
+     * @param attach_to_link
+     * @param touch_links
+     * @return
+     */
+    bool addSphere(std::string id,
+                   double radius,
+                   const Eigen::Affine3d& T,
+                   std::string frame_id = "world",
+                   std::string attach_to_link = "",
+                   std::vector<std::string> touch_links = std::vector<std::string>{});
+
+    /**
+     * @brief addCylinder
+     * @param id
+     * @param radius
+     * @param height
+     * @param T
+     * @param frame_id
+     * @param attach_to_link
+     * @param touch_links
+     * @return
+     */
+    bool addCylinder(std::string id,
+                     double radius,
+                     double  height,
+                     const Eigen::Affine3d& T,
+                     std::string frame_id = "world",
+                     std::string attach_to_link = "",
+                     std::vector<std::string> touch_links = std::vector<std::string>{});
+
+    /**
      * @brief getPlanningScene
      * @param req
      * @param res

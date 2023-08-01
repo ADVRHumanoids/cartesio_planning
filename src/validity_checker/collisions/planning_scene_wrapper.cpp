@@ -1,4 +1,5 @@
 #include <cartesio_planning/validity_checker/planning_scene_wrapper.h>
+#include <eigen_conversions/eigen_msg.h>
 
 
 namespace
@@ -282,6 +283,114 @@ void PlanningSceneWrapper::applyPlanningScene(const moveit_msgs::PlanningScene &
 {
     _monitor->updateFrameTransforms();
     _monitor->newPlanningSceneMessage(scene);
+}
+
+bool PlanningSceneWrapper::addCollisionObject(moveit_msgs::CollisionObject co,
+                                              std::string attach_to_link,
+                                              std::vector<std::string> touch_links)
+{
+    moveit_msgs::PlanningScene ps;
+    ps.is_diff = true;
+
+    // attached object
+    if(!attach_to_link.empty())
+    {
+        moveit_msgs::AttachedCollisionObject ao;
+        ao.object = co;
+        ao.link_name = attach_to_link;
+        ao.touch_links = touch_links;
+
+        ps.robot_state.is_diff = true;
+        ps.robot_state.attached_collision_objects = {ao};
+    }
+    // world object
+    else
+    {
+        ps.world.collision_objects.push_back(co);
+    }
+
+    applyPlanningScene(ps);
+
+    return true;
+}
+
+bool PlanningSceneWrapper::addBox(std::string id,
+                                  const Eigen::Vector3d &size,
+                                  const Eigen::Affine3d &T,
+                                  std::string frame_id,
+                                  std::string attach_to_link,
+                                  std::vector<std::string> touch_links)
+{
+    moveit_msgs::CollisionObject co;
+    co.id = id;
+    co.header.frame_id = frame_id;
+    tf::poseEigenToMsg(T, co.pose);
+
+    shape_msgs::SolidPrimitive solid;
+    solid.type = solid.BOX;
+    solid.dimensions = {size.x(), size.y(), size.z()};
+    co.primitives.push_back(solid);
+
+    geometry_msgs::Pose pose;
+    pose.orientation.w = 1.0;
+    co.primitive_poses.push_back(pose);
+
+    co.operation = co.ADD;
+
+    return addCollisionObject(co, attach_to_link, touch_links);
+}
+
+bool PlanningSceneWrapper::addSphere(std::string id,
+                                     double radius,
+                                     const Eigen::Affine3d &T,
+                                     std::string frame_id,
+                                     std::string attach_to_link,
+                                     std::vector<std::string> touch_links)
+{
+    moveit_msgs::CollisionObject co;
+    co.id = id;
+    co.header.frame_id = frame_id;
+    tf::poseEigenToMsg(T, co.pose);
+
+    shape_msgs::SolidPrimitive solid;
+    solid.type = solid.SPHERE;
+    solid.dimensions = {radius};
+    co.primitives.push_back(solid);
+
+    geometry_msgs::Pose pose;
+    pose.orientation.w = 1.0;
+    co.primitive_poses.push_back(pose);
+
+    co.operation = co.ADD;
+
+    return addCollisionObject(co, attach_to_link, touch_links);
+}
+
+bool PlanningSceneWrapper::addCylinder(std::string id,
+                                       double radius,
+                                       double height,
+                                       const Eigen::Affine3d &T,
+                                       std::string frame_id,
+                                       std::string attach_to_link,
+                                       std::vector<std::string> touch_links)
+{
+    moveit_msgs::CollisionObject co;
+    co.id = id;
+    co.header.frame_id = frame_id;
+    tf::poseEigenToMsg(T, co.pose);
+
+    shape_msgs::SolidPrimitive solid;
+    solid.type = solid.CYLINDER;
+    solid.dimensions = {height, radius};
+    co.primitives.push_back(solid);
+
+    geometry_msgs::Pose pose;
+    pose.orientation.w = 1.0;
+    co.primitive_poses.push_back(pose);
+
+    co.operation = co.ADD;
+
+    return addCollisionObject(co, attach_to_link, touch_links);
 }
 
 bool PlanningSceneWrapper::getPlanningScene(moveit_msgs::GetPlanningScene::Request & req,
