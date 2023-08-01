@@ -56,6 +56,7 @@ bool PositionCartesianSolver::solve()
     // initial cost
     getError(error);
     double current_cost = error.squaredNorm();
+    double achieved_cost = current_cost;
 
     // main solver loop
     bool tol_satisfied = error.lpNorm<Eigen::Infinity>() < _err_tol;
@@ -75,19 +76,18 @@ bool PositionCartesianSolver::solve()
 
         // line search
         double step_size = 1.0;
-        double achieved_cost = std::numeric_limits<double>::max();
 
         // todo: armijo rule
         while(achieved_cost >= current_cost)
         {
-            printf("cost %4.3e >= %4.3e, try alpha = %f \n",
-                   achieved_cost, current_cost, step_size);
+//            printf("cost %4.3e >= %4.3e, try alpha = %f \n",
+//                   achieved_cost, current_cost, step_size);
 
             if(step_size < _min_step_size)
             {
-                fprintf(stderr, "ik failed: step too small (error = %f > %f) \n",
+                fprintf(stderr, "warn: step too small (error = %f > %f) \n",
                         error.lpNorm<Eigen::Infinity>(), _err_tol);
-                return false;
+                break;
             }
 
             q = qcurr + step_size*dq;
@@ -99,8 +99,8 @@ bool PositionCartesianSolver::solve()
             step_size *= 0.5;
         }
 
-        printf("cost %4.3e < %4.3e, ok \n",
-               achieved_cost, current_cost);
+//        printf("cost %4.3e < %4.3e, ok \n",
+//               achieved_cost, current_cost);
 
         current_cost = achieved_cost;
         qcurr = q;
