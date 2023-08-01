@@ -18,6 +18,7 @@ public:
     GoalSamplerBase(PositionCartesianSolver::Ptr ik_solver,
                     ValidityCheckContext vc_ctx);
 
+    void setJointLimits(Eigen::VectorXd qmin, Eigen::VectorXd qmax);
 
     double distanceGoal(const Eigen::VectorXd& q) const;
 

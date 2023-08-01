@@ -33,6 +33,7 @@ PYBIND11_MODULE(NSPG, m)
              py::arg("ik_solver"),
              py::arg("vc_context"))
         .def("sample", goal_sampler_basic_sample)
+        .def("setJointLimits", &GoalSamplerBase::setJointLimits)
         ;
 }
 

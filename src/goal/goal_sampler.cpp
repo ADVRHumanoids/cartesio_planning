@@ -182,6 +182,17 @@ PositionCartesianSolver::Ptr GoalSamplerBase::getIkSolver()
     return _ik_solver;
 }
 
+void GoalSamplerBase::setJointLimits(Eigen::VectorXd qmin, Eigen::VectorXd qmax)
+{
+    if((qmax.array() < qmin.array()).any())
+    {
+        throw std::invalid_argument("invalid bounds");
+    }
+
+    _qmin = qmin;
+    _qmax = qmax;
+}
+
 Eigen::VectorXd GoalSamplerBase::generateRandomSeed()
 {
     // obtain model
