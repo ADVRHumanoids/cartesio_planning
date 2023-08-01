@@ -78,6 +78,10 @@ public:
 
     bool solve(const double timeout, const std::string& planner_type);
 
+    bool simplifySolutionPath(double timeout);
+
+    void interpolateSolutionPath(int count);
+
     ompl::base::PlannerStatus getPlannerStatus() const;
 
     std::vector<Eigen::VectorXd> getSolutionPath() const;

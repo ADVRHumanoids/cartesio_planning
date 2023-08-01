@@ -14,6 +14,8 @@
 #include <ompl/geometric/planners/rrt/SORRTstar.h>
 #include <ompl/geometric/planners/rrt/TRRT.h>
 #include <ompl/geometric/planners/rrt/VFRRT.h>
+#include <ompl/geometric/planners/fmt/FMT.h>
+#include <ompl/geometric/planners/fmt/BFMT.h>
 #include <ompl/geometric/planners/prm/LazyPRM.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/geometric/planners/prm/PRM.h>
@@ -32,6 +34,8 @@
 #include "utils/parse_yaml_utils.h"
 #include "utils/logging.h"
 #include "propagators/RK1.h"
+
+#include <moveit/trajectory_processing/time_optimal_trajectory_generation.h>
 
 using namespace XBot::Cartesian::Planning;
 
@@ -429,8 +433,7 @@ void OmplPlanner::getControlBounds(Eigen::VectorXd& control_min, Eigen::VectorXd
 
 void OmplPlanner::clearPlanner()
 {
-    _planner->clear();
-    _planner->clearQuery();
+    _planner.reset();
 }
 
 void OmplPlanner::setStateValidityPredicate(StateValidityPredicate svp)
@@ -530,6 +533,7 @@ bool OmplPlanner::solve(const double timeout,
     _planner->setProblemDefinition(_pdef);
     _planner->setup();
 
+
     print();
 
     _solved = _planner->ompl::base::Planner::solve(timeout);
@@ -554,6 +558,29 @@ bool OmplPlanner::solve(const double timeout,
 
 
     return _solved;
+
+}
+
+bool OmplPlanner::simplifySolutionPath(double timeout)
+{
+    ompl::geometric::PathSimplifier ps(_space_info);
+
+    auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+
+    bool ret = ps.simplify(*geom_path, timeout, true);
+
+    geom_path->interpolate();
+
+    return ret;
+}
+
+void OmplPlanner::interpolateSolutionPath(int count)
+{
+    auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+
+    geom_path->interpolate(count);
+
+    std::cout << "states after interpolation: " << geom_path->getStateCount() << "\n";
 
 }
 
@@ -660,6 +687,16 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
         ADD_PLANNER_AND_IF("PRM")
         {
             return std::make_shared<ompl::geometric::PRM>(_space_info);
+        }
+
+        ADD_PLANNER_AND_IF("FMT")
+        {
+            return std::make_shared<ompl::geometric::FMT>(_space_info);
+        }
+
+        ADD_PLANNER_AND_IF("BFMT")
+        {
+            return std::make_shared<ompl::geometric::BFMT>(_space_info);
         }
 
         ADD_PLANNER_AND_IF("PRMstar")
