@@ -17,100 +17,6 @@ using namespace XBot;
 using namespace XBot::Cartesian;
 using namespace XBot::Cartesian::Planning;
 
-auto add_box = [](PlanningSceneWrapper& self,
-                  std::string id,
-                  const Eigen::Vector3d& size,
-                  const Eigen::Affine3d& T,
-                  std::string frame_id,
-                  std::string attach_to_link,
-                  std::vector<std::string> touch_links)
-{
-    moveit_msgs::CollisionObject co;
-    co.id = id;
-    co.header.frame_id = frame_id;
-
-    shape_msgs::SolidPrimitive solid;
-    solid.type = solid.BOX;
-    solid.dimensions = {size.x(), size.y(), size.z()};  
-    co.primitives.push_back(solid);
-
-    geometry_msgs::Pose pose;
-    tf::poseEigenToMsg(T, pose);
-    co.primitive_poses.push_back(pose);
-
-    co.operation = co.ADD;
-
-    moveit_msgs::PlanningScene ps;
-    ps.is_diff = true;
-
-    // attached object
-    if(!attach_to_link.empty())
-    {
-        moveit_msgs::AttachedCollisionObject ao;
-        ao.object = co;
-        ao.link_name = attach_to_link;
-        ao.touch_links = touch_links;
-
-        ps.robot_state.is_diff = true;
-        ps.robot_state.attached_collision_objects = {ao};
-    }
-    // world object
-    else
-    {
-        ps.world.collision_objects.push_back(co);
-    }
-
-    self.applyPlanningScene(ps);
-
-};
-
-auto add_ellipse = [](PlanningSceneWrapper& self,
-                      std::string id,
-                      double radius,
-                      const Eigen::Affine3d& T,
-                      std::string frame_id,
-                      std::string attach_to_link,
-                      std::vector<std::string> touch_links)
-{
-    moveit_msgs::CollisionObject co;
-    co.id = id;
-    co.header.frame_id = frame_id;
-
-    shape_msgs::SolidPrimitive solid;
-    solid.type = solid.SPHERE;
-    solid.dimensions = {radius};
-    co.primitives.push_back(solid);
-
-    geometry_msgs::Pose pose;
-    tf::poseEigenToMsg(T, pose);
-    co.primitive_poses.push_back(pose);
-
-    co.operation = co.ADD;
-
-    moveit_msgs::PlanningScene ps;
-    ps.is_diff = true;
-
-    // attached object
-    if(!attach_to_link.empty())
-    {
-        moveit_msgs::AttachedCollisionObject ao;
-        ao.object = co;
-        ao.link_name = attach_to_link;
-        ao.touch_links = touch_links;
-
-        ps.robot_state.is_diff = true;
-        ps.robot_state.attached_collision_objects = {ao};
-    }
-    // world object
-    else
-    {
-        ps.world.collision_objects.push_back(co);
-    }
-
-    self.applyPlanningScene(ps);
-};
-
-
 auto remove_collision_object = [](PlanningSceneWrapper& self,
                                   std::string id)
 {
@@ -165,8 +71,9 @@ PYBIND11_MODULE(validity_check, m)
         .def("checkCollisions", &PlanningSceneWrapper::checkCollisions)
         .def("checkSelfCollisions", &PlanningSceneWrapper::checkSelfCollisions)
         .def("getCollidingLinks", &PlanningSceneWrapper::getCollidingLinks)
-        .def("addBox", add_box, py::arg("id"), py::arg("size"), py::arg("pose"), py::arg("frame_id") = "world", py::arg("attach_to_link") = "", py::arg("touch_links") = std::vector<std::string>())
-        .def("addSphere", add_ellipse,py::arg("id"), py::arg("size"), py::arg("pose"), py::arg("frame_id") = "world", py::arg("attach_to_link") = "", py::arg("touch_links") = std::vector<std::string>())
+        .def("addBox", &PlanningSceneWrapper::addBox, py::arg("id"), py::arg("size"), py::arg("pose"), py::arg("frame_id") = "world", py::arg("attach_to_link") = "", py::arg("touch_links") = std::vector<std::string>())
+        .def("addSphere", &PlanningSceneWrapper::addSphere, py::arg("id"), py::arg("radius"), py::arg("pose"), py::arg("frame_id") = "world", py::arg("attach_to_link") = "", py::arg("touch_links") = std::vector<std::string>())
+        .def("addCylinder", &PlanningSceneWrapper::addCylinder, py::arg("id"), py::arg("radius"), py::arg("height"), py::arg("pose"), py::arg("frame_id") = "world", py::arg("attach_to_link") = "", py::arg("touch_links") = std::vector<std::string>())
         .def("removeCollisionObject", remove_collision_object)
         .def("update", &PlanningSceneWrapper::update)
         .def("getCollidingLinks", &PlanningSceneWrapper::getCollidingLinks);

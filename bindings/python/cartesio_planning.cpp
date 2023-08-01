@@ -108,6 +108,8 @@ PYBIND11_MODULE(planning, m)
                                                   const double)>(&OmplPlanner::setStartAndGoalStates))
             .def("getSolutionPath", &OmplPlanner::getSolutionPath)
             .def("solve", &OmplPlanner::solve)
+        .def("simplifySolutionPath", &OmplPlanner::simplifySolutionPath)
+        .def("interpolateSolutionPath", &OmplPlanner::interpolateSolutionPath)
             .def("clearPlanner", &OmplPlanner::clearPlanner);
 
 //    py::class_<GoalSamplerBase>(m, "GoalSampler")
