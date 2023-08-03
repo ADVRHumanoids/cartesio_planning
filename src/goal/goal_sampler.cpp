@@ -99,6 +99,11 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q, double time_out_sec)
             goal_found = false;
         }
 
+        if(_cb)
+        {
+            _cb();
+        }
+
         // update output
         model->getJointPosition(q);
 
@@ -111,6 +116,11 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q, double time_out_sec)
         auto qrand = generateRandomSeed();
         model->setJointPosition(qrand);
         model->update();
+
+        if(_cb)
+        {
+            _cb();
+        }
 
         // check timeout
         auto now = std::chrono::high_resolution_clock::now();
@@ -182,6 +192,11 @@ PositionCartesianSolver::Ptr GoalSamplerBase::getIkSolver()
     return _ik_solver;
 }
 
+void GoalSamplerBase::setIterationCallback(std::function<void ()> cb)
+{
+    _cb = cb;
+}
+
 void GoalSamplerBase::setJointLimits(Eigen::VectorXd qmin, Eigen::VectorXd qmax)
 {
     if((qmax.array() < qmin.array()).any())
@@ -207,14 +222,14 @@ Eigen::VectorXd GoalSamplerBase::generateRandomSeed()
     qrand = (qrand.array() + 1)/2.0; // uniform in 0 < x < 1
     qrand = _qmin + qrand.cwiseProduct(_qmax - _qmin); // uniform in qmin < x < qmax
 
-    if(model->isFloatingBase())
-    {
-        qrand.head<6>().setRandom(); // we keep virtual joints between -1 and 1 (todo: improve)
-        qrand.head<3>() += qcurr.head<3>();
-        qrand.head<6>().tail<3>() *= M_PI;
-    }
+//    if(model->isFloatingBase())
+//    {
+//        qrand.head<6>().setRandom(); // we keep virtual joints between -1 and 1 (todo: improve)
+//        qrand.head<3>() += qcurr.head<3>();
+//        qrand.head<6>().tail<3>() *= M_PI;
+//    }
 
-    qrand.head<6>().setZero();
+//    qrand.head<6>().setZero();
 
 
     return qrand;

@@ -28,6 +28,8 @@ public:
     
     PositionCartesianSolver::Ptr getIkSolver();
 
+    void setIterationCallback(std::function<void(void)> cb);
+
 protected:
 
     ValidityCheckContext _validity_check;
@@ -37,6 +39,8 @@ protected:
     Eigen::JacobiSVD<Eigen::MatrixXd> _Jsvd;
 
     Eigen::VectorXd generateRandomSeed();
+
+    std::function<void(void)> _cb;
 };
 
 

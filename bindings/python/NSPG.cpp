@@ -34,6 +34,7 @@ PYBIND11_MODULE(NSPG, m)
              py::arg("vc_context"))
         .def("sample", goal_sampler_basic_sample)
         .def("setJointLimits", &GoalSamplerBase::setJointLimits)
+        .def("setIterationCallback", &GoalSamplerBase::setIterationCallback)
         ;
 }
 
