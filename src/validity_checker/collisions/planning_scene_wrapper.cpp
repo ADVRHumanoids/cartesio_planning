@@ -1,5 +1,12 @@
 #include <cartesio_planning/validity_checker/planning_scene_wrapper.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <tf_conversions/tf_eigen.h>
+
+#include <pcl/common/transforms.h>
+#include <pcl/octree/octree.h>
+#include <pcl/filters/crop_box.h>
+#include <octomap/OcTree.h>
+#include <octomap_msgs/conversions.h>
 
 
 namespace
@@ -65,7 +72,9 @@ namespace XBot { namespace Cartesian { namespace Planning {
 
 PlanningSceneWrapper::PlanningSceneWrapper(ModelInterface::ConstPtr model):
     _model(model),
-    _async_spinner(1, &_queue)
+    _async_spinner(1, &_queue),
+    _drill_camera_point_cloud(new pcl::PointCloud<pcl::PointXYZ>),
+    _front_lidar_point_cloud(new pcl::PointCloud<pcl::PointXYZ>)
 {
     // create robot model loader
     robot_model_loader::RobotModelLoader::Options rml_opt(_model->getUrdfString(),
@@ -99,6 +108,40 @@ void PlanningSceneWrapper::startMonitor()
     // AllowedCollisionMatrix definition. Entries can be added anywhere in the code simply
     // with acm.setEntry(std::string name1, std::string name2, bool allowed)
     acm = _monitor->getPlanningScene()->getAllowedCollisionMatrix();
+
+    ros::NodeHandle nh("~");
+    nh.setCallbackQueue(&_queue);
+    _apply_planning_scene_srv = nh.advertiseService("apply_planning_scene_service", &PlanningSceneWrapper::apply_planning_scene_service, this);
+}
+
+void PlanningSceneWrapper::drill_camera_pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& msg)
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pc (new pcl::PointCloud<pcl::PointXYZ>);
+    pc = msg;
+    transform_point_cloud(pc, _drill_camera_point_cloud, "base_link");
+}
+
+void PlanningSceneWrapper::front_lidar_pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& msg)
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pc (new pcl::PointCloud<pcl::PointXYZ>);
+    pc = msg;
+
+    // filter PointCloud to ignore nearest points (assuming they belong to the robot)
+    // TODO: add robot_body_filtering somehow
+    pcl::CropBox<pcl::PointXYZ> boxFilter;
+    boxFilter.setMin(Eigen::Vector4f(-1.5, -1.0, -1.0, 1));
+    boxFilter.setMax(Eigen::Vector4f(0.0, 0.1, 0.5, 1));
+    boxFilter.setNegative(true);
+    boxFilter.setInputCloud(pc);
+    boxFilter.filter(*pc);
+
+    transform_point_cloud(pc, _front_lidar_point_cloud, "base_link");
+}
+
+bool PlanningSceneWrapper::apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request& req, moveit_msgs::ApplyPlanningScene::Response& res)
+{
+    applyPlanningScene(req.scene);
+    return true;
 }
 
 void PlanningSceneWrapper::stopMonitor()
@@ -121,6 +164,75 @@ void PlanningSceneWrapper::startGetPlanningSceneServer()
 
     _async_spinner.start();
 
+}
+
+void PlanningSceneWrapper::startOctomapServer()
+{
+    ros::NodeHandle nh("~");
+    nh.setCallbackQueue(&_queue);
+
+    _drill_camera_pc_sub = nh.subscribe("/drill_camera/depth/color/points", 1, &PlanningSceneWrapper::drill_camera_pc_callback, this);
+    _front_lidar_pc_sub = nh.subscribe("/VLP16_lidar_front/velodyne_points", 1, &PlanningSceneWrapper::front_lidar_pc_callback, this);
+    _add_octomap_srv = nh.advertiseService("octomap_service", &PlanningSceneWrapper::octomap_service, this);
+}
+
+void PlanningSceneWrapper::transform_point_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, std::string frame_id)
+{
+    tf::StampedTransform transform;
+    try
+    {
+        _listener.waitForTransform(frame_id, cloud_in->header.frame_id, ros::Time(0), ros::Duration(10.0));
+        _listener.lookupTransform(frame_id, cloud_in->header.frame_id, ros::Time(0), transform);
+    }
+    catch (tf::TransformException ex)
+    {
+        ROS_ERROR("%s",ex.what());
+    }
+
+    Eigen::Affine3d b_T_cam;
+    tf::transformTFToEigen(transform, b_T_cam);
+    pcl::transformPointCloud(*cloud_in, *cloud_out, b_T_cam.matrix());
+
+    cloud_out->header.frame_id = frame_id;
+}
+
+bool PlanningSceneWrapper::octomap_service(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res)
+{
+    double resolution = 0.05;
+    pcl::octree::OctreePointCloudVoxelCentroid<pcl::PointXYZ> octree(resolution);
+    octree.setInputCloud(_drill_camera_point_cloud);
+    octree.addPointsFromInputCloud();
+    std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > voxel_centers;
+    octree.getOccupiedVoxelCenters(voxel_centers);
+
+    // create octomap instance from pcl octree
+    octomap::OcTree final_octree(resolution);
+    for (const auto & voxel_center: voxel_centers) {
+        final_octree.updateNode(voxel_center.x,voxel_center.y,voxel_center.z,true,false);
+    }
+
+    octree.setInputCloud(_front_lidar_point_cloud);
+    octree.addPointsFromInputCloud();
+    octree.getOccupiedVoxelCenters(voxel_centers);
+
+    // create octomap instance from pcl octree
+    for (const auto & voxel_center: voxel_centers) {
+        final_octree.updateNode(voxel_center.x,voxel_center.y,voxel_center.z,true,false);
+    }
+    final_octree.updateInnerOccupancy();
+
+    octomap_msgs::Octomap octomap;
+    octomap_msgs::binaryMapToMsg(final_octree, octomap);
+
+    octomap_msgs::OctomapWithPose octomap_with_pose;
+    octomap_with_pose.header.frame_id = "base_link";
+    octomap_with_pose.header.stamp = ros::Time::now();
+    octomap_with_pose.octomap = octomap;
+    moveit_msgs::PlanningScene ps;
+    ps.world.octomap = octomap_with_pose;
+    applyPlanningScene(ps);
+
+    return true;
 }
 
 void PlanningSceneWrapper::update()

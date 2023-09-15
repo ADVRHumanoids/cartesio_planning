@@ -3,13 +3,19 @@
 
 #include <ros/callback_queue.h>
 #include <ros/spinner.h>
+#include <tf/transform_listener.h>
 
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit_msgs/PlanningScene.h>
 #include <moveit_msgs/GetPlanningScene.h>
+#include <moveit_msgs/ApplyPlanningScene.h>
+
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_types.h>
 
 #include <XBotInterface/ModelInterface.h>
 
+#include <std_srvs/Trigger.h>
 
 namespace XBot { namespace Cartesian { namespace Planning {
 
@@ -47,6 +53,11 @@ public:
      * @brief startGetPlanningSceneServer
      */
     void startGetPlanningSceneServer();
+
+    /**
+     * @brief start server for octomap compatibility
+     */
+    void startOctomapServer();
 
     /**
      * @brief update method updates the internal collision detector model state
@@ -106,6 +117,7 @@ public:
      * @param touch_links
      * @return
      */
+
     bool addBox(std::string id,
                 const Eigen::Vector3d& size,
                 const Eigen::Affine3d& T,
@@ -163,9 +175,17 @@ public:
 private:
 
     void computeChainToLinks();
+    bool octomap_service(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
+    bool apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request & req, moveit_msgs::ApplyPlanningScene::Response & res);
+    void drill_camera_pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& msg);
+    void front_lidar_pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& msg);
+
+    void transform_point_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, std::string frame_id);
 
     std::map<std::string, std::set<std::string>> _chain_to_links;
     std::map<std::string, std::string> _link_to_chain;
+
+    tf::TransformListener _listener;
 
     ModelInterface::ConstPtr _model;
 
@@ -174,6 +194,11 @@ private:
     ros::CallbackQueue _queue;
     ros::AsyncSpinner _async_spinner;
     ros::ServiceServer _get_ps_srv;
+    ros::ServiceServer _add_octomap_srv;
+    ros::ServiceServer _apply_planning_scene_srv;
+    ros::Subscriber _drill_camera_pc_sub, _front_lidar_pc_sub;
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr _drill_camera_point_cloud, _front_lidar_point_cloud;
 
     srdf_advr::Model _srdf;
 
