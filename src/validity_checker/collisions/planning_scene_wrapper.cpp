@@ -72,9 +72,7 @@ namespace XBot { namespace Cartesian { namespace Planning {
 
 PlanningSceneWrapper::PlanningSceneWrapper(ModelInterface::ConstPtr model):
     _model(model),
-    _async_spinner(1, &_queue),
-    _drill_camera_point_cloud(new pcl::PointCloud<pcl::PointXYZ>),
-    _front_lidar_point_cloud(new pcl::PointCloud<pcl::PointXYZ>)
+    _async_spinner(1, &_queue)
 {
     // create robot model loader
     robot_model_loader::RobotModelLoader::Options rml_opt(_model->getUrdfString(),
@@ -114,28 +112,19 @@ void PlanningSceneWrapper::startMonitor()
     _apply_planning_scene_srv = nh.advertiseService("apply_planning_scene_service", &PlanningSceneWrapper::apply_planning_scene_service, this);
 }
 
-void PlanningSceneWrapper::drill_camera_pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& msg)
+void PlanningSceneWrapper::pc_callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg, int i)
 {
+    if(!_point_clouds[i])
+    {
+        _point_clouds[i].reset(new pcl::PointCloud<pcl::PointXYZ>);
+    }
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr pc (new pcl::PointCloud<pcl::PointXYZ>);
-    pc = msg;
-    transform_point_cloud(pc, _drill_camera_point_cloud, "base_link");
-}
+    *pc = *msg;
 
-void PlanningSceneWrapper::front_lidar_pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& msg)
-{
-    pcl::PointCloud<pcl::PointXYZ>::Ptr pc (new pcl::PointCloud<pcl::PointXYZ>);
-    pc = msg;
+    std::lock_guard<std::mutex> lg(_pc_mtx);
 
-    // filter PointCloud to ignore nearest points (assuming they belong to the robot)
-    // TODO: add robot_body_filtering somehow
-    pcl::CropBox<pcl::PointXYZ> boxFilter;
-    boxFilter.setMin(Eigen::Vector4f(-1.5, -1.0, -1.0, 1));
-    boxFilter.setMax(Eigen::Vector4f(0.0, 0.1, 0.5, 1));
-    boxFilter.setNegative(true);
-    boxFilter.setInputCloud(pc);
-    boxFilter.filter(*pc);
-
-    transform_point_cloud(pc, _front_lidar_point_cloud, "base_link");
+    transform_point_cloud(pc, _point_clouds[i], "base_link");
 }
 
 bool PlanningSceneWrapper::apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request& req, moveit_msgs::ApplyPlanningScene::Response& res)
@@ -166,13 +155,31 @@ void PlanningSceneWrapper::startGetPlanningSceneServer()
 
 }
 
-void PlanningSceneWrapper::startOctomapServer()
+void PlanningSceneWrapper::startOctomapServer(std::vector<std::string> input_topics)
 {
     ros::NodeHandle nh("~");
     nh.setCallbackQueue(&_queue);
 
-    _drill_camera_pc_sub = nh.subscribe("/drill_camera/depth/color/points", 1, &PlanningSceneWrapper::drill_camera_pc_callback, this);
-    _front_lidar_pc_sub = nh.subscribe("/VLP16_lidar_front/velodyne_points", 1, &PlanningSceneWrapper::front_lidar_pc_callback, this);
+    _point_clouds.resize(input_topics.size());
+
+    int i = 0;
+
+    for(auto topic: input_topics)
+    {
+        std::cout << "startOctomapServer: subscribed to " << topic << "\n";
+
+        auto cb = [this, i](const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg)
+        {
+            pc_callback(msg, i);
+        };
+
+        auto sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZ>>(topic, 1, cb);
+
+        _pc_subs.push_back(sub);
+
+        i++;
+    }
+
     _add_octomap_srv = nh.advertiseService("octomap_service", &PlanningSceneWrapper::octomap_service, this);
 }
 
@@ -198,27 +205,47 @@ void PlanningSceneWrapper::transform_point_cloud(pcl::PointCloud<pcl::PointXYZ>:
 
 bool PlanningSceneWrapper::octomap_service(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res)
 {
+    res.success = updateOctomap();
+
+    return true;
+}
+
+bool PlanningSceneWrapper::updateOctomap()
+{
+    std::lock_guard<std::mutex> lg(_pc_mtx);
+
     double resolution = 0.05;
+
     pcl::octree::OctreePointCloudVoxelCentroid<pcl::PointXYZ> octree(resolution);
-    octree.setInputCloud(_drill_camera_point_cloud);
-    octree.addPointsFromInputCloud();
-    std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > voxel_centers;
-    octree.getOccupiedVoxelCenters(voxel_centers);
-
-    // create octomap instance from pcl octree
     octomap::OcTree final_octree(resolution);
-    for (const auto & voxel_center: voxel_centers) {
-        final_octree.updateNode(voxel_center.x,voxel_center.y,voxel_center.z,true,false);
+    std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > voxel_centers;
+    
+    for(auto pc : _point_clouds)
+    {
+        if(!pc)
+        {
+            continue;
+        }
+
+        // filter PointCloud to ignore nearest points (assuming they belong to the robot)
+        // TODO: add robot_body_filtering somehow
+        pcl::CropBox<pcl::PointXYZ> boxFilter;
+        boxFilter.setMin(Eigen::Vector4f(-0.7, -0.4, -1.0, 1));
+        boxFilter.setMax(Eigen::Vector4f(0.7, 0.4, 2.0, 1));
+        boxFilter.setNegative(true);
+        boxFilter.setInputCloud(pc);
+        boxFilter.filter(*pc);
+
+        octree.setInputCloud(pc);
+        octree.addPointsFromInputCloud();
+        octree.getOccupiedVoxelCenters(voxel_centers);
+
+        for (const auto & voxel_center: voxel_centers) {
+            final_octree.updateNode(voxel_center.x, voxel_center.y, voxel_center.z, true, false);
+        }
+
     }
 
-    octree.setInputCloud(_front_lidar_point_cloud);
-    octree.addPointsFromInputCloud();
-    octree.getOccupiedVoxelCenters(voxel_centers);
-
-    // create octomap instance from pcl octree
-    for (const auto & voxel_center: voxel_centers) {
-        final_octree.updateNode(voxel_center.x,voxel_center.y,voxel_center.z,true,false);
-    }
     final_octree.updateInnerOccupancy();
 
     octomap_msgs::Octomap octomap;
@@ -230,6 +257,9 @@ bool PlanningSceneWrapper::octomap_service(std_srvs::Trigger::Request& req, std_
     octomap_with_pose.octomap = octomap;
     moveit_msgs::PlanningScene ps;
     ps.world.octomap = octomap_with_pose;
+
+    ps.is_diff = true;
+
     applyPlanningScene(ps);
 
     return true;

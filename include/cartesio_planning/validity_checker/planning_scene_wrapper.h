@@ -57,7 +57,12 @@ public:
     /**
      * @brief start server for octomap compatibility
      */
-    void startOctomapServer();
+    void startOctomapServer(std::vector<std::string> input_topics);
+
+    /**
+     * @brief update octomap from subscribed point clouds
+     */
+    bool updateOctomap();
 
     /**
      * @brief update method updates the internal collision detector model state
@@ -177,8 +182,8 @@ private:
     void computeChainToLinks();
     bool octomap_service(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
     bool apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request & req, moveit_msgs::ApplyPlanningScene::Response & res);
-    void drill_camera_pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& msg);
-    void front_lidar_pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& msg);
+    
+    void pc_callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg, int i);
 
     void transform_point_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, std::string frame_id);
 
@@ -196,9 +201,10 @@ private:
     ros::ServiceServer _get_ps_srv;
     ros::ServiceServer _add_octomap_srv;
     ros::ServiceServer _apply_planning_scene_srv;
-    ros::Subscriber _drill_camera_pc_sub, _front_lidar_pc_sub;
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr _drill_camera_point_cloud, _front_lidar_point_cloud;
+    
+    std::mutex _pc_mtx;
+    std::vector<ros::Subscriber> _pc_subs;
+    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> _point_clouds;
 
     srdf_advr::Model _srdf;
 
