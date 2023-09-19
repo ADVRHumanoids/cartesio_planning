@@ -542,10 +542,10 @@ bool OmplPlanner::solve(const double timeout,
     {
         auto * geom_path = _pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
-        geom_path->interpolate();
+        // geom_path->interpolate();
 
-        if(!geom_path->check())
-            return false;
+        // if(!geom_path->check())
+        //     return false;
     }
 
     ompl::base::PlannerData pdata(_space_info);
