@@ -19,12 +19,12 @@ PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci)
     {
         if(auto cart = std::dynamic_pointer_cast<Cartesian::CartesianTask>(t))
         {
-            auto tdata = std::make_shared<CartesianTaskData>(cart->getDistalLink(),
-                                                             cart->getBaseLink(),
-                                                             cart->getIndices());
+            auto tdata = std::make_shared<CartesianTaskData>(cart);
+
             _n_task += tdata->size;
 
-            _task_map[cart->getDistalLink()] = tdata;
+            _task_map[cart->getName()] = tdata;
+            _ctask_map[cart->getName()] = tdata;
 
             printf("[PositionCartesianSolver] adding cartesian task '%s' to '%s', size is %d \n",
                    cart->getBaseLink().c_str(),
@@ -37,7 +37,9 @@ PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci)
 void PositionCartesianSolver::setDesiredPose(std::string distal_frame,
                                              const Eigen::Affine3d & pose)
 {
-    if(!_ci->setPoseReference(distal_frame, pose))
+    bool ok = _ctask_map.at(distal_frame)->ctask->setPoseReference(pose);
+
+    if(!ok)
     {
         throw std::runtime_error("Unable to set desired pose for task '" + distal_frame + "'");
     }
@@ -46,7 +48,7 @@ void PositionCartesianSolver::setDesiredPose(std::string distal_frame,
 Eigen::Affine3d PositionCartesianSolver::getDesiredPose(std::string distal_frame) const
 {
     Eigen::Affine3d T;
-    _ci->getPoseReferenceRaw(distal_frame, T);
+    _ctask_map.at(distal_frame)->ctask->getPoseReferenceRaw(T);
     return T;
 }
 
@@ -142,7 +144,7 @@ void PositionCartesianSolver::getError(Eigen::VectorXd& error) const
     for(auto pair : _task_map)
     {
         auto t = pair.second;
-        t->update(_ci, _model); // tbd: optimize
+        t->update(*_model); // tbd: optimize
 
 //        std::cout << pair.first << ": err = " << t->error.transpose() << "\n";
 
@@ -160,7 +162,7 @@ void PositionCartesianSolver::getJacobian(Eigen::MatrixXd & J) const
     for(auto pair : _task_map)
     {
         auto t = pair.second;
-        t->update(_ci, _model); // tbd: optimize
+        t->update(*_model); // tbd: optimize
 
         J.middleRows(jac_idx, t->size) = t->J;
         jac_idx += t->size;
@@ -207,8 +209,9 @@ void PositionCartesianSolver::setMaxIterations(const int max_iter)
     _max_iter = max_iter;
 }
 
-PositionCartesianSolver::TaskData::TaskData(int a_size):
-    size(a_size)
+PositionCartesianSolver::TaskData::TaskData(Cartesian::TaskDescription::Ptr t):
+    size(t->getIndices().size()),
+    task(t)
 {
     error.setZero(size);
     J.setZero(size, 0);
@@ -219,25 +222,23 @@ PositionCartesianSolver::TaskData::~TaskData()
 
 }
 
-PositionCartesianSolver::CartesianTaskData::CartesianTaskData(std::string a_distal_link,
-                                                              std::string a_base_link,
-                                                              std::vector<int> a_indices):
-    TaskData(a_indices.size()),
-    distal_link(a_distal_link),
-    base_link(a_base_link),
-    indices(a_indices)
+PositionCartesianSolver::CartesianTaskData::CartesianTaskData(CartesianTask::Ptr t):
+    TaskData(t),
+    distal_link(t->getDistalLink()),
+    base_link(t->getBaseLink()),
+    ctask(t)
 {
 
 }
 
-void PositionCartesianSolver::CartesianTaskData::update(XBot::Cartesian::CartesianInterfaceImpl::Ptr ci,
-                                                        XBot::ModelInterface::Ptr model)
+void PositionCartesianSolver::CartesianTaskData::update(XBot::ModelInterface& model)
 {
-    J.setZero(size, model->getJointNum());
+    J.setZero(size, model.getJointNum());
     error.setZero(size);
 
     /* If task was disabled, error and jacobian are zero */
-    auto active = ci->getActivationState(distal_link);
+    auto active = task->getActivationState();
+
     if(active == ActivationState::Disabled)
     {
         return;
@@ -246,8 +247,8 @@ void PositionCartesianSolver::CartesianTaskData::update(XBot::Cartesian::Cartesi
 
     /* Error computation */
     Eigen::Affine3d T, Tdes;
-    ci->getCurrentPose(distal_link, T);
-    ci->getPoseReference(distal_link, Tdes);
+    ctask->getCurrentPose(T);
+    ctask->getPoseReference(Tdes);
 
     Eigen::Vector3d pos_error = T.translation() - Tdes.translation();
     Eigen::Vector3d rot_error;
@@ -257,27 +258,45 @@ void PositionCartesianSolver::CartesianTaskData::update(XBot::Cartesian::Cartesi
                               rot_error,
                               L);
 
+    /* Body jacobian */
+    if(ctask->isSubtaskLocal())
+    {
+        pos_error = T.linear().transpose()*pos_error;
+        rot_error = T.linear().transpose()*rot_error;
+    }
+
     Eigen::Vector6d error6d;
     error6d << pos_error, rot_error;
+
+    const auto& indices = task->getIndices();
 
     for(int i = 0; i < size; i++)
     {
         error[i] = error6d[indices[i]];
     }
 
+    std::cout << "error = " << error.transpose() << "\n";
+
     /* Jacobian computation */
     Eigen::MatrixXd Ji;
 
     if(base_link == "world")
     {
-        model->getJacobian(distal_link, Ji);
+        model.getJacobian(distal_link, Ji);
     }
     else
     {
-        model->getJacobian(distal_link, base_link, Ji);
+        model.getJacobian(distal_link, base_link, Ji);
     }
 
     Ji.bottomRows<3>() = L * Ji.bottomRows<3>();
+
+    /* Body jacobian */
+    if(ctask->isSubtaskLocal())
+    {
+        Ji.topRows<3>() = T.linear().transpose()*Ji.topRows<3>();
+        Ji.bottomRows<3>() = T.linear().transpose()*Ji.bottomRows<3>();
+    }
 
     for(int i = 0; i < size; i++)
     {

@@ -127,30 +127,29 @@ private:
     {
         typedef std::shared_ptr<TaskData> Ptr;
 
-        TaskData(int size);
+        TaskData(TaskDescription::Ptr task);
 
         const int size;
         Eigen::MatrixXd J;
         Eigen::VectorXd error;
+        TaskDescription::Ptr task;
 
-        virtual void update(CartesianInterfaceImpl::Ptr ci,
-                            ModelInterface::Ptr model) = 0;
+        virtual void update(ModelInterface& model) = 0;
 
         virtual ~TaskData();
     };
 
     struct CartesianTaskData : TaskData
     {
-        CartesianTaskData(std::string distal_link,
-                          std::string base_link,
-                          std::vector<int> indices);
+        typedef std::shared_ptr<CartesianTaskData> Ptr;
+
+        CartesianTaskData(CartesianTask::Ptr task);
 
         std::string distal_link;
         std::string base_link;
-        std::vector<int> indices;
+        CartesianTask::Ptr ctask;
 
-        void update(CartesianInterfaceImpl::Ptr ci,
-                    ModelInterface::Ptr model) override;
+        void update(ModelInterface& model) override;
 
         static void compute_orientation_error(const Eigen::Matrix3d& Rd,
                                               const Eigen::Matrix3d& Re,
@@ -162,6 +161,7 @@ private:
     CartesianInterfaceImpl::Ptr _ci;
     ModelInterface::Ptr _model;
     std::map<std::string, TaskData::Ptr> _task_map;
+    std::map<std::string, CartesianTaskData::Ptr> _ctask_map;
     int _max_iter;
     double _err_tol;
     double _min_step_size;
