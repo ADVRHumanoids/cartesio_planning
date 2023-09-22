@@ -569,8 +569,6 @@ bool OmplPlanner::simplifySolutionPath(double timeout)
 
     bool ret = ps.simplify(*geom_path, timeout, true);
 
-    geom_path->interpolate();
-
     return ret;
 }
 
