@@ -146,7 +146,6 @@ void PositionCartesianSolver::getError(Eigen::VectorXd& error) const
         auto t = pair.second;
         t->update(*_model); // tbd: optimize
 
-//        std::cout << pair.first << ": err = " << t->error.transpose() << "\n";
 
         error.segment(error_idx, t->size) = t->error;
         error_idx += t->size;
@@ -275,7 +274,6 @@ void PositionCartesianSolver::CartesianTaskData::update(XBot::ModelInterface& mo
         error[i] = error6d[indices[i]];
     }
 
-    std::cout << "error = " << error.transpose() << "\n";
 
     /* Jacobian computation */
     Eigen::MatrixXd Ji;

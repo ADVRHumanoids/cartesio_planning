@@ -30,6 +30,8 @@ public:
 
     void setIterationCallback(std::function<void(void)> cb);
 
+    Eigen::VectorXd generateRandomSeed();
+
 protected:
 
     ValidityCheckContext _validity_check;
@@ -38,7 +40,6 @@ protected:
     Eigen::MatrixXd _J;
     Eigen::JacobiSVD<Eigen::MatrixXd> _Jsvd;
 
-    Eigen::VectorXd generateRandomSeed();
 
     std::function<void(void)> _cb;
 };

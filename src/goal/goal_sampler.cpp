@@ -222,6 +222,7 @@ Eigen::VectorXd GoalSamplerBase::generateRandomSeed()
     qrand = (qrand.array() + 1)/2.0; // uniform in 0 < x < 1
     qrand = _qmin + qrand.cwiseProduct(_qmax - _qmin); // uniform in qmin < x < qmax
 
+
 //    if(model->isFloatingBase())
 //    {
 //        qrand.head<6>().setRandom(); // we keep virtual joints between -1 and 1 (todo: improve)
