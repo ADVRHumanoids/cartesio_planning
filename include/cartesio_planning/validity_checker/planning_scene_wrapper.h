@@ -65,6 +65,26 @@ public:
     bool updateOctomap();
 
     /**
+     * @brief clearOctomap
+     */
+    void clearOctomap();
+
+    /**
+     * @brief updateOctomap
+     * @param pc_topic
+     * @param local_min
+     * @param local_max
+     * @param base_min
+     * @param base_max
+     * @return
+     */
+    bool updateOctomapFromTopic(std::string pc_topic,
+                                double resolution,
+                                double ground_height,
+                                Eigen::Vector3d local_min, Eigen::Vector3d local_max,
+                                Eigen::Vector3d base_min, Eigen::Vector3d base_max);
+
+    /**
      * @brief update method updates the internal collision detector model state
      * from the provided pointer to ModelInterface
      */

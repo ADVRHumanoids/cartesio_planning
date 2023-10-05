@@ -20,10 +20,10 @@ auto ompl_planner_construct = [](Eigen::VectorXd qmin, Eigen::VectorXd qmax, std
 
 
 auto ompl_planner_construct_constr = [](
-        ompl::base::ConstraintPtr constr,
-        Eigen::VectorXd qmin,
-        Eigen::VectorXd qmax,
-        std::string yaml_str)
+                                         ompl::base::ConstraintPtr constr,
+                                         Eigen::VectorXd qmin,
+                                         Eigen::VectorXd qmax,
+                                         std::string yaml_str)
 {
     return new OmplPlanner(qmin, qmax, constr, YAML::Load(yaml_str));
 };
@@ -39,8 +39,8 @@ auto goal_sampler_construct = [](CartesianInterfaceImpl::Ptr ci, ValidityCheckCo
 };
 
 auto goal_sampler_setref = [](GoalSamplerBase& self,
-                            const std::string& frame,
-                            const Eigen::Affine3d& Tref)
+                              const std::string& frame,
+                              const Eigen::Affine3d& Tref)
 {
     self.getIkSolver()->setDesiredPose(frame, Tref);
 };
@@ -51,7 +51,7 @@ struct TimedOut : public std::runtime_error
 };
 
 auto goal_sample = [](GoalSamplerBase& self,
-                    double timeout_sec)
+                      double timeout_sec)
 {
     Eigen::VectorXd q;
     if(self.sampleGoal(q, timeout_sec))
@@ -91,46 +91,48 @@ PYBIND11_MODULE(planning, m)
     py::register_exception<TimedOut>(m, "TimedOut");
 
     py::class_<OmplPlanner>(m, "OmplPlanner")
-            .def(py::init(ompl_planner_construct),
-                 py::arg("qmin"),
-                 py::arg("qmax"),
-                 py::arg("yaml")="")
-            .def(py::init(ompl_planner_construct_constr),
-                 py::arg("constr"),
-                 py::arg("qmin"),
-                 py::arg("qmax"),
-                 py::arg("yaml")="")
-            .def("__repr__", ompl_planner_print)
-            .def("setStateValidityPredicate", &OmplPlanner::setStateValidityPredicate)
-            .def("setStartAndGoalStates",
-                 static_cast<void(OmplPlanner::*)(const Eigen::VectorXd&,
-                                                  const Eigen::VectorXd&,
-                                                  const double)>(&OmplPlanner::setStartAndGoalStates))
-            .def("getSolutionPath", &OmplPlanner::getSolutionPath)
-            .def("solve", &OmplPlanner::solve)
+        .def(py::init(ompl_planner_construct),
+             py::arg("qmin"),
+             py::arg("qmax"),
+             py::arg("yaml")="")
+        .def(py::init(ompl_planner_construct_constr),
+             py::arg("constr"),
+             py::arg("qmin"),
+             py::arg("qmax"),
+             py::arg("yaml")="")
+        .def("__repr__", ompl_planner_print)
+        .def("setStateValidityPredicate", &OmplPlanner::setStateValidityPredicate)
+        .def("setStartAndGoalStates",
+             static_cast<void(OmplPlanner::*)(const Eigen::VectorXd&,
+                                               const Eigen::VectorXd&,
+                                               const double)>(&OmplPlanner::setStartAndGoalStates))
+        .def("getSolutionPath", &OmplPlanner::getSolutionPath)
+        .def("solve", &OmplPlanner::solve)
         .def("simplifySolutionPath", &OmplPlanner::simplifySolutionPath)
         .def("interpolateSolutionPath", &OmplPlanner::interpolateSolutionPath)
-            .def("clearPlanner", &OmplPlanner::clearPlanner);
+        .def("clearPlanner", &OmplPlanner::clearPlanner);
 
-//    py::class_<GoalSamplerBase>(m, "GoalSampler")
-//            .def(py::init(goal_sampler_construct))
-//            .def("sampleGoal", goal_sample)
-////            .def("setValidityChecker", &GoalSamplerBase::setValidityCheker)
-//            .def("setMaxIterations", goal_sampler_set_maxiter)
-//            .def("setDesiredPose", goal_sampler_setref);
+    //    py::class_<GoalSamplerBase>(m, "GoalSampler")
+    //            .def(py::init(goal_sampler_construct))
+    //            .def("sampleGoal", goal_sample)
+    ////            .def("setValidityChecker", &GoalSamplerBase::setValidityCheker)
+    //            .def("setMaxIterations", goal_sampler_set_maxiter)
+    //            .def("setDesiredPose", goal_sampler_setref);
 
     py::class_<PositionCartesianSolver, PositionCartesianSolver::Ptr>(m, "PositionCartesianSolver")
-            .def(py::init<CartesianInterfaceImpl::Ptr>())
-            .def("getError", ik_err)
-            .def("getJacobian", ik_jacob)
-            .def("setMaxIterations", &PositionCartesianSolver::setMaxIterations)
-            .def("solve", &PositionCartesianSolver::solve)
-            .def("setDesiredPose", &PositionCartesianSolver::setDesiredPose)
-            .def("getDesiredPose", &PositionCartesianSolver::getDesiredPose)
-            .def("reset", &PositionCartesianSolver::reset)
-            .def("setErrorTolerance", &PositionCartesianSolver::setErrorTolerance)
-            .def("getModel", &PositionCartesianSolver::getModel)
-            .def("getCI", &PositionCartesianSolver::getCI);
+        .def(py::init<CartesianInterfaceImpl::Ptr>())
+        .def("getError", ik_err)
+        .def("getJacobian", ik_jacob)
+        .def("setMaxIterations", &PositionCartesianSolver::setMaxIterations)
+        .def("solve", &PositionCartesianSolver::solve)
+        .def("refineSolution", &PositionCartesianSolver::refineSolution)
+        .def("setDesiredPose", &PositionCartesianSolver::setDesiredPose)
+        .def("getDesiredPose", &PositionCartesianSolver::getDesiredPose)
+        .def("reset", &PositionCartesianSolver::reset)
+        .def("setErrorTolerance", &PositionCartesianSolver::setErrorTolerance)
+        .def("getModel", &PositionCartesianSolver::getModel)
+        .def("getCI", &PositionCartesianSolver::getCI)
+        ;
 
 }
 

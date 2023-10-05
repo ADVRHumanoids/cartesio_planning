@@ -80,6 +80,13 @@ PYBIND11_MODULE(validity_check, m)
         .def("startGetPlanningSceneServer", &PlanningSceneWrapper::startGetPlanningSceneServer)
         .def("startOctomapServer", &PlanningSceneWrapper::startOctomapServer)
         .def("updateOctomap", &PlanningSceneWrapper::updateOctomap)
+        .def("clearOctomap", &PlanningSceneWrapper::clearOctomap)
+        .def("updateOctomapFromTopic", &PlanningSceneWrapper::updateOctomapFromTopic,
+             py::arg("topic"), py::arg("resolution"), py::arg("ground_height"),
+             py::arg("local_lb") = Eigen::Vector3d::Zero(),
+             py::arg("local_ub") = Eigen::Vector3d::Zero(),
+             py::arg("base_lb") = Eigen::Vector3d::Zero(),
+             py::arg("base_ub") = Eigen::Vector3d::Zero())
         .def("setPadding", &PlanningSceneWrapper::setPadding)
         .def("checkCollisions", &PlanningSceneWrapper::checkCollisions)
         .def("checkSelfCollisions", &PlanningSceneWrapper::checkSelfCollisions)

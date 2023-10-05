@@ -265,6 +265,123 @@ bool PlanningSceneWrapper::updateOctomap()
     return true;
 }
 
+void PlanningSceneWrapper::clearOctomap()
+{
+    _monitor->clearOctomap();
+}
+
+bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
+                                                  double resolution,
+                                                  double ground_height,
+                                                  Eigen::Vector3d local_min,
+                                                  Eigen::Vector3d local_max,
+                                                  Eigen::Vector3d base_min,
+                                                  Eigen::Vector3d base_max)
+{
+    auto pc_msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(pc_topic, ros::Duration(5.0));
+
+    if(!pc_msg)
+    {
+        std::cerr << "no message received on topic " << pc_topic << " within timeout \n";
+        return false;
+    }
+
+    // convert ros msg to pcl
+    auto pc = pcl::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    pcl::fromROSMsg(*pc_msg, *pc);
+
+    // apply local filter if any
+    if(!local_min.isZero() || !local_max.isZero())
+    {
+        Eigen::Vector4f boxMin, boxMax;
+        boxMin << local_min.cast<float>(), 1;
+        boxMax << local_max.cast<float>(), 1;
+
+        pcl::CropBox<pcl::PointXYZ> boxFilter;
+        boxFilter.setMin(boxMin);
+        boxFilter.setMax(boxMax);
+        boxFilter.setNegative(true);
+        boxFilter.setInputCloud(pc);
+        boxFilter.filter(*pc);
+    }
+
+    // transform to base link
+    transform_point_cloud(pc, pc, "base_link");
+
+    // apply global filter if any
+    if(!base_min.isZero() || !base_max.isZero())
+    {
+        Eigen::Vector4f boxMin, boxMax;
+        boxMin << base_min.cast<float>(), 1;
+        boxMax << base_max.cast<float>(), 1;
+
+        pcl::CropBox<pcl::PointXYZ> boxFilter;
+        boxFilter.setMin(boxMin);
+        boxFilter.setMax(boxMax);
+        boxFilter.setNegative(true);
+        boxFilter.setInputCloud(pc);
+        boxFilter.filter(*pc);
+    }
+
+    // apply ground filter
+    pcl::CropBox<pcl::PointXYZ> boxFilter;
+    boxFilter.setMin(Eigen::Vector4f(-5., -5., ground_height, 1.0));
+    boxFilter.setMax(Eigen::Vector4f(5., 5., ground_height + 3.0, 1.0));
+    boxFilter.setNegative(false);
+    boxFilter.setInputCloud(pc);
+    boxFilter.filter(*pc);
+
+    // get initial octomap (we're going to add this point cloud on top)
+    moveit_msgs::GetPlanningSceneRequest ps_req;
+    moveit_msgs::GetPlanningSceneResponse ps_res;
+    ps_req.components.components = moveit_msgs::PlanningSceneComponents::OCTOMAP;
+    getPlanningScene(ps_req, ps_res);
+
+    auto initial_octree_abstract = octomap_msgs::msgToMap(ps_res.scene.world.octomap.octomap);
+    octomap::OcTree* initial_octree = nullptr;
+
+    if(initial_octree_abstract)
+    {
+        initial_octree = dynamic_cast<octomap::OcTree*>(initial_octree_abstract);
+    }
+    else{
+        initial_octree = new octomap::OcTree(resolution);
+    }
+
+    // to octree
+    pcl::octree::OctreePointCloudVoxelCentroid<pcl::PointXYZ> octree(resolution);
+    std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > voxel_centers;
+
+    octree.setInputCloud(pc);
+    octree.addPointsFromInputCloud();
+    octree.getOccupiedVoxelCenters(voxel_centers);
+
+    for (const auto & vc: voxel_centers)
+    {
+        initial_octree->updateNode(vc.x, vc.y, vc.z, true, false);
+    }
+
+    initial_octree->updateInnerOccupancy();
+
+    octomap_msgs::Octomap octomap;
+    octomap_msgs::binaryMapToMsg(*initial_octree, octomap);
+
+    octomap_msgs::OctomapWithPose octomap_with_pose;
+    octomap_with_pose.header.frame_id = "base_link";
+    octomap_with_pose.header.stamp = ros::Time::now();
+    octomap_with_pose.octomap = octomap;
+    moveit_msgs::PlanningScene ps;
+    ps.world.octomap = octomap_with_pose;
+
+    ps.is_diff = true;
+
+    applyPlanningScene(ps);
+
+    delete initial_octree;
+
+    return true;
+}
+
 void PlanningSceneWrapper::update()
 {
     // acquire lock for thread-safe access to the planning scene
@@ -624,7 +741,7 @@ void PlanningSceneWrapper::computeChainToLinks()
         while(!ok && current_link->parent_joint)
 
         {
-            std::cout << "trying to connect link " << current_link->name << ".. \n";
+            // std::cout << "trying to connect link " << current_link->name << ".. \n";
 
             // hack: skip base link
             if(current_link->name == "base_link")

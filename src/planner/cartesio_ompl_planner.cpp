@@ -473,6 +473,12 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
     _sw->setState(ompl_start.get(), start);
     _sw->setState(ompl_goal.get(), goal);
 
+    // clear previous start/goal
+    if(_planner)
+    {
+        _planner->clearQuery();
+    }
+
     // set start and goal
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal, threshold);
 
@@ -499,6 +505,12 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
     // create ompl start and goal variables
     ompl::base::ScopedState<> ompl_start(_space);
     _sw->setState(ompl_start.get(), start);
+
+    // clear previous start/goal
+    if(_planner)
+    {
+        _planner->clearQuery();
+    }
 
     // set start and goal
     _pdef->clearStartStates();
@@ -528,13 +540,11 @@ bool OmplPlanner::solve(const double timeout,
         _planner = make_planner(planner_type);
         _planner->printProperties(std::cout);
         _planner->printSettings(std::cout);
+        _planner->setProblemDefinition(_pdef);
+        _planner->setup();
+        print();
     }
 
-    _planner->setProblemDefinition(_pdef);
-    _planner->setup();
-
-
-    print();
 
     _solved = _planner->ompl::base::Planner::solve(timeout);
 
