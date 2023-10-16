@@ -15,7 +15,7 @@ public:
 
     typedef std::shared_ptr<GoalSamplerBase> Ptr;
 
-    typedef std::function<Eigen::VectorXd(void)> RandomSeedFn;
+    typedef std::function<Eigen::VectorXd(const Eigen::VectorXd&)> RandomSeedFn;
 
     GoalSamplerBase(PositionCartesianSolver::Ptr ik_solver,
                     ValidityCheckContext vc_ctx);

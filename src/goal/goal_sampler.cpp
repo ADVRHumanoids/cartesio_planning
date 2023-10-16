@@ -70,7 +70,7 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q,
     // default generator samples uniformly over bounds
     if(!random_seed_generator)
     {
-        random_seed_generator = [this]()
+        random_seed_generator = [this](const Eigen::VectorXd&)
         {
             return generateRandomSeed();
         };
@@ -103,6 +103,11 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q,
     {
         ntrial++;
 
+        if(_cb)
+        {
+            _cb();
+        }
+
         // query ik
         auto ik_start = clock_t::now();
         goal_found = _ik_solver->solve();
@@ -114,7 +119,7 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q,
         {
             Eigen::VectorXd err;
             _ik_solver->getError(err);
-//            printf("ik failed: error = %f > %f \n", err.lpNorm<Eigen::Infinity>(), _ik_solver->getErrorThreshold());
+            printf("ik failed \n");
         }
 
         // if goal found, check state validity
@@ -124,17 +129,18 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q,
             bool vc_ok = _validity_check.checkAll();
             vc_time += clock_t::now() - vc_start;
 
+            if(!vc_ok)
+            {
+                printf("vcheck failed \n");
+            }
+
 //            printf("found invalid goal state with colliding links: ");
 //            auto cl = _validity_check.planning_scene->getCollidingLinks();
 //            std::copy(cl.begin(), cl.end(), std::ostream_iterator<std::string>(std::cout, ", "));
 //            std::cout << std::endl;
 
             goal_found = vc_ok;
-        }
 
-        if(_cb)
-        {
-            _cb();
         }
 
         // update output
@@ -148,14 +154,11 @@ bool GoalSamplerBase::sampleGoal(Eigen::VectorXd &q,
         }
 
         // generate random configuration
-        auto qrand = random_seed_generator();
+        qrand = random_seed_generator(q);
         model->setJointPosition(qrand);
         model->update();
 
-        if(_cb)
-        {
-            _cb();
-        }
+
 
         // check timeout
         auto now = clock_t::now();
@@ -285,18 +288,27 @@ Eigen::VectorXd GoalSamplerBase::generateRandomSeedNullspace(const Eigen::Vector
     Eigen::MatrixXd J;
     _ik_solver->getJacobian(J);
 
+    // add eq constraints given by equal bounds
+    for(int i = 0; i < model->getJointNum(); i++)
+    {
+        if(_qmin[i] == _qmax[i])
+        {
+            J.conservativeResize(J.rows() + 1, J.cols());
+            J.row(J.rows() - 1).setZero();
+            J(J.rows() - 1, i) = 1;
+        }
+    }
+
     Eigen::MatrixXd V = J.jacobiSvd(Eigen::ComputeFullV).matrixV();
 
-    auto Vns = V.rightCols(J.rows());
-
-    std::cout << "DBG " << (J*Vns).norm() << " ~= 0 \n";
+    auto Vns = V.rightCols(J.cols() - J.rows());
 
     Eigen::VectorXd nrand;
     nrand.setRandom(Vns.cols());
 
     Eigen::VectorXd qrand = qgoal + Vns*nrand*dq;
 
-    return qrand;
+    return qrand.cwiseMin(_qmax).cwiseMax(_qmin);;
 
 }
 
