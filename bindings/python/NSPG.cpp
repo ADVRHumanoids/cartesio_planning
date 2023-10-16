@@ -16,6 +16,18 @@ auto goal_sampler_basic_sample(GoalSamplerBase& self, double timeout)
     return self.sampleGoal(q, timeout);
 }
 
+auto goal_sampler_basic_sample_ns(GoalSamplerBase& self, Eigen::VectorXd q0, double dq, double timeout)
+{
+    Eigen::VectorXd q;
+
+    auto rsg = [q0, dq, &self]()
+    {
+        return self.generateRandomSeedNullspace(q0, dq);
+    };
+
+    return self.sampleGoal(q, timeout, rsg);
+}
+
 PYBIND11_MODULE(NSPG, m)
 {
     py::class_<NSPG, NSPG::Ptr>(m, "NSPG")
@@ -32,7 +44,10 @@ PYBIND11_MODULE(NSPG, m)
                       ValidityCheckContext>(),
              py::arg("ik_solver"),
              py::arg("vc_context"))
-        .def("sample", goal_sampler_basic_sample)
+        .def("sample", goal_sampler_basic_sample,
+             py::arg("timeout"))
+        .def("sampleNullspace", goal_sampler_basic_sample_ns,
+             py::arg("q0"), py::arg("dq"), py::arg("timeout"))
         .def("generateRandomSeed", &GoalSamplerBase::generateRandomSeed)
         .def("setJointLimits", &GoalSamplerBase::setJointLimits)
         .def("setIterationCallback", &GoalSamplerBase::setIterationCallback)

@@ -15,6 +15,8 @@ public:
 
     typedef std::shared_ptr<GoalSamplerBase> Ptr;
 
+    typedef std::function<Eigen::VectorXd(void)> RandomSeedFn;
+
     GoalSamplerBase(PositionCartesianSolver::Ptr ik_solver,
                     ValidityCheckContext vc_ctx);
 
@@ -22,7 +24,9 @@ public:
 
     double distanceGoal(const Eigen::VectorXd& q) const;
 
-    bool sampleGoal(Eigen::VectorXd& q, double time_out_sec);
+    bool sampleGoal(Eigen::VectorXd& q,
+                    double time_out_sec,
+                    RandomSeedFn random_seed_generator = RandomSeedFn());
 
     bool sampleGoalPostural(Eigen::VectorXd& q, const unsigned int time_out_sec);
     
@@ -31,6 +35,8 @@ public:
     void setIterationCallback(std::function<void(void)> cb);
 
     Eigen::VectorXd generateRandomSeed();
+
+    Eigen::VectorXd generateRandomSeedNullspace(const Eigen::VectorXd& qgoal, double dq);
 
 protected:
 
