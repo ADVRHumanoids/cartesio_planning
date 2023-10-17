@@ -104,6 +104,7 @@ bool PositionCartesianSolver::solve()
             getError(error);
             achieved_cost = error.squaredNorm();
 
+
             step_size *= 0.5;
         }
 

@@ -80,9 +80,23 @@ std::function<bool ()> ValidityCheckContext::make_collision_checker(YAML::Node v
     return validity_checker;
 }
 
-bool ValidityCheckContext::checkAll()
+bool ValidityCheckContext::checkAll(bool verbose)
 {
-    return vc_aggregate.checkAll();
+    std::vector<std::string> failed_checks;
+
+    bool ret = vc_aggregate.checkAll(&failed_checks);
+
+    if(!ret && verbose)
+    {
+        std::cout << "failed predicates: ";
+
+        std::copy(failed_checks.begin(), failed_checks.end(),
+                  std::ostream_iterator<std::string>(std::cout, ", "));
+
+        std::cout << std::endl;
+    }
+
+    return ret;
 }
 
 XBot::Cartesian::Planning::ValidityCheckContext::ValidityCheckContext()

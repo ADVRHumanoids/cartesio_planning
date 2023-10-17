@@ -27,7 +27,7 @@ public:
 
     void setPlanningScene(PlanningSceneWrapper::Ptr ps);
 
-    bool checkAll();
+    bool checkAll(bool verbose = false);
 
     PlanningSceneWrapper::Ptr planning_scene;
     ValidityPredicateAggregate vc_aggregate;

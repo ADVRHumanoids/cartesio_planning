@@ -98,6 +98,9 @@ public:
     bool checkCollisions() const;   
     bool checkSelfCollisions() const;
 
+    double computeCollisionDistance() const;
+    double computeSelfCollisionDistance() const;
+
     /**
      * @brief Get the names of the links that are involved in collisions for the current state
      */
@@ -114,6 +117,12 @@ public:
      * collision detection
      */
     void setPadding(double padding);
+
+    /**
+     * @brief set padding around the robot links for more conservative
+     * collision detection
+     */
+    void setLinkPadding(std::map<std::string, double> padding);
 
     /**
      * @brief applyPlanningScene
