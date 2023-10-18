@@ -36,7 +36,7 @@ bool NSPG::sample ( double timeout )
 {
     // BE SURE THAT _ik_solver AND _vc_context HAS THE SAME MODEL
     Eigen::VectorXd x, dqlimits;
-    XBot::JointNameMap chain_map, joint_map, velocity_map, random_map;
+    XBot::JointNameMap chain_map, joint_map, random_map;
     
     // Start initializing joint_map
     _ik_solver->getModel()->getJointPosition(joint_map);
@@ -44,26 +44,30 @@ bool NSPG::sample ( double timeout )
     _ik_solver->getModel()->getVelocityLimits(dqlimits);
     
     _ik_solver->getModel()->getJointPosition(x);
-    
-    // Fill velocity_map with the velocity limits
-    _ik_solver->getModel()->eigenToMap(x, velocity_map);
-    _ik_solver->getModel()->eigenToMap(dqlimits, velocity_map);
+
     
     float T = 0.0;
-    double dt = 0.005;
+    double dt = 0.001;
     int iter = 0;
 
-    _ik_solver->solve();
+    _time = std::chrono::high_resolution_clock::now();
+
+    bool solved = _ik_solver->solve();
     
-    while(!_vc_context.vc_aggregate.checkAll())
+    while(!solved || !_vc_context.vc_aggregate.checkAll())
     {
-        auto tic = std::chrono::high_resolution_clock::now();
+        if(T >= timeout)
+        {
+            std::cout << "timeout" <<std::endl;
+            return false;
+        }
         
         // Acquire colliding chains
-        auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
+//        auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
+        std::vector<XBot::ModelChain> colliding_chains {};
         
         // Generate a random velocity vector for colliding chains' joints only every n iterations
-        if (iter % 100 == 0)
+        if (iter % 50 == 0)
         {
             _ik_solver->getModel()->eigenToMap(x, joint_map);
             random_map = generateRandomVelocities(colliding_chains);  
@@ -74,20 +78,26 @@ bool NSPG::sample ( double timeout )
             joint_map[i.first] += i.second * dt;
         
         iter ++;
-     
+
         _ik_solver->getCI()->setReferencePosture(joint_map);
-        _ik_solver->solve();
+        solved = _ik_solver->solve();
+        if (!solved)
+        {
+            std::cout << "[NSPG]: unable to solve" << std::endl;
+            auto toc = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<float> fsec = toc-_time;
+            T += fsec.count();
+            _time = toc;
+            continue;
+        }
 
         _rviz->publishMarkers(ros::Time::now(), {});
-                        
+
         auto toc = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> fsec = toc-tic;
+        std::chrono::duration<float> fsec = toc-_time;
         T += fsec.count();
-        if(T >= timeout)
-        {
-            std::cout << "timeout" <<std::endl;
-            return false;
-        }
+
+        _time = toc;
     }
     
     return true;
@@ -100,64 +110,18 @@ double NSPG::generateRandom()
 
 XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> colliding_chains) 
 {
-    XBot::JointNameMap random_map, chain_map, velocityLim_map;
-    Eigen::VectorXd velocity_lim;
-    
-    _ik_solver->getModel()->getVelocityLimits(velocity_lim);
-    
-    _ik_solver->getCI()->getReferencePosture(velocityLim_map);
-    _ik_solver->getModel()->eigenToMap(velocity_lim, velocityLim_map);
-    
-    // Add random velocities for colliding chains
-    if (!_vc_context.vc_aggregate.check("collisions")) 
-    {
-        for (auto i:colliding_chains)
-        {
-             // Here you can add extra joints to the kinematic chains in collision.
-             if (i.getChainName() == "front_right_leg" || i.getChainName() == "front_left_leg" || i.getChainName() == "rear_right_leg" || i.getChainName() == "rear_left_leg")
-             {
-                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
-                 random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-                 random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-             }
-//             
-//             if (i.getChainName() == "right_arm" || i.getChainName() == "left_arm")
-//             {
-//                 random_map.insert(std::make_pair("torso_yaw", 2 * generateRandom() * velocityLim_map["torso_yaw"]));  // UNCOMMENT FOR CENTAURO
-//                 random_map.insert(std::make_pair("WaistYaw", 2 * generateRandom() * velocityLim_map["WaistYaw"]));   // UNCOMMENT THIS FOR COMANPLUS
-//             }
-//             
-//             if (i.getChainName() == "arm_A" || i.getChainName() == "arm_B" || i.getChainName() == "arm_C")
-//             {
-//                 random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-//                 random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-//                 random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
-//             }
-            
-            if (i.getChainName() == "head")
-            {
-                random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-                random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-                random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
-            }
-            
-            i.getJointPosition(chain_map);
-                
-            for (auto j : chain_map)
-            {
-                j.second = generateRandom() * velocityLim_map[j.first];
-                random_map.insert(std::make_pair(j.first, j.second));
-            }
-        }
-    }
-    
-    // Add random velocities to the floating base when the convex hull check fails
-     if (!_vc_context.vc_aggregate.check("stability"))
-     {
-         random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom()*50));
-         random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom()*50));
-         random_map.insert(std::make_pair("VIRTUALJOINT_3", generateRandom()*50));
-     }
+    XBot::JointNameMap random_map, chain_map;
+
+    random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom() * 50));
+    random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom() * 100));
+    random_map.insert(std::make_pair("VIRTUALJOINT_6", generateRandom() * 10));
+
+    random_map.insert(std::make_pair("J1_E", generateRandom() * 50));
+    random_map.insert(std::make_pair("J2_E", generateRandom() * 50));
+    random_map.insert(std::make_pair("J3_E", generateRandom() * 50));
+    random_map.insert(std::make_pair("J4_E", generateRandom() * 50));
+    random_map.insert(std::make_pair("J5_E", generateRandom() * 50));
+    random_map.insert(std::make_pair("J6_E", generateRandom() * 50));
 
     return random_map;
 }

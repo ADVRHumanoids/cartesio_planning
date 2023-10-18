@@ -49,6 +49,8 @@ namespace XBot { namespace Cartesian { namespace Planning {
         Planning::ValidityCheckContext _vc_context;
         
         RobotViz::Ptr _rviz;
+
+        std::chrono::time_point<std::chrono::high_resolution_clock> _time;
         
     };
 }}}

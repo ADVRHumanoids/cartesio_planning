@@ -13,7 +13,7 @@ PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci)
     _max_iter(DEFAULT_MAX_ITER),
     _err_tol(DEFAULT_ERR_TOL),
     _iter_callback([](){}),
-    _min_step_size(1e-3)
+    _min_step_size(0.6)
 {
     for(auto t : ci->getIkProblem().getTask(0))
     {
@@ -67,9 +67,9 @@ bool PositionCartesianSolver::solve()
     double achieved_cost = current_cost;
 
     // main solver loop
-    bool tol_satisfied = error.lpNorm<Eigen::Infinity>() < _err_tol;
+    bool tol_satisfied = false;
+//    bool tol_satisfied = error.lpNorm<Eigen::Infinity>() < _err_tol;
     int iter = 0;
-
     while(!tol_satisfied && iter < _max_iter)
     {
         double dt = 1.0; // dummy dt
@@ -93,8 +93,8 @@ bool PositionCartesianSolver::solve()
 
             if(step_size < _min_step_size)
             {
-                // fprintf(stderr, "warn: step too small (error = %f > %f) \n",
-                //         error.lpNorm<Eigen::Infinity>(), _err_tol);
+//                 fprintf(stderr, "warn: step too small (error = %f > %f) \n",
+//                         error.lpNorm<Eigen::Infinity>(), _err_tol);
                 break;
             }
 
