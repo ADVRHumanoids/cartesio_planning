@@ -97,7 +97,7 @@ public:
      * @return
      */
 
-    void setMinStepSize();
+    void setMinStepSize(double min_step_size);
 
     /**
      * @brief setRosServerClass
