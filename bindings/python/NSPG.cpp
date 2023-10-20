@@ -10,10 +10,10 @@
 namespace py = pybind11;
 using namespace XBot::Cartesian::Planning;
 
-auto goal_sampler_basic_sample(GoalSamplerBase& self, double timeout)
+auto goal_sampler_basic_sample(GoalSamplerBase& self, double timeout, GoalSamplerBase::RandomSeedFn rsf)
 {
     Eigen::VectorXd q;
-    return self.sampleGoal(q, timeout);
+    return self.sampleGoal(q, timeout, rsf);
 }
 
 auto goal_sampler_basic_sample_ns(GoalSamplerBase& self, double dq, double timeout)
@@ -45,7 +45,7 @@ PYBIND11_MODULE(NSPG, m)
              py::arg("ik_solver"),
              py::arg("vc_context"))
         .def("sample", goal_sampler_basic_sample,
-             py::arg("timeout"))
+             py::arg("timeout"), py::arg("random_seed_fn") = GoalSamplerBase::RandomSeedFn())
         .def("sampleNullspace", goal_sampler_basic_sample_ns,
              py::arg("dq"), py::arg("timeout"))
         .def("generateRandomSeed", &GoalSamplerBase::generateRandomSeed)

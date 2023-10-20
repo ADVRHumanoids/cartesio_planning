@@ -13,7 +13,7 @@ PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci)
     _max_iter(DEFAULT_MAX_ITER),
     _err_tol(DEFAULT_ERR_TOL),
     _iter_callback([](){}),
-    _min_step_size(0.6)
+    _min_step_size(1e-3)
 {
     for(auto t : ci->getIkProblem().getTask(0))
     {
@@ -43,6 +43,14 @@ void PositionCartesianSolver::setDesiredPose(std::string distal_frame,
     {
         throw std::runtime_error("Unable to set desired pose for task '" + distal_frame + "'");
     }
+}
+
+void PositionCartesianSolver::setMinStepSize(double min_step_size)
+{
+    _min_step_size = min_step_size;
+
+    if (_min_step_size > 0.5)
+        ROS_INFO("Line search is disabled");
 }
 
 Eigen::Affine3d PositionCartesianSolver::getDesiredPose(std::string distal_frame) const

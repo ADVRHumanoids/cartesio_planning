@@ -92,6 +92,14 @@ public:
     double getErrorThreshold() const;
 
     /**
+     * @brief setMinStepSize: if > 0.5 line search disabled
+     * @param min_step_size
+     * @return
+     */
+
+    void setMinStepSize();
+
+    /**
      * @brief setRosServerClass
      * @param ros_server
      */
