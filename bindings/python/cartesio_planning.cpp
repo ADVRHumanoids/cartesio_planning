@@ -4,7 +4,7 @@
 #include <pybind11/functional.h>
 
 #include <cartesio_planning/planner/cartesio_ompl_planner.h>
-#include "goal/goal_sampler.h"
+#include <cartesio_planning/goal/goal_sampler.h>
 #include <ros/ros.h>
 
 namespace py = pybind11;

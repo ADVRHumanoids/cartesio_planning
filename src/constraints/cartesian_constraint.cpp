@@ -1,4 +1,4 @@
-#include "cartesian_constraint.h"
+#include <cartesio_planning/constraints/cartesian_constraint.h>
 
 namespace XBot { namespace Cartesian { namespace Planning {
 

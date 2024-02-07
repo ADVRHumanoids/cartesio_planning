@@ -4,8 +4,8 @@
 #include <pybind11/functional.h>
 #include <pybind11/chrono.h>
 
-#include "goal/NSPG.h"
-#include "goal/goal_sampler.h"
+#include <cartesio_planning/goal/NSPG.h>
+#include <cartesio_planning/goal/goal_sampler.h>
 
 namespace py = pybind11;
 using namespace XBot::Cartesian::Planning;

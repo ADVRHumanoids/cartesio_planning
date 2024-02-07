@@ -1,4 +1,4 @@
-#include "position_ik_solver.h"
+#include <cartesio_planning/ik/position_ik_solver.h>
 
 using namespace XBot;
 using namespace XBot::Cartesian::Planning;

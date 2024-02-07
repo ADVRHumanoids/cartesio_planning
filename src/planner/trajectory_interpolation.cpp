@@ -1,4 +1,4 @@
-#include "planner/trajectory_interpolation.h"
+#include <cartesio_planning/planner/trajectory_interpolation.h>
 #include <casadi/casadi.hpp>
 
 namespace

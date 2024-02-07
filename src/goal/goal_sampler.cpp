@@ -1,4 +1,4 @@
-#include "goal_sampler.h"
+#include <cartesio_planning/goal/goal_sampler.h>
 #include <chrono>
 #include <limits>
 

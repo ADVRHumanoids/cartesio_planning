@@ -55,15 +55,15 @@
 #include <cartesio_planning/FootStepPlanner.h>
 
 #include <cartesio_planning/utils/state_wrapper.h>
-#include "ik/position_ik_solver.h"
+#include <cartesio_planning/ik/position_ik_solver.h>
 #include "samplers/stepSampler.h"
 #include "propagators/stepPropagator.h"
 #include <cartesio_planning/validity_checker/validity_checker_context.h>
 #include <cartesio_planning/utils/robot_viz.h>
 #include <cartesio_planning/validity_checker/planning_scene_wrapper.h>
 #include "nodes/goal_generation.h"
-#include "goal/goal_sampler.h"
-#include "goal/NSPG.h"
+#include <cartesio_planning/goal/goal_sampler.h>
+#include <cartesio_planning/goal/NSPG.h>
 #include "utils/map_converter.h"
 #include "utils/hash.h"
 #include <cartesio_planning/interpolator/cartesian_trajectory_interpolation.h>
