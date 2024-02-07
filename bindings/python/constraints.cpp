@@ -3,7 +3,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 
-#include "constraints/cartesian_constraint.h"
+#include <cartesio_planning/constraints/cartesian_constraint.h>
 
 namespace py = pybind11;
 

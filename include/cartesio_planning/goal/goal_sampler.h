@@ -3,7 +3,7 @@
 
 #include <ompl/base/goals/GoalSampleableRegion.h>
 
-#include "ik/position_ik_solver.h"
+#include <cartesio_planning/ik/position_ik_solver.h>
 #include <cartesio_planning/utils/state_wrapper.h>
 #include <functional>
 #include <cartesio_planning/validity_checker/validity_checker_context.h>

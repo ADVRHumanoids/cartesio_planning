@@ -1,4 +1,4 @@
-#include "NSPG.h"
+#include <cartesio_planning/goal/NSPG.h>
 
 using namespace XBot::Cartesian::Planning;
 

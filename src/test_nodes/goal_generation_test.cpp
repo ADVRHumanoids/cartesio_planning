@@ -1,4 +1,4 @@
-#include "ik/position_ik_solver.h"
+#include <cartesio_planning/ik/position_ik_solver.h>
 #include <cartesian_interface/ros/RosServerClass.h>
 #include <cartesian_interface/utils/LoadConfig.h>
 #include <std_srvs/Trigger.h>

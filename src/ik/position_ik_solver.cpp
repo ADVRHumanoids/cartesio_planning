@@ -1,4 +1,4 @@
-#include "position_ik_solver.h"
+#include <cartesio_planning/ik/position_ik_solver.h>
 
 using namespace XBot;
 using namespace XBot::Cartesian::Planning;
@@ -37,6 +37,10 @@ PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci)
 void PositionCartesianSolver::setDesiredPose(std::string distal_frame,
                                              const Eigen::Affine3d & pose)
 {
+    if (_ctask_map.find(distal_frame) == _ctask_map.end()) {
+        throw std::runtime_error("Task named '" + distal_frame + "' not found!");
+    }
+    
     bool ok = _ctask_map.at(distal_frame)->ctask->setPoseReference(pose);
 
     if(!ok)

@@ -3,7 +3,7 @@
 
 #include <ompl/base/Constraint.h>
 
-#include "../ik/position_ik_solver.h"
+#include <cartesio_planning/ik/position_ik_solver.h>
 
 namespace XBot { namespace Cartesian { namespace Planning {
 
