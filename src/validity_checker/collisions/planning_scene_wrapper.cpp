@@ -276,7 +276,8 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
                                                   Eigen::Vector3d local_min,
                                                   Eigen::Vector3d local_max,
                                                   Eigen::Vector3d base_min,
-                                                  Eigen::Vector3d base_max)
+                                                  Eigen::Vector3d base_max,
+                                                  std::string base_link)
 {
     auto pc_msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(pc_topic, ros::Duration(5.0));
 
@@ -306,7 +307,7 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
     }
 
     // transform to base link
-    transform_point_cloud(pc, pc, "base_link");
+    transform_point_cloud(pc, pc, base_link);
 
     // apply global filter if any
     if(!base_min.isZero() || !base_max.isZero())
@@ -324,12 +325,14 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
     }
 
     // apply ground filter
-    pcl::CropBox<pcl::PointXYZ> boxFilter;
-    boxFilter.setMin(Eigen::Vector4f(-5., -5., ground_height, 1.0));
-    boxFilter.setMax(Eigen::Vector4f(5., 5., ground_height + 3.0, 1.0));
-    boxFilter.setNegative(false);
-    boxFilter.setInputCloud(pc);
-    boxFilter.filter(*pc);
+    if (ground_height>0) {
+        pcl::CropBox<pcl::PointXYZ> boxFilter;
+        boxFilter.setMin(Eigen::Vector4f(-5., -5., ground_height, 1.0));
+        boxFilter.setMax(Eigen::Vector4f(5., 5., ground_height + 3.0, 1.0));
+        boxFilter.setNegative(false);
+        boxFilter.setInputCloud(pc);
+        boxFilter.filter(*pc);
+    }
 
     // get initial octomap (we're going to add this point cloud on top)
     moveit_msgs::GetPlanningSceneRequest ps_req;

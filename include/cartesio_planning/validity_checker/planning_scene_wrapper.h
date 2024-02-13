@@ -82,7 +82,8 @@ public:
                                 double resolution,
                                 double ground_height,
                                 Eigen::Vector3d local_min, Eigen::Vector3d local_max,
-                                Eigen::Vector3d base_min, Eigen::Vector3d base_max);
+                                Eigen::Vector3d base_min, Eigen::Vector3d base_max, 
+                                std::string base_link="base_link");
 
     /**
      * @brief update method updates the internal collision detector model state
