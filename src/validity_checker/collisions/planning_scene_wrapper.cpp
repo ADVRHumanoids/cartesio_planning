@@ -370,7 +370,7 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
     octomap_msgs::binaryMapToMsg(*initial_octree, octomap);
 
     octomap_msgs::OctomapWithPose octomap_with_pose;
-    octomap_with_pose.header.frame_id = "base_link";
+    octomap_with_pose.header.frame_id = base_link;
     octomap_with_pose.header.stamp = ros::Time::now();
     octomap_with_pose.octomap = octomap;
     moveit_msgs::PlanningScene ps;

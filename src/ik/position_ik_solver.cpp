@@ -143,10 +143,6 @@ bool PositionCartesianSolver::solve()
     {
         fprintf(stderr, "ik failed: max iteration reached (error = %f > %f) \n",
                 error.lpNorm<Eigen::Infinity>(), _err_tol);
-
-        // std::cout << q.transpose() << std::endl;
-        // std::cout << error.transpose() << std::endl;
-
     }
 
     return tol_satisfied;
@@ -158,18 +154,15 @@ void PositionCartesianSolver::getError(Eigen::VectorXd& error) const
     error.setZero(_n_task);
 
     int error_idx = 0;
-    for(auto pair : _ctask_map)
+    for(auto pair : _task_map)
     {
-
-
         auto t = pair.second;
         t->update(*_model); // tbd: optimize
+
 
         error.segment(error_idx, t->size) = t->error;
         error_idx += t->size;
     }
-
-
 
 }
 

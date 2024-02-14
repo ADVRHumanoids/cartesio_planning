@@ -19,7 +19,7 @@ NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_con
                                            rviz_nh,
                                            Eigen::Vector4d(1.0, 1.0, 0.1, 1.0)
                                            );
-        //_rviz->setPrefix("planner/");
+        _rviz->setPrefix("planner/");
     }
     
 void NSPG::setIKSolver ( PositionCartesianSolver::Ptr new_ik_solver )
