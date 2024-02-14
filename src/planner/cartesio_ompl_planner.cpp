@@ -518,6 +518,8 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
 
     // set start and goal
     _pdef->clearStartStates();
+    _pdef->clearGoal();
+    _pdef->clearSolutionPaths();
     _pdef->addStartState(ompl_start);
     goal->setThreshold(threshold);
     _pdef->setGoal(goal);
