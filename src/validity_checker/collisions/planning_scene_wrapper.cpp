@@ -356,10 +356,31 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
     octree.addPointsFromInputCloud();
     octree.getOccupiedVoxelCenters(voxel_centers);
 
+//    for (const auto & vc: voxel_centers)
+//    {
+//        initial_octree->updateNode(vc.x, vc.y, vc.z, true, false);
+//    }
+    std::vector<pcl::PointXY> saved_pts;
     for (const auto & vc: voxel_centers)
     {
-        initial_octree->updateNode(vc.x, vc.y, vc.z, true, false);
+        pcl::PointXY pt;
+        pt.x = vc.x;    pt.y = vc.y;
+        auto samePointXY = [&pt](pcl::PointXY p)
+        {
+            return pt.x == p.x && pt.y == p.y;
+        };
+
+        if (std::find_if(saved_pts.begin(), saved_pts.end(), samePointXY) == saved_pts.end())
+        {
+            for (double i = -0.6; i < 3.0; i += resolution)
+            {
+                initial_octree->updateNode(vc.x, vc.y, i, true, false);
+                std::cout << "diocane" << std::endl;
+            }
+            saved_pts.push_back(pt);
+        }
     }
+
 
     initial_octree->updateInnerOccupancy();
 
