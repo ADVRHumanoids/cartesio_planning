@@ -259,7 +259,11 @@ void PositionCartesianSolver::CartesianTaskData::update(XBot::ModelInterface& mo
 
     /* Error computation */
     Eigen::Affine3d T, Tdes;
-    ctask->getCurrentPose(T);
+
+    //see issue https://github.com/ADVRHumanoids/cartesio_planning/issues/21
+    //ctask->getCurrentPose(T);
+    model.getPose(ctask->getDistalLink(), ctask->getBaseLink(), T);
+
     ctask->getPoseReference(Tdes);
 
     Eigen::Vector3d pos_error = T.translation() - Tdes.translation();

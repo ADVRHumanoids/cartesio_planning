@@ -88,6 +88,7 @@ bool NSPG::sample ( double timeout )
             std::chrono::duration<float> fsec = toc-_time;
             T += fsec.count();
             _time = toc;
+            _rviz->publishMarkers(ros::Time::now(), {});
             continue;
         }
 
