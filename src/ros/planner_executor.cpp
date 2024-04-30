@@ -13,7 +13,14 @@ PlannerExecutor::PlannerExecutor():
 {
     auto cfg = Utils::ConfigOptionsFromParamServer();
 
-    _robot = RobotInterface::getRobot(cfg);
+    try
+    {
+        _robot = RobotInterface::getRobot(cfg);
+    }
+    catch(std::runtime_error&)
+    {
+
+    }
 
     _model = ModelInterface::getModel(cfg);
 
@@ -53,7 +60,14 @@ PlannerExecutor::PlannerExecutor():
 
             for(int i = 0; i < msg->name.size(); i++)
             {
-                q[_model->getVIndexFromVName(msg->name[i])] = msg->position[i];
+                int idx = _model->getVIndexFromVName(msg->name[i]);
+
+                if(idx < 0)
+                {
+                    continue;
+                }
+
+                q[idx] = msg->position[i];
             }
 
             _model->minimalToPosition(q, _q_start);
@@ -71,7 +85,14 @@ PlannerExecutor::PlannerExecutor():
 
             for(int i = 0; i < msg->name.size(); i++)
             {
-                q[_model->getVIndexFromVName(msg->name[i])] = msg->position[i];
+                int idx = _model->getVIndexFromVName(msg->name[i]);
+
+                if(idx < 0)
+                {
+                    continue;
+                }
+
+                q[idx] = msg->position[i];
             }
 
             _model->minimalToPosition(q, _q_goal);
