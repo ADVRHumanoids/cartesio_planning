@@ -2,6 +2,7 @@
 #define CARTESIO_PLANNING_TYPES_H
 
 #include <Eigen/Dense>
+#include <memory>
 
 #define CARTESIO_PLANNING_DECLARE_SMART_PTR(Class) \
 typedef std::shared_ptr<Class> Ptr; \

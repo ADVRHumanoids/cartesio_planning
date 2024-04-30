@@ -12,12 +12,18 @@ find_package(cartesian_interface REQUIRED)
 find_package(ompl REQUIRED)
 
 add_library(cartesio_planning SHARED
-    src/cartesio_planning.cpp
-    include/cartesio_planning/cartesio_planning.h
-    src/impl/state_space.hxx
     include/cartesio_planning/state_space.h
-    include/common/types.h
+    include/cartesio_planning/cartesio_planning.h
+    include/cartesio_planning/common/types.h
+    include/cartesio_planning/state_validity_checker/collision.h
+    src/impl/cartesio_planning.hxx
+    src/impl/state_space.hxx
+    src/impl/parse_utils.hxx
+    src/impl/profiling.hxx
+    src/cartesio_planning.cpp
     src/state_space.cpp
+    src/state_validity_checker.cpp
+    src/collision.cpp
 )
 
 target_include_directories(cartesio_planning
@@ -41,4 +47,8 @@ install(TARGETS cartesio_planning
     DESTINATION lib
 )
 
+add_subdirectory(src/ros)
+
 export_project()
+
+add_subdirectory(test)

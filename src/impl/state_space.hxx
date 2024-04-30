@@ -5,6 +5,8 @@
 
 #include <ompl/base/StateSpace.h>
 
+#include <ompl/base/ScopedState.h>
+
 #include <ompl/base/StateSpaceTypes.h>
 
 namespace XBot::Cartesian::Planning {
@@ -25,19 +27,32 @@ public:
 
     std::pair<Eigen::VectorXd, Eigen::VectorXd> getBounds() const;
 
-    std::unique_ptr<ompl::base::State> createState();
+    ompl::base::State * createState() const;
 
     void setValue(ompl::base::State& s,
-                  Eigen::VectorXd q);
+                  Eigen::VectorXd q) const;
 
-    Eigen::VectorXd getValue(const ompl::base::State& s);
+    Eigen::VectorXd getValue(const ompl::base::State& s) const;
 
     int addOmplSpace(ompl::base::StateSpacePtr ss, std::string id);
+
+    ompl::base::StateSpacePtr getStateSpace() const;
+
+    int getNq() const;
+
+    int getNq(int i) const;
+
+    int getQIndex(int i) const;
+
+    ModelInterface::Ptr getModel(int i) const;
+
+    void updateModelState(const Eigen::VectorXd& q) const;
 
 private:
 
     std::map<std::string, ompl::base::StateSpacePtr> _ss_map;
     std::vector<ompl::base::StateSpacePtr> _ss_vec;
+    std::vector<int> _q_index;
     std::shared_ptr<ompl::base::CompoundStateSpace> _ss;
 
 };
@@ -47,9 +62,10 @@ class RobotConfigurationSpace : public ompl::base::StateSpace
 
 public:
 
-    RobotConfigurationSpace(ModelInterface::ConstPtr model);
+    RobotConfigurationSpace(ModelInterface::Ptr model,
+                            Planning::StateSpace::RobotConfigurationSpaceOptions opt);
 
-    ModelInterface::ConstPtr model() const;
+    ModelInterface::Ptr model() const;
 
     // StateSpace interface
     unsigned int getDimension() const override;
@@ -64,6 +80,8 @@ public:
     ompl::base::StateSamplerPtr allocDefaultStateSampler() const override;
     ompl::base::State *allocState() const override;
     void freeState(ompl::base::State *state) const override;
+    void printState(const ompl::base::State *state, std::ostream &out) const override;
+
 
     // State type
     class StateType : public ompl::base::State
@@ -78,16 +96,24 @@ public:
     {
         // StateSampler interface
     public:
+
+        StateSampler(const StateSpace *space,
+                     ModelInterface::ConstPtr model,
+                     Planning::StateSpace::RobotConfigurationSpaceOptions opt);
+
         void sampleUniform(ompl::base::State *state) override;
         void sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance) override;
         void sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) override;
 
         ModelInterface::ConstPtr _model;
+        Planning::StateSpace::RobotConfigurationSpaceOptions _opt;
     };
 
 private:
 
-    ModelInterface::ConstPtr _model;
+    ModelInterface::Ptr _model;
+
+    Planning::StateSpace::RobotConfigurationSpaceOptions _opt;
 
     static const Eigen::VectorXd& getQ(const ompl::base::State *);
     static Eigen::VectorXd& getQ(ompl::base::State *);

@@ -1,0 +1,29 @@
+# goal
+string type  # pose, joint, robot_state, goal_generation
+int16[] active_subtasks
+string[] goal_frame
+geometry_msgs/PoseStamped[] goal_pose
+sensor_msgs/JointState goal_joint
+sensor_msgs/JointState start_joint
+string goal_robot_state
+string planner_type
+float64 goal_generation_timeout
+float64 planner_timeout
+bool move_base
+string[] goal_generation_validity_checks
+string[] planner_validity_checks
+bool play_on_rviz
+bool play_on_robot
+float64 max_velocity
+float64 max_acceleration
+float64 trajectory_dt
+---
+# result
+trajectory_msgs/JointTrajectory trajectory
+sensor_msgs/JointState goal_configuration
+bool success
+string message
+---
+# feedback
+string current_phase
+float64 trj_execution_perc

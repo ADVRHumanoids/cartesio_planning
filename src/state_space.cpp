@@ -1,20 +1,28 @@
 #include <cartesio_planning/state_space.h>
 #include "impl/state_space.hxx"
+#include "impl/profiling.hxx"
 
 #include <ompl/base/spaces/SE3StateSpace.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 
 using namespace XBot::Cartesian::Planning;
 
+
 StateSpace::StateSpace()
 {
     impl = std::make_unique<Impl>();
 }
 
-int StateSpace::addRobotConfigurationSpace(XBot::ModelInterface::ConstPtr model)
+int StateSpace::addRobotConfigurationSpace(XBot::ModelInterface::Ptr model,
+                                           RobotConfigurationSpaceOptions opt)
 {
-    auto rss = std::make_shared<RobotConfigurationSpace>(model);
+    auto rss = std::make_shared<RobotConfigurationSpace>(model, opt);
     return impl->addOmplSpace(rss, "robot_" + model->getName());
+}
+
+XBot::ModelInterface::Ptr StateSpace::getModel(int i) const
+{
+    return impl->getModel(i);
 }
 
 // StateSpace::StateSpace(XBotInterface &model)
@@ -61,9 +69,19 @@ int StateSpace::addEuclidean(Eigen::VectorXd qmin,
     return addEuclidean(qmin, qmax, id);
 }
 
-std::pair<Eigen::VectorXd, Eigen::VectorXd> StateSpace::getBounds() const
+int StateSpace::getNq() const
 {
-    return impl->getBounds();
+    return impl->getNq();
+}
+
+int StateSpace::getNq(int i) const
+{
+    return impl->getNq(i);
+}
+
+int StateSpace::getQIndex(int i) const
+{
+    return impl->getQIndex(i);
 }
 
 StateSpace::~StateSpace()
@@ -71,9 +89,19 @@ StateSpace::~StateSpace()
 
 }
 
+const StateSpace::Impl &StateSpace::getImpl() const
+{
+    return *impl;
+}
+
 StateSpace::Impl &StateSpace::getImpl()
 {
     return *impl;
+}
+
+StateSpace::Impl::Impl()
+{
+    _ss = std::make_shared<ompl::base::CompoundStateSpace>();
 }
 
 int StateSpace::Impl::addSE3(Eigen::Vector6d qmin, Eigen::Vector6d qmax, std::string id)
@@ -127,12 +155,61 @@ std::pair<Eigen::VectorXd, Eigen::VectorXd> StateSpace::Impl::getBounds() const
     return {qmin, qmax};
 }
 
-std::unique_ptr<ompl::base::State> StateSpace::Impl::createState()
+ompl::base::State * StateSpace::Impl::createState()const
 {
-    return std::unique_ptr<ompl::base::State>(_ss->allocState());
+    return _ss->allocState();
 }
 
-Eigen::VectorXd StateSpace::Impl::getValue(const ompl::base::State &s)
+void StateSpace::Impl::setValue(ompl::base::State &s, Eigen::VectorXd q) const
+{
+    auto& cs = static_cast<ompl::base::CompoundState&>(s);
+
+    int i = 0;
+    int si = 0;
+
+    for(auto& ss : _ss_vec)
+    {
+        if(auto se3 = dynamic_cast<ompl::base::SE3StateSpace::StateType*>(cs.components[si]))
+        {
+            // set r^3
+            Eigen::Vector3d::Map(se3->as<ompl::base::RealVectorStateSpace::StateType>(0)->values)
+                = q.segment<3>(i);
+
+            i += 3;
+
+            // set so3
+            auto so3 = se3->as<ompl::base::SO3StateSpace::StateType>(1);
+
+            so3->x = q[i++];
+            so3->y = q[i++];
+            so3->z = q[i++];
+        }
+        else if(auto rcs = dynamic_cast<RobotConfigurationSpace::StateType*>(cs.components[si]))
+        {
+            rcs->q = q.segment(i, ss->getDimension());
+            i += ss->getDimension();
+        }
+        else if(auto rvs = dynamic_cast<ompl::base::RealVectorStateSpace::StateType*>(cs.components[si]))
+        {
+            Eigen::VectorXd::Map(rvs->values, ss->getDimension()) = q.segment(i, ss->getDimension());
+            i += ss->getDimension();
+        }
+        else
+        {
+            throw std::runtime_error("invalid state type");
+        }
+
+        si++;
+    }
+
+    if(i != q.size())
+    {
+        throw std::runtime_error("could not set state value");
+    }
+
+}
+
+Eigen::VectorXd StateSpace::Impl::getValue(const ompl::base::State &s) const
 {
     const auto& cs = static_cast<const ompl::base::CompoundState&>(s);
 
@@ -140,11 +217,11 @@ Eigen::VectorXd StateSpace::Impl::getValue(const ompl::base::State &s)
     value.setZero(_ss->getDimension());
 
     int i = 0;
-
+    int si = 0;
 
     for(auto& ss : _ss_vec)
     {
-        if(auto se3 = ss->as<ompl::base::SE3StateSpace::StateType>())
+        if(auto se3 = dynamic_cast<ompl::base::SE3StateSpace::StateType*>(cs.components[si]))
         {
             value[i++] = se3->getX();
             value[i++] = se3->getY();
@@ -155,11 +232,30 @@ Eigen::VectorXd StateSpace::Impl::getValue(const ompl::base::State &s)
             value[i++] = se3->rotation().z;
             value[i++] = se3->rotation().w;
         }
-        if(auto rcs = ss->as<RobotConfigurationSpace>())
+        else if(auto rcs = dynamic_cast<RobotConfigurationSpace::StateType*>(cs.components[si]))
         {
-            rcs->q
+            value.segment(i, ss->getDimension()) = rcs->q;
+            i += ss->getDimension();
         }
+        else if(auto rvs = dynamic_cast<ompl::base::RealVectorStateSpace::StateType*>(cs.components[si]))
+        {
+            value.segment(i, ss->getDimension()) = Eigen::VectorXd::Map(rvs->values, ss->getDimension());
+            i += ss->getDimension();
+        }
+        else
+        {
+            throw std::runtime_error("invalid state type");
+        }
+
+        si++;
     }
+
+    if(i != value.size())
+    {
+        throw std::runtime_error("could not get state value");
+    }
+
+    return value;
 }
 
 int StateSpace::Impl::addOmplSpace(ompl::base::StateSpacePtr ss, std::string id)
@@ -180,8 +276,63 @@ int StateSpace::Impl::addOmplSpace(ompl::base::StateSpacePtr ss, std::string id)
 
     _ss->addSubspace(ss, 1.0);
 
+    if(_q_index.empty())
+    {
+        _q_index = {0};
+    }
+    else
+    {
+        _q_index.push_back(_q_index.back() + ss->getDimension());
+    }
+
     return _ss_vec.size() - 1;
 
+}
+
+ompl::base::StateSpacePtr StateSpace::Impl::getStateSpace() const
+{
+    return _ss;
+}
+
+int StateSpace::Impl::getNq() const
+{
+    return _ss->getDimension();
+}
+
+int StateSpace::Impl::getNq(int i) const
+{
+    return _ss_vec.at(i)->getDimension();
+}
+
+int StateSpace::Impl::getQIndex(int i) const
+{
+    return _q_index.at(i);
+}
+
+XBot::ModelInterface::Ptr StateSpace::Impl::getModel(int i) const
+{
+    auto rcs = std::dynamic_pointer_cast<RobotConfigurationSpace>(_ss_vec.at(i));
+
+    if(!rcs)
+    {
+        return nullptr;
+    }
+
+    return rcs->model();
+}
+
+void StateSpace::Impl::updateModelState(const Eigen::VectorXd& q) const
+{
+    TIKTOK(update_model_state);
+
+    for(int i = 0; i < _ss_vec.size(); i++)
+    {
+        if(auto model = getModel(i))
+        {
+            model->setJointPosition(q.segment(getQIndex(i), getNq(i)));
+            model->update();
+        }
+    }
 }
 
 namespace XBot::Cartesian::Planning
@@ -212,26 +363,39 @@ Eigen::VectorXd vectorToEigen(std::vector<double> v)
 
 }
 
-XBot::ModelInterface::ConstPtr RobotConfigurationSpace::model() const
+StateSpace::RobotConfigurationSpaceOptions::RobotConfigurationSpaceOptions()
+{
+    sample_collision_free = false;
+}
+
+
+RobotConfigurationSpace::RobotConfigurationSpace(ModelInterface::Ptr model,
+                                                 Planning::StateSpace::RobotConfigurationSpaceOptions opt):
+    _model(model), _opt(opt)
+{
+
+}
+
+XBot::ModelInterface::Ptr RobotConfigurationSpace::model() const
 {
     return _model;
 }
 
 unsigned int RobotConfigurationSpace::getDimension() const
 {
-    return _model->getNv();
+    return _model->getNq();
 }
 
 double RobotConfigurationSpace::getMaximumExtent() const
 {
     auto [qmin, qmax] = _model->getJointLimits();
-    return _model->difference(qmax, qmin).norm();
+    return (qmax - qmin).norm();
 }
 
 double RobotConfigurationSpace::getMeasure() const
 {
     auto [qmin, qmax] = _model->getJointLimits();
-    return  _model->difference(qmax, qmin).prod();
+    return  (qmax - qmin).prod();
 }
 
 void RobotConfigurationSpace::enforceBounds(ompl::base::State *state) const
@@ -241,7 +405,8 @@ void RobotConfigurationSpace::enforceBounds(ompl::base::State *state) const
 
 bool RobotConfigurationSpace::satisfiesBounds(const ompl::base::State *state) const
 {
-    _model->checkJointLimits(getQ(state));
+    bool ok = _model->checkJointLimits(getQ(state));
+    return ok;
 }
 
 void RobotConfigurationSpace::copyState(ompl::base::State *destination, const ompl::base::State *source) const
@@ -267,7 +432,7 @@ void RobotConfigurationSpace::interpolate(const ompl::base::State *from, const o
 
 ompl::base::StateSamplerPtr RobotConfigurationSpace::allocDefaultStateSampler() const
 {
-    return std::make_shared<StateSampler>();
+    return std::make_shared<StateSampler>(this, _model, _opt);
 }
 
 ompl::base::State *RobotConfigurationSpace::allocState() const
@@ -293,13 +458,33 @@ Eigen::VectorXd &RobotConfigurationSpace::getQ(ompl::base::State * s)
 }
 
 
+RobotConfigurationSpace::StateSampler::StateSampler(const StateSpace *space,
+                                                    ModelInterface::ConstPtr model,
+                                                    Planning::StateSpace::RobotConfigurationSpaceOptions opt):
+    ompl::base::StateSampler(space),
+    _model(model),
+    _opt(opt)
+{
+
+}
+
 void XBot::Cartesian::Planning::RobotConfigurationSpace::StateSampler::sampleUniform(ompl::base::State *state)
 {
+    TIKTOK(sample_q);
+
     getQ(state) = _model->generateRandomQ();
+
+    if(_opt.sample_collision_free)
+    {
+        _opt.collision_model->computeCollisionFree(getQ(state), _opt.compute_coll_free_opt);
+    }
+
 }
 
 void XBot::Cartesian::Planning::RobotConfigurationSpace::StateSampler::sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance)
 {
+    TIKTOK(sample_q);
+
     Eigen::VectorXd dq(_model->getNv());
 
     for(int i = 0; i < dq.size(); i++)
@@ -310,10 +495,17 @@ void XBot::Cartesian::Planning::RobotConfigurationSpace::StateSampler::sampleUni
     getQ(state) = _model->sum(getQ(near), dq);
 
     _model->enforceJointLimits(getQ(state));
+
+    if(_opt.sample_collision_free)
+    {
+        _opt.collision_model->computeCollisionFree(getQ(state), _opt.compute_coll_free_opt);
+    }
 }
 
 void XBot::Cartesian::Planning::RobotConfigurationSpace::StateSampler::sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev)
 {
+    TIKTOK(sample_q);
+
     Eigen::VectorXd dq(_model->getNv());
 
     for(int i = 0; i < dq.size(); i++)
@@ -324,4 +516,16 @@ void XBot::Cartesian::Planning::RobotConfigurationSpace::StateSampler::sampleGau
     getQ(state) = _model->sum(getQ(mean), dq);
 
     _model->enforceJointLimits(getQ(state));
+
+    if(_opt.sample_collision_free)
+    {
+        _opt.collision_model->computeCollisionFree(getQ(state), _opt.compute_coll_free_opt);
+    }
+}
+
+
+
+void XBot::Cartesian::Planning::RobotConfigurationSpace::printState(const ompl::base::State *state, std::ostream &out) const
+{
+    out << getQ(state).transpose().format(2);
 }

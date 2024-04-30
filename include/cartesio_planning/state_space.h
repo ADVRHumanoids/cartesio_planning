@@ -5,6 +5,8 @@
 
 #include <xbot2_interface/xbotinterface2.h>
 
+#include <xbot2_interface/collision.h>
+
 namespace XBot::Cartesian::Planning {
 
 class StateSpace {
@@ -20,9 +22,21 @@ public:
         SE2
     };
 
+    struct RobotConfigurationSpaceOptions
+    {
+        Collision::CollisionModel::Ptr collision_model;
+        Collision::CollisionModel::ComputeCollisionFreeOptions compute_coll_free_opt;
+        bool sample_collision_free;
+
+        RobotConfigurationSpaceOptions();
+    };
+
     StateSpace();
 
-    int addRobotConfigurationSpace(ModelInterface::ConstPtr model);
+    int addRobotConfigurationSpace(ModelInterface::Ptr model,
+                                   RobotConfigurationSpaceOptions opt = RobotConfigurationSpaceOptions());
+
+    ModelInterface::Ptr getModel(int i) const;
 
     int addSO3(Eigen::Vector3d qmin, Eigen::Vector3d qmax, std::string id = "");
 
@@ -38,7 +52,11 @@ public:
 
     void setBounds(std::string id, Eigen::VectorXd qmin, Eigen::VectorXd qmax);
 
-    std::pair<Eigen::VectorXd, Eigen::VectorXd> getBounds() const;
+    int getNq() const;
+
+    int getNq(int i) const;
+
+    int getQIndex(int i) const;
 
     ~StateSpace();
 
@@ -50,6 +68,7 @@ private:
 
 public:
 
+    const Impl& getImpl() const;
     Impl& getImpl();
 
 };
