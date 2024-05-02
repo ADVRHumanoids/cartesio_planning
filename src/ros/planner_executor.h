@@ -1,6 +1,9 @@
 #ifndef PLANNER_EXECUTOR_H
 #define PLANNER_EXECUTOR_H
 
+#include <actionlib/server/simple_action_server.h>
+#include <cartesio_planning/PlanMotionAction.h>
+
 #include <cartesio_planning/cartesio_planning.h>
 #include <cartesio_planning/ros/planning_scene_wrapper.h>
 #include <cartesio_planning/ros/robot_viz.h>
@@ -18,11 +21,17 @@ public:
 
 private:
 
-    void publishMarkerStart();
+    bool publishMarkerStart();
 
-    void publishMarkerGoal();
+    bool publishMarkerGoal();
 
     void publishMarkerSolution();
+
+    void executePlanMotionAction(const cartesio_planning::PlanMotionGoalConstPtr& goal);
+
+    Eigen::VectorXd jointStateToQ(const sensor_msgs::JointState& js,
+                                  const Eigen::VectorXd& q0);
+
 
     ros::NodeHandle _n, _npr;
 
@@ -39,6 +48,10 @@ private:
     ModelInterface::Ptr _model;
 
     Planner::Ptr _planner;
+
+    typedef actionlib::SimpleActionServer<cartesio_planning::PlanMotionAction> ActionServer;
+
+    std::unique_ptr<ActionServer> _as;
 };
 
 }

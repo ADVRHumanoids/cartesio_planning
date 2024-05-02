@@ -24,6 +24,7 @@ add_library(cartesio_planning SHARED
     src/state_space.cpp
     src/state_validity_checker.cpp
     src/collision.cpp
+    include/cartesio_planning/trajectory_interpolation.h include/cartesio_planning/trajectory_interpolation.cpp
 )
 
 target_include_directories(cartesio_planning

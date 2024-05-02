@@ -46,6 +46,7 @@ target_include_directories(cartesio_planning_ros
     ${pcl_ros_INCLUDE_DIRS}
     ${eigen_conversions_INCLUDE_DIRS}
     ${tf_conversions_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS}
 )
 
 target_link_libraries(cartesio_planning_ros
