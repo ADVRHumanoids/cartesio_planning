@@ -1,6 +1,8 @@
 #ifndef PLANNING_SCENE_WRAPPER_HXX
 #define PLANNING_SCENE_WRAPPER_HXX
 
+#include <mutex>
+
 #include <cartesio_planning/ros/planning_scene_wrapper.h>
 
 #include <ros/callback_queue.h>

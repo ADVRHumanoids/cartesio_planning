@@ -58,6 +58,12 @@ public:
 
     int getQIndex(int i) const;
 
+    Eigen::VectorXd sum(const Eigen::VectorXd& q1, const Eigen::VectorXd& q2);
+
+    Eigen::VectorXd interpolate(const Eigen::VectorXd& q1, const Eigen::VectorXd& q2, double tau);
+
+    Eigen::VectorXd difference(const Eigen::VectorXd& q1, const Eigen::VectorXd& q2);
+
     ~StateSpace();
 
 private:

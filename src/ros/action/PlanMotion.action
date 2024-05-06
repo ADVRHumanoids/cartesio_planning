@@ -17,6 +17,9 @@ bool play_on_robot
 float64 max_velocity
 float64 max_acceleration
 float64 trajectory_dt
+string[] joint_limit_names
+float64[] joint_limit_lower
+float64[] joint_limit_upper
 ---
 # result
 trajectory_msgs/JointTrajectory trajectory

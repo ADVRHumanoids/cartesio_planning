@@ -444,7 +444,7 @@ ompl::base::State *RobotConfigurationSpace::allocState() const
 
 void RobotConfigurationSpace::freeState(ompl::base::State *state) const
 {
-    delete static_cast<StateType*>(state);
+    // delete static_cast<StateType*>(state);
 }
 
 const Eigen::VectorXd &RobotConfigurationSpace::getQ(const ompl::base::State * s)

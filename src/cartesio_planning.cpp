@@ -41,17 +41,7 @@ Planner::~Planner()
 Planner::Impl::Impl(StateSpace::ConstPtr space, YAML::Node options):
     _ss(space), _options(options), _verbose(false)
 {
-    _space_info = std::make_shared<ompl::base::SpaceInformation>(space->getImpl().getStateSpace());
 
-    _space_info->setStateValidityChecker(
-
-        [this](const ompl::base::State * state){
-
-            return isStateValid(*state);
-
-    });
-
-    _pdef = std::make_shared<ompl::base::ProblemDefinition>(_space_info);
 }
 
 bool Planner::Impl::solve(Eigen::VectorXd qstart,
@@ -59,6 +49,19 @@ bool Planner::Impl::solve(Eigen::VectorXd qstart,
                           double timeout,
                           std::string planner_type)
 {
+    // create everything
+    _space_info = std::make_shared<ompl::base::SpaceInformation>(_ss->getImpl().getStateSpace());
+
+    _space_info->setStateValidityChecker(
+
+        [this](const ompl::base::State * state){
+
+            return isStateValid(*state);
+
+        });
+
+    _pdef = std::make_shared<ompl::base::ProblemDefinition>(_space_info);
+
     // create requested planner
     auto planner = make_planner(planner_type);
     planner->setProblemDefinition(_pdef);
@@ -109,13 +112,13 @@ bool Planner::Impl::solve(Eigen::VectorXd qstart,
 
     // solve
     TIC(planner);
-    bool solved = _planner->solve(timeout);
+    auto solved_flag = _planner->solve(timeout);
     double solve_time = TOC(planner);
 
     // print profiling
     ProfilingData::instance().print(std::cout, solve_time);
 
-    return solved;
+    return solved_flag == ompl::base::PlannerStatus::EXACT_SOLUTION;
 
 }
 
@@ -237,6 +240,8 @@ ompl::base::PlannerPtr Planner::Impl::make_planner(std::string planner_type)
     std::map<std::string, std::function<void()>> config_functions = {
         {"RRTstar", std::bind(&Planner::Impl::configure_RRTstar, this)}
     };
+
+    _planner.reset();
 
     try
     {

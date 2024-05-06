@@ -6,6 +6,10 @@
 
 #include <sensor_msgs/JointState.h>
 
+#include <cartesio_planning/trajectory_interpolation.h>
+
+#include "impl/utils.hxx"
+
 using namespace XBot::Cartesian::Planning;
 
 
@@ -15,26 +19,31 @@ PlannerExecutor::PlannerExecutor():
 {
     auto cfg = Utils::ConfigOptionsFromParamServer();
 
-    try
+    if(!_npr.param<bool>("visual", false))
     {
-        _robot = RobotInterface::getRobot(cfg);
-    }
-    catch(std::runtime_error&)
-    {
+        try
+        {
+            _robot = RobotInterface::getRobot(cfg);
+        }
+        catch(std::runtime_error&)
+        {
 
+        }
     }
 
     _model = ModelInterface::getModel(cfg);
+
+    _planner_model = ModelInterface::getModel(cfg);
 
     auto state_space = std::make_shared<StateSpace>();
 
     StateSpace::RobotConfigurationSpaceOptions ss_opt;
 
-    state_space->addRobotConfigurationSpace(_model, ss_opt);
+    state_space->addRobotConfigurationSpace(_planner_model, ss_opt);
 
     _planner = std::make_shared<Planner>(state_space, YAML::Node());
 
-    _ps = std::make_shared<PlanningSceneWrapper>(_model);
+    _ps = std::make_shared<PlanningSceneWrapper>(_planner_model);
 
     _planner->addStateValidityChecker(
         std::make_shared<PlanningSceneChecker>(_ps, state_space)
@@ -79,6 +88,12 @@ PlannerExecutor::PlannerExecutor():
 
     _as->start();
 
+    _playtrj_timer = _npr.createTimer(ros::Duration(0.01),
+                                      &PlannerExecutor::playTrajectoryCallback,
+                                      this,
+                                      false,
+                                      false);
+
 }
 
 bool PlannerExecutor::publishMarkerStart()
@@ -105,10 +120,21 @@ void PlannerExecutor::executePlanMotionAction(const cartesio_planning::PlanMotio
     {
         cartesio_planning::PlanMotionResult res;
         res.success = false;
-        res.message = "invalid goal type +'" + goal->type + "'";
+        res.message = "invalid goal type '" + goal->type + "'";
         _as->setAborted(res, res.message);
         return;
     }
+
+    // custom joint limits
+    Eigen::VectorXd qmin, qmax;
+    _planner_model->getJointLimits(qmin, qmax);
+    for(int i = 0; i < goal->joint_limit_names.size(); i++)
+    {
+        int idx = _planner_model->getVIndexFromVName(goal->joint_limit_names[i]);
+        qmin[idx] = goal->joint_limit_lower[i];
+        qmax[idx] = goal->joint_limit_upper[i];
+    }
+    _planner_model->setJointLimits(qmin, qmax);
 
     // if we're connected to a robot, the start pose will be the current robot state
     if(_robot)
@@ -177,6 +203,14 @@ void PlannerExecutor::executePlanMotionAction(const cartesio_planning::PlanMotio
         return;
     }
 
+    // verbose
+    std::cout << "planning from: \n" <<
+        "  q_start = [" << _q_start.transpose().format(2) << "]\n" <<
+        "  q_goal  = [" << _q_goal.transpose().format(2) << "]\n";
+
+    // stop play trj timer
+    _playtrj_timer.stop();
+
     // now we have start and goal, let's plan
     bool plan_ok = _planner->solve(_q_start,
                                    _q_goal,
@@ -189,30 +223,75 @@ void PlannerExecutor::executePlanMotionAction(const cartesio_planning::PlanMotio
         res.success = false;
         res.message = "planner failed";
         _as->setSucceeded(res, res.message);
+        std::cerr << "failed \n";
         return;
     }
 
-    // get path (TODO: interpolation)
-    Eigen::MatrixXd path = _planner->getSolutionPath(true);
+    // get path
+    Eigen::MatrixXd path = _planner->getSolutionPath(false);
 
+    std::cerr << "solution contains " << path.cols() << " points \n";
+
+    // interpolate
+    Eigen::VectorXd vmax, amax;
+    vmax.setConstant(_model->getNv(), goal->max_velocity);
+    amax.setConstant(_model->getNv(), goal->max_acceleration);
+    auto trj = simpleInterpolation(*_planner_model, path, vmax, amax, goal->trajectory_dt);
+
+    // fill result
     cartesio_planning::PlanMotionResult res;
     res.success = true;
     res.message = "planner succeeded";
 
     // save joint goal
     res.goal_configuration.name = _model->getVNames();
-    res.goal_configuration.position.resize(_model->getNv());
-    Eigen::VectorXd::Map(res.goal_configuration.position.data(),
-                         res.goal_configuration.position.size()) = _model->positionToMinimal(_q_goal);
+    utils::eigenToStd(_model->positionToMinimal(_q_goal),
+                      res.goal_configuration.position);
 
     // save trajectory
+    res.trajectory = std::move(trj);
     res.trajectory.joint_names = _model->getVNames();
-    res.trajectory.points.resize(path.cols());
 
+    // succeeeded
     _as->setSucceeded(res, res.message);
 
+    // save a trj at 100Hz for playback
+    _trj = simpleInterpolation(*_planner_model, path, vmax, amax, 0.01);
+    _trj.joint_names = res.trajectory.joint_names;
 
+    // start play trj timer
+    _playtrj_idx = 0;
+    _playtrj_timer.start();
+}
 
+void PlannerExecutor::playTrajectoryCallback(const ros::TimerEvent &event)
+{
+    if(_trj.joint_names.empty())
+    {
+        return;
+    }
+
+    JointNameMap qmap;
+
+    for(int i = 0; i < _trj.joint_names.size(); i++)
+    {
+        qmap[_trj.joint_names[i]] = _trj.points[_playtrj_idx].positions[i];
+    }
+
+    _playtrj_idx = (_playtrj_idx + 1) % _trj.points.size();
+
+    _model->setJointPositionMinimal(qmap);
+
+    _model->update();
+
+    std::vector<std::string> cl;
+
+    if(!_planner->checkValid(_model->getJointPosition()))
+    {
+        cl = _ps->getCollidingLinks();
+    }
+
+    _viz_solution->publishMarkers(ros::Time::now(), cl);
 }
 
 Eigen::VectorXd PlannerExecutor::jointStateToQ(const sensor_msgs::JointState &js,

@@ -4,6 +4,7 @@ project(cartesio_planning VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 include(cmake/ExportProject.cmake)
 
@@ -16,6 +17,7 @@ add_library(cartesio_planning SHARED
     include/cartesio_planning/cartesio_planning.h
     include/cartesio_planning/common/types.h
     include/cartesio_planning/state_validity_checker/collision.h
+    include/cartesio_planning/trajectory_interpolation.h
     src/impl/cartesio_planning.hxx
     src/impl/state_space.hxx
     src/impl/parse_utils.hxx
@@ -24,7 +26,11 @@ add_library(cartesio_planning SHARED
     src/state_space.cpp
     src/state_validity_checker.cpp
     src/collision.cpp
-    include/cartesio_planning/trajectory_interpolation.h include/cartesio_planning/trajectory_interpolation.cpp
+    src/trajectory_interpolation.cpp
+    src/ompl_replacement/AtlasStateSpace.h
+    src/ompl_replacement/AtlasChart.h
+    src/ompl_replacement/AtlasStateSpace.cpp
+    src/ompl_replacement/AtlasChart.cpp
 )
 
 target_include_directories(cartesio_planning

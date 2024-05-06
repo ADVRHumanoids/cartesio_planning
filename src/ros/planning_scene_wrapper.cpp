@@ -24,7 +24,17 @@ PlanningSceneWrapper::Impl::Impl(ModelInterface::ConstPtr model):
     // provide get planning scene server
     ros::NodeHandle nh("~");
     nh.setCallbackQueue(&_queue);
+
     _monitor->providePlanningSceneService();
+
+    // provide apply planning scene service
+    _apply_planning_scene_srv
+        = nh.advertiseService<moveit_msgs::ApplyPlanningSceneRequest,
+                              moveit_msgs::ApplyPlanningSceneResponse>("apply_planning_scene",
+                                                                       [this](auto req, auto res) {
+                                                                           _monitor->newPlanningSceneMessage(req.scene);
+                                                                           return true;
+                                                                       });
 
     // start async spinner
     _async_spinner.start();
@@ -37,10 +47,6 @@ void PlanningSceneWrapper::Impl::update()
 
     // retrieve robot state data struct
     auto& robot_state = _monitor->getPlanningScene()->getCurrentStateNonConst();
-
-    // retrieve modelinterface state
-    XBot::JointNameMap q;
-    _model->getJointPosition(q);
 
     // update planning scene from model
     for(const auto& jptr : _model->getJoints())

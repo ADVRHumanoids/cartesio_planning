@@ -29,6 +29,8 @@ private:
 
     void executePlanMotionAction(const cartesio_planning::PlanMotionGoalConstPtr& goal);
 
+    void playTrajectoryCallback(const ros::TimerEvent& event);
+
     Eigen::VectorXd jointStateToQ(const sensor_msgs::JointState& js,
                                   const Eigen::VectorXd& q0);
 
@@ -45,13 +47,19 @@ private:
 
     RobotInterface::Ptr _robot;
 
-    ModelInterface::Ptr _model;
+    ModelInterface::Ptr _model, _planner_model;
 
     Planner::Ptr _planner;
 
     typedef actionlib::SimpleActionServer<cartesio_planning::PlanMotionAction> ActionServer;
 
     std::unique_ptr<ActionServer> _as;
+
+    ros::Timer _playtrj_timer;
+
+    int _playtrj_idx;
+
+    trajectory_msgs::JointTrajectory _trj;
 };
 
 }

@@ -9,6 +9,8 @@
 
 #include <ompl/base/StateSpaceTypes.h>
 
+#include "../ompl_replacement/AtlasStateSpace.h"
+
 namespace XBot::Cartesian::Planning {
 
 ompl::base::RealVectorBounds boundsEigenToOmpl(Eigen::VectorXd qmin, Eigen::VectorXd qmax);
