@@ -80,3 +80,21 @@ install(TARGETS planning_server
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+
+##
+add_executable(goal_sampler_node
+    goal_sampler_node.cpp
+)
+
+target_link_libraries(goal_sampler_node
+    PUBLIC
+    cartesio_planning
+    cartesio_planning_ros
+)
+
+install(TARGETS goal_sampler_node
+    EXPORT ${PROJECT_NAME}Targets
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+

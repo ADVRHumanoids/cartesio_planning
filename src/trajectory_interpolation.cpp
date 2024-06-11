@@ -4,7 +4,7 @@
 
 namespace XBot::Cartesian::Planning {
 
-trajectory_msgs::JointTrajectory simpleInterpolation(const ModelInterface& model,
+trajectory_msgs::JointTrajectory simpleInterpolation(StateSpace& ss,
                                                      const Eigen::MatrixXd &wp,
                                                      const Eigen::VectorXd &max_vel,
                                                      const Eigen::VectorXd &max_acc,
@@ -19,7 +19,7 @@ trajectory_msgs::JointTrajectory simpleInterpolation(const ModelInterface& model
 
     // first node
     trj.points.resize(1);
-    utils::eigenToStd(model.positionToMinimal(wp.col(0)), trj.points[0].positions);
+    utils::eigenToStd(wp.col(0), trj.points[0].positions);
     trj.points[0].velocities.assign(n, 0.);
     trj.points[0].accelerations.assign(n, 0.);
     trj.points[0].time_from_start.fromSec(0);
@@ -50,7 +50,7 @@ trajectory_msgs::JointTrajectory simpleInterpolation(const ModelInterface& model
         const double segment_start_time = trj.points.back().time_from_start.toSec();
         const auto& qstart = wp.col(s);
         const auto& qend = wp.col(s+1);
-        auto delta_q = model.difference(qend, qstart);
+        auto delta_q = ss.difference(qend, qstart);
 
         for(int i = 0; i < n_nodes + 1; i++)
         {
@@ -59,7 +59,7 @@ trajectory_msgs::JointTrajectory simpleInterpolation(const ModelInterface& model
             auto [tau, dtau, ddtau] = Utils::quinticSplineDerivatives(alpha);
 
             trajectory_msgs::JointTrajectoryPoint pt;
-            utils::eigenToStd(model.positionToMinimal(model.sum(qstart, tau*delta_q)), pt.positions);
+            utils::eigenToStd(ss.interpolate(qstart, qend, tau), pt.positions);
             utils::eigenToStd(dtau*delta_q/segment_duration, pt.velocities);
             utils::eigenToStd(ddtau*delta_q/segment_duration/segment_duration, pt.accelerations);
             pt.time_from_start.fromSec(segment_start_time + node_time);

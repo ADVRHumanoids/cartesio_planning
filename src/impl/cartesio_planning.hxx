@@ -49,18 +49,6 @@ public:
                double timeout,
                std::string planner_type);
 
-    bool addStateValidityChecker(StateValidityChecker::ConstPtr svc);
-
-    bool isStateValid(const ompl::base::State& s,
-                      bool force_verbose = false,
-                      std::ostream& os = std::cerr,
-                      std::vector<std::string> *failed_checks = nullptr) const;
-
-    bool checkValid(const Eigen::VectorXd& q,
-                    bool force_verbose = false,
-                    std::ostream& os = std::cerr,
-                    std::vector<std::string> *failed_checks = nullptr) const;
-
     Eigen::MatrixXd getSolutionPath(bool simplify = false, double timeout = -1) const;
 
 private:
@@ -78,8 +66,6 @@ private:
     YAML::Node _options;
 
     std::shared_ptr<ompl::base::Planner> _planner;
-
-    std::map<std::string, StateValidityChecker::ConstPtr> _svc_map;
 
     bool _verbose;
 

@@ -31,6 +31,8 @@ private:
 
     void playTrajectoryCallback(const ros::TimerEvent& event);
 
+    void convertToMinimalQ(trajectory_msgs::JointTrajectory& trj);
+
     Eigen::VectorXd jointStateToQ(const sensor_msgs::JointState& js,
                                   const Eigen::VectorXd& q0);
 
@@ -48,6 +50,8 @@ private:
     RobotInterface::Ptr _robot;
 
     ModelInterface::Ptr _model, _planner_model;
+
+    StateSpace::Ptr _ss;
 
     Planner::Ptr _planner;
 

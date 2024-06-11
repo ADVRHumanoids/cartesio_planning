@@ -3,12 +3,12 @@
 
 #include <Eigen/Dense>
 #include <trajectory_msgs/JointTrajectory.h>
-#include <xbot2_interface/xbotinterface2.h>
+#include "state_space.h"
 
 namespace XBot::Cartesian::Planning
 {
 
-trajectory_msgs::JointTrajectory simpleInterpolation(const ModelInterface& model,
+trajectory_msgs::JointTrajectory simpleInterpolation(StateSpace& ss,
                                                      const Eigen::MatrixXd &wp,
                                                      const Eigen::VectorXd &max_vel,
                                                      const Eigen::VectorXd &max_acc,

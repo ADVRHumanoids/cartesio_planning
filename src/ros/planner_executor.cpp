@@ -35,18 +35,18 @@ PlannerExecutor::PlannerExecutor():
 
     _planner_model = ModelInterface::getModel(cfg);
 
-    auto state_space = std::make_shared<StateSpace>();
+    _ss = std::make_shared<StateSpace>();
 
     StateSpace::RobotConfigurationSpaceOptions ss_opt;
 
-    state_space->addRobotConfigurationSpace(_planner_model, ss_opt);
+    _ss->addRobotConfigurationSpace(_planner_model, ss_opt);
 
-    _planner = std::make_shared<Planner>(state_space, YAML::Node());
+    _planner = std::make_shared<Planner>(_ss, YAML::Node());
 
     _ps = std::make_shared<PlanningSceneWrapper>(_planner_model);
 
-    _planner->addStateValidityChecker(
-        std::make_shared<PlanningSceneChecker>(_ps, state_space)
+    _ss->addStateValidityChecker(
+        std::make_shared<PlanningSceneChecker>(_ps, _ss)
         );
 
     _q_start = _q_goal = _model->getRobotState("home");
@@ -98,20 +98,21 @@ PlannerExecutor::PlannerExecutor():
 
 bool PlannerExecutor::publishMarkerStart()
 {
-    bool ret = _planner->checkValid(_q_start);
+    bool ret = _ss->checkValid(_q_start);
     _viz_start->publishMarkers(ros::Time::now(), _ps->getCollidingLinks());
     return ret;
 }
 
 bool PlannerExecutor::publishMarkerGoal()
 {
-    bool ret = _planner->checkValid(_q_goal);
+    bool ret = _ss->checkValid(_q_goal);
     _viz_start->publishMarkers(ros::Time::now(), _ps->getCollidingLinks());
     return ret;
 }
 
 void PlannerExecutor::executePlanMotionAction(const cartesio_planning::PlanMotionGoalConstPtr &goal)
 {
+    // check type is valid
     std::set<std::string> supported_types = {
       "joint", "pose", "goal_generation", "goal_listener", "goal_state"
     };
@@ -125,7 +126,7 @@ void PlannerExecutor::executePlanMotionAction(const cartesio_planning::PlanMotio
         return;
     }
 
-    // custom joint limits
+    // set custom joint limits
     Eigen::VectorXd qmin, qmax;
     _planner_model->getJointLimits(qmin, qmax);
     for(int i = 0; i < goal->joint_limit_names.size(); i++)
@@ -158,6 +159,9 @@ void PlannerExecutor::executePlanMotionAction(const cartesio_planning::PlanMotio
     {
         // just use our internal q start (can be set via topic while "jogging")
     }
+
+    // handle constraints, if any
+
 
     // check validity and publish
     if(!publishMarkerStart())
@@ -236,7 +240,8 @@ void PlannerExecutor::executePlanMotionAction(const cartesio_planning::PlanMotio
     Eigen::VectorXd vmax, amax;
     vmax.setConstant(_model->getNv(), goal->max_velocity);
     amax.setConstant(_model->getNv(), goal->max_acceleration);
-    auto trj = simpleInterpolation(*_planner_model, path, vmax, amax, goal->trajectory_dt);
+    auto trj = simpleInterpolation(*_ss, path, vmax, amax, goal->trajectory_dt);
+    convertToMinimalQ(trj);
 
     // fill result
     cartesio_planning::PlanMotionResult res;
@@ -256,8 +261,9 @@ void PlannerExecutor::executePlanMotionAction(const cartesio_planning::PlanMotio
     _as->setSucceeded(res, res.message);
 
     // save a trj at 100Hz for playback
-    _trj = simpleInterpolation(*_planner_model, path, vmax, amax, 0.01);
+    _trj = simpleInterpolation(*_ss, path, vmax, amax, 0.01);
     _trj.joint_names = res.trajectory.joint_names;
+    convertToMinimalQ(trj);
 
     // start play trj timer
     _playtrj_idx = 0;
@@ -286,12 +292,24 @@ void PlannerExecutor::playTrajectoryCallback(const ros::TimerEvent &event)
 
     std::vector<std::string> cl;
 
-    if(!_planner->checkValid(_model->getJointPosition()))
+    if(!_ss->checkValid(_model->getJointPosition()))
     {
         cl = _ps->getCollidingLinks();
     }
 
     _viz_solution->publishMarkers(ros::Time::now(), cl);
+}
+
+void PlannerExecutor::convertToMinimalQ(trajectory_msgs::JointTrajectory &trj)
+{
+    for(auto& pt : trj.points)
+    {
+        auto qmin = _model->positionToMinimal(
+            Eigen::VectorXd::Map(pt.positions.data(), pt.positions.size())
+            );
+
+        utils::eigenToStd(qmin, pt.positions);
+    }
 }
 
 Eigen::VectorXd PlannerExecutor::jointStateToQ(const sensor_msgs::JointState &js,

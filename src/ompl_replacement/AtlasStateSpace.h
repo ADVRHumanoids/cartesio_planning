@@ -64,20 +64,20 @@ static const double ATLAS_STATE_SPACE_BACKOFF = 0.75;
 namespace base
 {
 /// @cond IGNORE
-/** \brief Forward declaration of ompl::base::AtlasChart */
-OMPL_CLASS_FORWARD(AtlasChart);
+/** \brief Forward declaration of ompl::base::AtlasChartNE */
+OMPL_CLASS_FORWARD(AtlasChartNE);
 /// @endcond
 
 /// @cond IGNORE
-/** \brief Forward declaration of ompl::base::AtlasStateSpace */
-OMPL_CLASS_FORWARD(AtlasStateSpace);
+/** \brief Forward declaration of ompl::base::AtlasStateSpaceNE */
+OMPL_CLASS_FORWARD(AtlasStateSpaceNE);
 /// @endcond
 
 /** \brief StateSampler for use on an atlas. */
 class AtlasStateSampler : public StateSampler
 {
 public:
-    AtlasStateSampler(const AtlasStateSpace *space);
+    AtlasStateSampler(const AtlasStateSpaceNE *space);
 
     /** \brief Sample a state uniformly from the charted regions of the
              * manifold. Return sample in \a state. */
@@ -94,7 +94,7 @@ public:
 
 private:
     /** \brief Atlas on which to sample. */
-    const AtlasStateSpace *atlas_;
+    const AtlasStateSpaceNE *atlas_;
 
     /** \brief Random number generator. */
     mutable RNG rng_;
@@ -103,8 +103,8 @@ private:
 /**
    @anchor gAtlas
    @par Short Description
-   AtlasStateSpace implements an atlas-based methodology for constrained sampling-based planning,
-   where the underlying constraint manifold is locally parameterized by \e charts (AtlasChart). The underlying
+   AtlasStateSpaceNE implements an atlas-based methodology for constrained sampling-based planning,
+   where the underlying constraint manifold is locally parameterized by \e charts (AtlasChartNE). The underlying
    constraint manifold can then be sampled and explored using the collection of these charts (an \e atlas).
 
    @par External Documentation
@@ -125,11 +125,11 @@ private:
 
 /** \brief ConstrainedStateSpace encapsulating a planner-agnostic atlas
          * algorithm for planning on a constraint manifold. */
-class AtlasStateSpace : public ConstrainedStateSpace
+class AtlasStateSpaceNE : public ConstrainedStateSpace
 {
 public:
 
-    using AtlasChartBiasFunction = std::function<double(AtlasChart *)>;
+    using AtlasChartBiasFunction = std::function<double(AtlasChartNE *)>;
     using NNElement = std::pair<const StateType *, std::size_t>;
     typedef std::function<Eigen::VectorXd(const Eigen::VectorXd&, const Eigen::VectorXd&)> BinaryVectorOp;
 
@@ -144,27 +144,31 @@ public:
         }
 
         /** \brief Get the chart this state is on. */
-        AtlasChart *getChart() const
+        AtlasChartNE *getChart() const
         {
             return chart_;
         }
 
         /** \brief Set the chart \a c for the state. */
-        void setChart(AtlasChart *c) const
+        void setChart(AtlasChartNE *c) const
         {
             chart_ = c;
         }
 
     private:
         /** \brief Chart owning the state. */
-        mutable AtlasChart *chart_{nullptr};
+        mutable AtlasChartNE *chart_{nullptr};
     };
 
     /** \brief Construct an atlas with the specified dimensions. */
-    AtlasStateSpace(const StateSpacePtr &ambientSpace, const ConstraintPtr &constraint, bool separate = true);
+    AtlasStateSpaceNE(const StateSpacePtr &ambientSpace, const ConstraintPtr &constraint, bool separate = true);
+
+    AtlasStateSpaceNE(const StateSpacePtr &ambientSpace, const ConstraintPtr &constraint,
+                      BinaryVectorOp sum, BinaryVectorOp diff, int nv,
+                      bool separate = true);
 
     /** \brief Destructor. */
-    ~AtlasStateSpace() override;
+    ~AtlasStateSpaceNE() override;
 
     /**
      * @brief getAmbientTangentDimension
@@ -173,12 +177,10 @@ public:
     int getAmbientTangentDimension() const;
 
     /**
-     * @brief setNonEuclideanAmbientSpace
-     * @param sum
-     * @param diff
-     * @param nv
+     * @brief getManifoldDimension
+     * @return
      */
-    void setNonEuclideanAmbientSpace(BinaryVectorOp sum, BinaryVectorOp diff, int nv);
+    int getManifoldDimension() const;
 
     /** \brief Reset the space (except for anchor charts). */
     void clear() override;
@@ -222,7 +224,7 @@ public:
     void setEpsilon(double epsilon)
     {
         if (epsilon <= 0)
-            throw ompl::Exception("ompl::base::AtlasStateSpace::setEpsilon(): "
+            throw ompl::Exception("ompl::base::AtlasStateSpaceNE::setEpsilon(): "
                                   "epsilon must be positive.");
         epsilon_ = epsilon;
     }
@@ -232,7 +234,7 @@ public:
     void setRho(double rho)
     {
         if (rho <= 0)
-            throw ompl::Exception("ompl::base::AtlasStateSpace::setRho(): "
+            throw ompl::Exception("ompl::base::AtlasStateSpaceNE::setRho(): "
                                   "rho must be positive.");
         rho_ = rho;
         rho_s_ = rho_ / std::pow(1 - exploration_, 1.0 / k_);
@@ -244,7 +246,7 @@ public:
     void setAlpha(double alpha)
     {
         if (alpha <= 0 || alpha >= boost::math::constants::pi<double>() / 2.)
-            throw ompl::Exception("ompl::base::AtlasStateSpace::setAlpha(): "
+            throw ompl::Exception("ompl::base::AtlasStateSpaceNE::setAlpha(): "
                                   "alpha must be in (0, pi/2).");
         cos_alpha_ = std::cos(alpha);
     }
@@ -257,7 +259,7 @@ public:
     void setExploration(double exploration)
     {
         if (exploration >= 1)
-            throw ompl::Exception("ompl::base::AtlasStateSpace::setExploration(): "
+            throw ompl::Exception("ompl::base::AtlasStateSpaceNE::setExploration(): "
                                   "exploration must be in [0, 1).");
         exploration_ = exploration;
 
@@ -352,21 +354,21 @@ public:
 
     /** \brief Create a new chart for the atlas, centered at \a xorigin,
              * which should be on the manifold. Returns nullptr upon failure. */
-    AtlasChart *newChart(const StateType *state) const;
+    AtlasChartNE *newChart(const StateType *state) const;
 
     /** \brief Pick a chart at random. */
-    AtlasChart *sampleChart() const;
+    AtlasChartNE *sampleChart() const;
 
     /** \brief Find the chart to which \a x belongs. Returns nullptr if
              * no chart found. Assumes \a x is already on the manifold. */
-    AtlasChart *owningChart(const StateType *state) const;
+    AtlasChartNE *owningChart(const StateType *state) const;
 
     /** \brief Wrapper to return chart \a state belongs to. Will attempt
              * to initialize new chart if \a state does not belong to one. If \a
              * force is true, this routine will reinitialize the chart that the
              * state should be on. If \a created is not null, it will be set to
              * true if a new chart is created. */
-    AtlasChart *getChart(const StateType *state, bool force = false, bool *created = nullptr) const;
+    AtlasChartNE *getChart(const StateType *state, bool force = false, bool *created = nullptr) const;
 
     /** @} */
 
@@ -376,7 +378,7 @@ public:
     /** \brief Wrapper for newChart(). Charts created this way will
              * persist through calls to clear().
              * \throws ompl::Exception if manifold seems degenerate here. */
-    AtlasChart *anchorChart(const State *state) const;
+    AtlasChartNE *anchorChart(const State *state) const;
 
     /** \brief Traverse the manifold from \a from toward \a to. Returns
              * true if we reached \a to, and false if we stopped early for any
@@ -409,10 +411,10 @@ protected:
     mutable std::vector<StateType *> anchors_;
 
     /** \brief Set of charts. */
-    mutable std::vector<AtlasChart *> charts_;
+    mutable std::vector<AtlasChartNE *> charts_;
 
     /** \brief PDF of charts according to a bias function. */
-    mutable PDF<AtlasChart *> chartPDF_;
+    mutable PDF<AtlasChartNE *> chartPDF_;
 
     /** \brief Set of chart centers and indices, accessible by
              * nearest-neighbor queries to the chart centers. */
@@ -457,6 +459,12 @@ protected:
      * @brief nv_ is the ambient's tangent space dimension
      */
     int nv_;
+
+    /**
+     * @brief k_
+     * @note we deliberately shadow base class
+     */
+    int k_;
 
     /**
      * @brief f_sum_

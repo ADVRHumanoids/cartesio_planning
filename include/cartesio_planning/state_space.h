@@ -7,7 +7,12 @@
 
 #include <xbot2_interface/collision.h>
 
+#include "constraint.h"
+
+
 namespace XBot::Cartesian::Planning {
+
+class StateValidityChecker;
 
 class StateSpace {
 
@@ -19,7 +24,8 @@ public:
         EUCLIDEAN,
         SO2,
         SE3,
-        SE2
+        SE2,
+        ROBOT_CONFIGURATION
     };
 
     struct RobotConfigurationSpaceOptions
@@ -36,8 +42,6 @@ public:
     int addRobotConfigurationSpace(ModelInterface::Ptr model,
                                    RobotConfigurationSpaceOptions opt = RobotConfigurationSpaceOptions());
 
-    ModelInterface::Ptr getModel(int i) const;
-
     int addSO3(Eigen::Vector3d qmin, Eigen::Vector3d qmax, std::string id = "");
 
     int addSE3(Eigen::Vector6d qmin, Eigen::Vector6d qmax, std::string id = "");
@@ -52,17 +56,33 @@ public:
 
     void setBounds(std::string id, Eigen::VectorXd qmin, Eigen::VectorXd qmax);
 
+    void setConstraint(Constraint::Ptr c);
+
+    Eigen::VectorXd random() const;
+
+    Eigen::VectorXd ambientRandom() const;
+
     int getNq() const;
+
+    int getNv() const;
 
     int getNq(int i) const;
 
     int getQIndex(int i) const;
 
-    Eigen::VectorXd sum(const Eigen::VectorXd& q1, const Eigen::VectorXd& q2);
+    ModelInterface::Ptr getModel(int i) const;
 
-    Eigen::VectorXd interpolate(const Eigen::VectorXd& q1, const Eigen::VectorXd& q2, double tau);
+    Eigen::VectorXd sum(const Eigen::VectorXd& q1, const Eigen::VectorXd& v) const;
 
-    Eigen::VectorXd difference(const Eigen::VectorXd& q1, const Eigen::VectorXd& q2);
+    Eigen::VectorXd interpolate(const Eigen::VectorXd& q1, const Eigen::VectorXd& q2, double tau) const;
+
+    Eigen::VectorXd difference(const Eigen::VectorXd& q1, const Eigen::VectorXd& q2) const;
+
+    bool addStateValidityChecker(std::shared_ptr<const StateValidityChecker> svc);
+
+    bool checkValid(const Eigen::VectorXd& q,
+                    std::vector<std::string> * failed_checks = nullptr,
+                    std::ostream& report_os = std::cerr) const;
 
     ~StateSpace();
 
@@ -74,7 +94,7 @@ private:
 
 public:
 
-    const Impl& getImpl() const;
+    Impl& getImpl() const;
     Impl& getImpl();
 
 };

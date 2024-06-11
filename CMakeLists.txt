@@ -3,7 +3,9 @@ cmake_minimum_required(VERSION 3.20)
 project(cartesio_planning VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
+
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 include(cmake/ExportProject.cmake)
@@ -31,6 +33,13 @@ add_library(cartesio_planning SHARED
     src/ompl_replacement/AtlasChart.h
     src/ompl_replacement/AtlasStateSpace.cpp
     src/ompl_replacement/AtlasChart.cpp
+    include/cartesio_planning/constraints/cartesian_constraint.h
+    src/cartesian_constraint.cpp
+    include/cartesio_planning/constraint.h
+    src/constraint.cpp
+    src/impl/constraint.hxx
+    include/cartesio_planning/constraints/contact_constraint.h
+    src/contact_constraint.cpp
 )
 
 target_include_directories(cartesio_planning
@@ -59,3 +68,5 @@ add_subdirectory(src/ros)
 export_project()
 
 add_subdirectory(test)
+
+add_subdirectory(python)

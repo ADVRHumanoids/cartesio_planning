@@ -3,24 +3,15 @@
 #include "impl/cartesio_planning.hxx"
 #include "impl/parse_utils.hxx"
 #include "impl/profiling.hxx"
+#include "ompl_replacement/AtlasStateSpace.h"
 
 using namespace XBot::Cartesian::Planning;
 
 Planner::Planner(StateSpace::ConstPtr space, YAML::Node options)
 {
     impl = std::make_unique<Impl>(space, options);
-}
 
-bool Planner::addStateValidityChecker(StateValidityChecker::ConstPtr svc)
-{
-    return impl->addStateValidityChecker(svc);
-}
-
-bool Planner::checkValid(const Eigen::VectorXd &q,
-                         std::vector<std::string> *failed_checks,
-                         std::ostream &report_os) const
-{
-    return impl->checkValid(q, true, report_os, failed_checks);
+    space->getImpl().setOptions(options);
 }
 
 bool Planner::solve(Eigen::VectorXd qstart, Eigen::VectorXd qgoal, double timeout, std::string planner_type)
@@ -56,11 +47,13 @@ bool Planner::Impl::solve(Eigen::VectorXd qstart,
 
         [this](const ompl::base::State * state){
 
-            return isStateValid(*state);
+            return _ss->getImpl().isStateValid(*state);
 
         });
 
     _pdef = std::make_shared<ompl::base::ProblemDefinition>(_space_info);
+
+    _ss->getImpl().setSpaceInformation(_space_info.get());
 
     // create requested planner
     auto planner = make_planner(planner_type);
@@ -84,7 +77,7 @@ bool Planner::Impl::solve(Eigen::VectorXd qstart,
         throw std::runtime_error("start state is out of bounds");
     }
 
-    if(!isStateValid(*start, true))
+    if(!_ss->checkValid(qstart, nullptr))
     {
         throw std::runtime_error("start state is invalid");
     }
@@ -94,10 +87,42 @@ bool Planner::Impl::solve(Eigen::VectorXd qstart,
         throw std::runtime_error("goal state is out of bounds");
     }
 
-    if(!isStateValid(*goal, true))
+    if(!_ss->checkValid(qgoal, nullptr))
     {
         throw std::runtime_error("goal state is invalid");
     }
+
+    if(auto c = _ss->getImpl().getConstraint())
+    {
+        // check start and goal on manifold
+        if(c->value(qstart).norm() >= ompl::magic::CONSTRAINT_PROJECTION_TOLERANCE)
+        {
+            throw std::runtime_error(
+                "start state is outside manifold: error is " +
+                std::to_string(c->value(qstart).norm())
+                );
+        }
+
+        if(c->value(qgoal).norm() >= ompl::magic::CONSTRAINT_PROJECTION_TOLERANCE)
+        {
+            throw std::runtime_error(
+                "goal state is outside manifold: error is " +
+                std::to_string(c->value(qgoal).norm())
+                );
+        }
+
+        // anchor charts on start and goal
+        auto atlas = std::static_pointer_cast<ompl::base::AtlasStateSpaceNE>(
+            _ss->getImpl().getStateSpace()
+            );
+
+        atlas->anchorChart(start);
+
+        atlas->anchorChart(goal);
+
+    }
+
+
 
     // clear previous start/goal and solution
     planner->clearQuery();
@@ -121,69 +146,6 @@ bool Planner::Impl::solve(Eigen::VectorXd qstart,
     return solved_flag == ompl::base::PlannerStatus::EXACT_SOLUTION;
 
 }
-
-bool Planner::Impl::addStateValidityChecker(StateValidityChecker::ConstPtr svc)
-{
-    if(_svc_map.count(svc->getName()))
-    {
-        return false;
-    }
-
-    _svc_map[svc->getName()] = svc;
-
-    return true;
-}
-
-bool Planner::Impl::isStateValid(const ompl::base::State &state,
-                                 bool force_verbose,
-                                 std::ostream& os,
-                                 std::vector<std::string> * failed_checks) const
-{
-
-    Eigen::VectorXd q = _ss->getImpl().getValue(state);
-
-    return checkValid(q, force_verbose, os, failed_checks);
-
-}
-
-bool Planner::Impl::checkValid(const Eigen::VectorXd &q,
-                               bool force_verbose,
-                               std::ostream &os,
-                               std::vector<std::string> *failed_checks) const
-{
-    TIKTOK(state_validity_check);
-
-    _ss->getImpl().updateModelState(q);
-
-    std::optional<Eigen::VectorXd> qnear;
-
-    for(const auto& [cname, c] : _svc_map)
-    {
-        qnear.reset();
-
-        if(!c->checkValid(q, qnear))
-        {
-            if(force_verbose || _verbose)
-            {
-                os << "validity check '" << cname << "' failed: ";
-                c->printInvalidStateInformation(os);
-                os << "\n";
-            }
-
-            if(failed_checks)
-            {
-                failed_checks->push_back(cname);
-            }
-
-            return false;
-        }
-    }
-
-    TIKTOK(state_valid);
-
-    return true;
-}
-
 
 
 Eigen::MatrixXd Planner::Impl::getSolutionPath(bool simplify, double timeout) const

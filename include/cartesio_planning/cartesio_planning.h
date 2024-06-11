@@ -18,12 +18,6 @@ public:
     Planner(StateSpace::ConstPtr space,
             YAML::Node options);
 
-    bool addStateValidityChecker(StateValidityChecker::ConstPtr svc);
-
-    bool checkValid(const Eigen::VectorXd& q,
-                    std::vector<std::string> * failed_checks = nullptr,
-                    std::ostream& report_os = std::cerr) const;
-
     bool solve(Eigen::VectorXd qstart,
                Eigen::VectorXd qgoal,
                double timeout,

@@ -40,22 +40,26 @@
 #include "ompl/base/SpaceInformation.h"
 #include "ompl/util/Exception.h"
 
+#include "../impl/profiling.hxx"
+
 /// AtlasStateSampler
 
 /// Public
 
-ompl::base::AtlasStateSampler::AtlasStateSampler(const AtlasStateSpace *space) : StateSampler(space), atlas_(space)
+ompl::base::AtlasStateSampler::AtlasStateSampler(const AtlasStateSpaceNE *space) : StateSampler(space), atlas_(space)
 {
 }
 
 void ompl::base::AtlasStateSampler::sampleUniform(State *state)
 {
-    auto astate = state->as<AtlasStateSpace::StateType>();
+    TIKTOK(sample_q);
+
+    auto astate = state->as<AtlasStateSpaceNE::StateType>();
 
     const std::size_t k = atlas_->getManifoldDimension();
     Eigen::VectorXd ru(k);
 
-    AtlasChart *c;
+    AtlasChartNE *c;
 
     // Sampling a point on the manifold.
     unsigned int tries = ompl::magic::ATLAS_STATE_SPACE_SAMPLES;
@@ -77,18 +81,18 @@ void ompl::base::AtlasStateSampler::sampleUniform(State *state)
         } while (tries-- > 0 && !c->inPolytope(ru));
 
         // Project. Will need to try again if this fails.
-    } while (tries > 0 && !c->psi(ru, *astate));
+    } while (tries > 0 && !c->psi(ru, *astate) && !space_->satisfiesBounds( state));
 
     if (tries == 0)
     {
         // Consider decreasing rho and/or the exploration paramter if this
         // becomes a problem.
-        OMPL_WARN("ompl::base::AtlasStateSpace::sampleUniform(): "
+        OMPL_WARN("ompl::base::AtlasStateSpaceNE::sampleUniform(): "
                   "Took too long; returning center of a random chart.");
         atlas_->copyState(astate, c->getOrigin());
     }
 
-    space_->enforceBounds(state);
+    // space_->enforceBounds(state);
 
     // Extend polytope of neighboring chart wherever point is near the border.
     c->psiInverse(*astate, ru);
@@ -98,18 +102,20 @@ void ompl::base::AtlasStateSampler::sampleUniform(State *state)
 
 void ompl::base::AtlasStateSampler::sampleUniformNear(State *state, const State *near, const double dist)
 {
+    TIKTOK(sample_q);
+
     // Find the chart that the starting point is on.
-    auto astate = state->as<AtlasStateSpace::StateType>();
-    auto anear = near->as<AtlasStateSpace::StateType>();
+    auto astate = state->as<AtlasStateSpaceNE::StateType>();
+    auto anear = near->as<AtlasStateSpaceNE::StateType>();
 
     const std::size_t k = atlas_->getManifoldDimension();
 
     Eigen::VectorXd ru(k), uoffset(k);
 
-    AtlasChart *c = atlas_->getChart(anear, true);
+    AtlasChartNE *c = atlas_->getChart(anear, true);
     if (c == nullptr)
     {
-        OMPL_ERROR("ompl::base::AtlasStateSpace::sampleUniformNear(): "
+        OMPL_ERROR("ompl::base::AtlasStateSpaceNE::sampleUniformNear(): "
                    "Sampling failed because chart creation failed! Falling back to uniform sample.");
         sampleUniform(state);
         return;
@@ -131,7 +137,7 @@ void ompl::base::AtlasStateSampler::sampleUniformNear(State *state, const State 
     {
         // Consider decreasing the dist argument if this becomes a
         // problem. Check planner code to see how it gets chosen.
-        OMPL_WARN("ompl::base:::AtlasStateSpace::sampleUniformNear(): "
+        OMPL_WARN("ompl::base:::AtlasStateSpaceNE::sampleUniformNear(): "
                   "Took too long; returning initial point.");
         atlas_->copyState(state, near);
     }
@@ -149,16 +155,18 @@ void ompl::base::AtlasStateSampler::sampleUniformNear(State *state, const State 
 
 void ompl::base::AtlasStateSampler::sampleGaussian(State *state, const State *mean, const double stdDev)
 {
-    auto astate = state->as<AtlasStateSpace::StateType>();
-    auto amean = mean->as<AtlasStateSpace::StateType>();
+    TIKTOK(sample_q);
+
+    auto astate = state->as<AtlasStateSpaceNE::StateType>();
+    auto amean = mean->as<AtlasStateSpaceNE::StateType>();
 
     const std::size_t k = atlas_->getManifoldDimension();
     Eigen::VectorXd ru(k), rand(k);
 
-    AtlasChart *c = atlas_->getChart(amean, true);
+    AtlasChartNE *c = atlas_->getChart(amean, true);
     if (c == nullptr)
     {
-        OMPL_ERROR("ompl::base::AtlasStateSpace::sampleGaussian(): "
+        OMPL_ERROR("ompl::base::AtlasStateSpaceNE::sampleGaussian(): "
                    "Sampling failed because chart creation failed! Falling back to uniform sample.");
         sampleUniform(state);
         return;
@@ -177,7 +185,7 @@ void ompl::base::AtlasStateSampler::sampleGaussian(State *state, const State *me
 
     if (tries == 0)
     {
-        OMPL_WARN("ompl::base::AtlasStateSpace::sampleUniforGaussian(): "
+        OMPL_WARN("ompl::base::AtlasStateSpaceNE::sampleUniforGaussian(): "
                   "Took too long; returning initial point.");
         atlas_->copyState(state, mean);
     }
@@ -193,20 +201,16 @@ void ompl::base::AtlasStateSampler::sampleGaussian(State *state, const State *me
     astate->setChart(c);
 }
 
-/// AtlasStateSpace
+/// AtlasStateSpaceNE
 
 /// Public
 
-ompl::base::AtlasStateSpace::AtlasStateSpace(const StateSpacePtr &ambientSpace, const ConstraintPtr &constraint,
+ompl::base::AtlasStateSpaceNE::AtlasStateSpaceNE(const StateSpacePtr &ambientSpace, const ConstraintPtr &constraint,
                                              bool separate)
     : ConstrainedStateSpace(ambientSpace, constraint)
-    , biasFunction_([](AtlasChart *) -> double { return 1; })
+    , biasFunction_([](AtlasChartNE *) -> double { return 1; })
     , separate_(separate)
 {
-    setRho(delta_ * ompl::magic::ATLAS_STATE_SPACE_RHO_MULTIPLIER);
-    setAlpha(ompl::magic::ATLAS_STATE_SPACE_ALPHA);
-    setExploration(ompl::magic::ATLAS_STATE_SPACE_EXPLORATION);
-
     setName("Atlas" + space_->getName());
 
     chartNN_.setDistanceFunction(
@@ -226,9 +230,45 @@ ompl::base::AtlasStateSpace::AtlasStateSpace(const StateSpacePtr &ambientSpace, 
     };
 
     nv_ = n_;
+
+    k_ = ConstrainedStateSpace::k_;
+
+    setRho(delta_ * ompl::magic::ATLAS_STATE_SPACE_RHO_MULTIPLIER);
+    setAlpha(ompl::magic::ATLAS_STATE_SPACE_ALPHA);
+    setExploration(ompl::magic::ATLAS_STATE_SPACE_EXPLORATION);
 }
 
-ompl::base::AtlasStateSpace::~AtlasStateSpace()
+ompl::base::AtlasStateSpaceNE::AtlasStateSpaceNE(const StateSpacePtr &ambientSpace,
+                                                 const ConstraintPtr &constraint,
+                                                 BinaryVectorOp sum,
+                                                 BinaryVectorOp diff,
+                                                 int nv,
+                                                 bool separate)
+    : ConstrainedStateSpace(ambientSpace, constraint)
+    , biasFunction_([](AtlasChartNE *) -> double { return 1; })
+    , separate_(separate)
+{
+
+    setName("Atlas" + space_->getName());
+
+    chartNN_.setDistanceFunction(
+        [&](const NNElement &e1, const NNElement &e2) -> double { return distance(e1.first, e2.first); });
+
+    // set default sum and diff functions for the ambient space
+    f_sum_ = sum;
+
+    f_diff_ = diff;
+
+    nv_ = nv;
+
+    k_ = nv - constraint->getCoDimension();
+
+    setRho(delta_ * ompl::magic::ATLAS_STATE_SPACE_RHO_MULTIPLIER);
+    setAlpha(ompl::magic::ATLAS_STATE_SPACE_ALPHA);
+    setExploration(ompl::magic::ATLAS_STATE_SPACE_EXPLORATION);
+}
+
+ompl::base::AtlasStateSpaceNE::~AtlasStateSpaceNE()
 {
     // Delete anchors first so clear does no reinitialization.
     for (auto anchor : anchors_)
@@ -238,21 +278,17 @@ ompl::base::AtlasStateSpace::~AtlasStateSpace()
     clear();
 }
 
-int ompl::base::AtlasStateSpace::getAmbientTangentDimension() const
+int ompl::base::AtlasStateSpaceNE::getAmbientTangentDimension() const
 {
     return nv_;
 }
 
-void ompl::base::AtlasStateSpace::setNonEuclideanAmbientSpace(BinaryVectorOp sum,
-                                                              BinaryVectorOp diff,
-                                                              int nv)
+int ompl::base::AtlasStateSpaceNE::getManifoldDimension() const
 {
-    f_sum_ = sum;
-    f_diff_ = diff;
-    nv_ = nv;
+    return k_;
 }
 
-void ompl::base::AtlasStateSpace::clear()
+void ompl::base::AtlasStateSpaceNE::clear()
 {
     // Delete the non-anchor charts
     for (auto chart : charts_)
@@ -277,45 +313,45 @@ void ompl::base::AtlasStateSpace::clear()
     ConstrainedStateSpace::clear();
 }
 
-Eigen::VectorXd ompl::base::AtlasStateSpace::ambientSum(const Eigen::VectorXd &q,
+Eigen::VectorXd ompl::base::AtlasStateSpaceNE::ambientSum(const Eigen::VectorXd &q,
                                                         const Eigen::VectorXd &v) const
 {
     return f_sum_(q, v);
 }
 
-Eigen::VectorXd ompl::base::AtlasStateSpace::ambientDiff(const Eigen::VectorXd &q1,
+Eigen::VectorXd ompl::base::AtlasStateSpaceNE::ambientDiff(const Eigen::VectorXd &q1,
                                                          const Eigen::VectorXd &q2) const
 {
     return f_diff_(q1, q2);
 }
 
-ompl::base::AtlasChart *ompl::base::AtlasStateSpace::anchorChart(const ompl::base::State *state) const
+ompl::base::AtlasChartNE *ompl::base::AtlasStateSpaceNE::anchorChart(const ompl::base::State *state) const
 {
     auto anchor = cloneState(state)->as<StateType>();
     anchors_.push_back(anchor);
 
     // This could fail with an exception. We cannot recover if that happens.
-    AtlasChart *chart = newChart(anchor);
+    AtlasChartNE *chart = newChart(anchor);
     if (chart == nullptr)
-        throw ompl::Exception("ompl::base::AtlasStateSpace::anchorChart(): "
+        throw ompl::Exception("ompl::base::AtlasStateSpaceNE::anchorChart(): "
                               "Initial chart creation failed. Cannot proceed.");
 
     return chart;
 }
 
-ompl::base::AtlasChart *ompl::base::AtlasStateSpace::newChart(const StateType *state) const
+ompl::base::AtlasChartNE *ompl::base::AtlasStateSpaceNE::newChart(const StateType *state) const
 {
-    AtlasChart *chart;
+    AtlasChartNE *chart;
     StateType *cstate = nullptr;
 
     try
     {
         cstate = cloneState(state)->as<StateType>();
-        chart = new AtlasChart(this, cstate);
+        chart = new AtlasChartNE(this, cstate);
     }
     catch (ompl::Exception &e)
     {
-        OMPL_ERROR("ompl::base::AtlasStateSpace::newChart(): "
+        OMPL_ERROR("ompl::base::AtlasStateSpaceNE::newChart(): "
                    "Failed because manifold looks degenerate here.");
 
         if (cstate != nullptr)
@@ -333,8 +369,8 @@ ompl::base::AtlasChart *ompl::base::AtlasStateSpace::newChart(const StateType *s
 
         for (auto &&near : nearbyCharts)
         {
-            AtlasChart *other = charts_[near.second];
-            AtlasChart::generateHalfspace(other, chart);
+            AtlasChartNE *other = charts_[near.second];
+            AtlasChartNE::generateHalfspace(other, chart);
 
             chartPDF_.update(chartPDF_.getElements()[near.second], biasFunction_(other));
         }
@@ -347,18 +383,18 @@ ompl::base::AtlasChart *ompl::base::AtlasStateSpace::newChart(const StateType *s
     return chart;
 }
 
-ompl::base::AtlasChart *ompl::base::AtlasStateSpace::sampleChart() const
+ompl::base::AtlasChartNE *ompl::base::AtlasStateSpaceNE::sampleChart() const
 {
     if (charts_.empty())
-        throw ompl::Exception("ompl::base::AtlasStateSpace::sampleChart(): "
-                              "Atlas sampled before any charts were made. Use AtlasStateSpace::anchorChart() first.");
+        throw ompl::Exception("ompl::base::AtlasStateSpaceNE::sampleChart(): "
+                              "Atlas sampled before any charts were made. Use AtlasStateSpaceNE::anchorChart() first.");
 
     return chartPDF_.sample(rng_.uniform01());
 }
 
-ompl::base::AtlasChart *ompl::base::AtlasStateSpace::getChart(const StateType *state, bool force, bool *created) const
+ompl::base::AtlasChartNE *ompl::base::AtlasStateSpaceNE::getChart(const StateType *state, bool force, bool *created) const
 {
-    AtlasChart *c = state->getChart();
+    AtlasChartNE *c = state->getChart();
     if (c == nullptr || force)
     {
         c = owningChart(state);
@@ -377,7 +413,7 @@ ompl::base::AtlasChart *ompl::base::AtlasStateSpace::getChart(const StateType *s
     return c;
 }
 
-ompl::base::AtlasChart *ompl::base::AtlasStateSpace::owningChart(const StateType *state) const
+ompl::base::AtlasChartNE *ompl::base::AtlasStateSpaceNE::owningChart(const StateType *state) const
 {
     Eigen::VectorXd u_t(k_);
     auto temp = allocState()->as<StateType>();
@@ -386,7 +422,7 @@ ompl::base::AtlasChart *ompl::base::AtlasStateSpace::owningChart(const StateType
     chartNN_.nearestR(std::make_pair(state, 0), rho_, nearby);
 
     double best = epsilon_;
-    AtlasChart *chart = nullptr;
+    AtlasChartNE *chart = nullptr;
     for (auto & near : nearby)
     {
         // The point must lie in the chart's validity region and polytope
@@ -408,7 +444,7 @@ ompl::base::AtlasChart *ompl::base::AtlasStateSpace::owningChart(const StateType
     return chart;
 }
 
-bool ompl::base::AtlasStateSpace::discreteGeodesic(const State *from, const State *to, bool interpolate,
+bool ompl::base::AtlasStateSpaceNE::discreteGeodesic(const State *from, const State *to, bool interpolate,
                                                    std::vector<ompl::base::State *> *geodesic) const
 {
     auto &&svc = si_->getStateValidityChecker();
@@ -421,7 +457,7 @@ bool ompl::base::AtlasStateSpace::discreteGeodesic(const State *from, const Stat
     auto ato = to->as<StateType>();
 
     // Try to get starting chart from `from` state.
-    AtlasChart *c = getChart(afrom);
+    AtlasChartNE *c = getChart(afrom);
     if (c == nullptr)
         return false;
 
@@ -537,22 +573,22 @@ bool ompl::base::AtlasStateSpace::discreteGeodesic(const State *from, const Stat
     return ret;
 }
 
-double ompl::base::AtlasStateSpace::estimateFrontierPercent() const
+double ompl::base::AtlasStateSpaceNE::estimateFrontierPercent() const
 {
     double frontier = 0;
-    for (const AtlasChart *c : charts_)
+    for (const AtlasChartNE *c : charts_)
         frontier += c->estimateIsFrontier() ? 1 : 0;
 
     return (100 * frontier) / charts_.size();
 }
 
-void ompl::base::AtlasStateSpace::printPLY(std::ostream &out) const
+void ompl::base::AtlasStateSpaceNE::printPLY(std::ostream &out) const
 {
     std::stringstream v, f;
     std::size_t vcount = 0;
     std::size_t fcount = 0;
     std::vector<Eigen::VectorXd> vertices;
-    for (AtlasChart *c : charts_)
+    for (AtlasChartNE *c : charts_)
     {
         vertices.clear();
         c->toPolygon(vertices);

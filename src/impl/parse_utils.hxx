@@ -20,6 +20,19 @@ if(opt[#name]) \
 /* End macro for option parsing */
 
 /* Macro for option parsing */
+#define OBJECT_PARSE_OPTION(obj, name, type) \
+if(opt && opt[#name]) \
+    { \
+            type value = opt[#name].as<type>(); \
+            std::cout << "Found " #type " option '" #name "' with value = " << value << std::endl; \
+            obj->set##name(value); \
+    } \
+    else { \
+        std::cout << "No option '" #name "' specified" << std::endl; \
+} \
+/* End macro for option parsing */
+
+/* Macro for option parsing */
 #define YAML_PARSE_OPTION(yaml, name, type, default_value) \
     type name = default_value; \
     if(yaml[#name]) \

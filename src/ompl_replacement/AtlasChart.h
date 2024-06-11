@@ -49,11 +49,11 @@ namespace base
 {
 /** \brief Tangent space and bounding polytope approximating some patch
          * of the manifold. */
-class AtlasChart
+class AtlasChartNE
 {
 private:
     /** \brief Halfspace equation on a chart. \note Use
-             * AtlasChart::generateHalfspace to create new halfspace objects.
+             * AtlasChartNE::generateHalfspace to create new halfspace objects.
              * Since each halfspace is associated to exactly one chart, we let
              * the chart be responsible for deleting it. */
     class Halfspace
@@ -66,7 +66,7 @@ private:
         /** \brief Create a halfspace equitably separating charts \a
                  * owner and \a neighbor. This halfspace will coincide with
                  * chart \a owner. */
-        Halfspace(const AtlasChart *owner, const AtlasChart *neighbor);
+        Halfspace(const AtlasChartNE *owner, const AtlasChartNE *neighbor);
 
         /** \brief Return whether point \a v on the owning chart
                  * lies within the halfspace. */
@@ -104,14 +104,14 @@ private:
         }
 
         /** \brief Get the chart to which this halfspace belongs. */
-        const AtlasChart *getOwner() const
+        const AtlasChartNE *getOwner() const
         {
             return owner_;
         }
 
     private:
         /** \brief Chart to which this halfspace belongs. */
-        const AtlasChart *owner_;
+        const AtlasChartNE *owner_;
 
         /** \brief Halfspace complementary to this one, but on the
                  * neighboring chart. */
@@ -144,16 +144,16 @@ private:
 
 public:
     // non-copyable
-    AtlasChart(const AtlasChart &) = delete;
-    AtlasChart &operator=(const AtlasChart &) = delete;
+    AtlasChartNE(const AtlasChartNE &) = delete;
+    AtlasChartNE &operator=(const AtlasChartNE &) = delete;
 
     /** \brief Create a tangent space chart for \a atlas with center at
              * ambient space point \a xorigin.
              * \throws ompl::Exception when manifold seems degenerate here. */
-    AtlasChart(const AtlasStateSpace *atlas, const AtlasStateSpace::StateType *state);
+    AtlasChartNE(const AtlasStateSpaceNE *atlas, const AtlasStateSpaceNE::StateType *state);
 
     /** \brief Destructor. */
-    ~AtlasChart();
+    ~AtlasChartNE();
 
     /** \brief Forget all acquired information such as the halfspace
              * boundary. */
@@ -161,7 +161,7 @@ public:
 
     /** \brief Returns phi(0), the center of the chart in ambient
              * space. */
-    const AtlasStateSpace::StateType *getOrigin() const
+    const AtlasStateSpaceNE::StateType *getOrigin() const
     {
         return state_;
     }
@@ -207,7 +207,7 @@ public:
 
     /** \brief Try to find an owner for ambient point \x from among the
              * neighbors of this chart. Returns nullptr if none found.*/
-    const AtlasChart *owningNeighbor(const Eigen::Ref<const Eigen::VectorXd> &x) const;
+    const AtlasChartNE *owningNeighbor(const Eigen::Ref<const Eigen::VectorXd> &x) const;
 
     /** \brief For manifolds of dimension 2, return in order in \a
              * vertices the polygon boundary of this chart, including an
@@ -232,7 +232,7 @@ public:
              * between charts \a c1 and \a c2, and add them to the charts'
              * polytopes boundaries.
              * \note Charts must be different charts from the same atlas. */
-    static void generateHalfspace(AtlasChart *c1, AtlasChart *c2);
+    static void generateHalfspace(AtlasChartNE *c1, AtlasChartNE *c2);
 
 protected:
     /** \brief The constraint function that defines the manifold. */
@@ -255,7 +255,7 @@ private:
     const unsigned int k_;
 
     /** \brief Origin of the chart in ambient space coordinates. */
-    const AtlasStateSpace::StateType *state_;
+    const AtlasStateSpaceNE::StateType *state_;
 
     /** \brief Basis for the chart space. */
     const Eigen::MatrixXd bigPhi_;
@@ -266,7 +266,7 @@ private:
     /**
      * @brief atlas_
      */
-    const AtlasStateSpace * atlas_;
+    const AtlasStateSpaceNE * atlas_;
 };
 }
 }

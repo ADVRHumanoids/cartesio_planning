@@ -4,6 +4,8 @@
 #include <chrono>
 #include <map>
 #include <vector>
+#include <string>
+#include <ostream>
 #include <math.h>
 
 #define TIC(name) auto tic_##name = std::chrono::high_resolution_clock::now()
@@ -55,7 +57,14 @@ struct ProfilingData
         collision_check,
         collision_near,
         collision_near_ok,
-        state_validity_check;
+        state_validity_check,
+        atlas_psi,
+        atlas_psi_ok,
+        atlas_psi_linesearch,
+        constr_eval,
+        constr_jac,
+        constr_project,
+        cartesian_refine;
 
     std::vector<std::pair<std::string, SimpleStats*>> entries = {
         {"sample_q                 ", &sample_q},
@@ -64,7 +73,14 @@ struct ProfilingData
         {"state_validity_check     ", &state_validity_check},
         {" └──collision_check      ", &collision_check},
         {"    └──collision_near    ", &collision_near},
-        {"    └──collision_near_ok ", &collision_near_ok}
+        {"    └──collision_near_ok ", &collision_near_ok},
+        {"atlaschart::psi          ", &atlas_psi},
+        {" └──psi_ok               ", &atlas_psi_ok},
+        {" └──linesearch           ", &atlas_psi_linesearch},
+        {"constr_eval              ", &constr_eval},
+        {"constr_jac               ", &constr_jac},
+        {"constr_project           ", &constr_project},
+        {"cartesian_refine           ", &cartesian_refine}
     };
 
     void reset()

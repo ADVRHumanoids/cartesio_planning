@@ -12,6 +12,8 @@ class CollisionValidityChecker : public StateValidityChecker
 
 public:
 
+    CARTESIO_PLANNING_DECLARE_SMART_PTR(CollisionValidityChecker)
+
     CollisionValidityChecker(StateSpace::ConstPtr space,
                              XBot::Collision::CollisionModel::Ptr collision_model,
                              std::optional<std::string> id = std::nullopt,
