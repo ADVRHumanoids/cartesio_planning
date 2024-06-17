@@ -81,11 +81,12 @@ void ompl::base::AtlasStateSampler::sampleUniform(State *state)
         } while (tries-- > 0 && !c->inPolytope(ru));
 
         // Project. Will need to try again if this fails.
-    } while (tries > 0 && !c->psi(ru, *astate) && !space_->satisfiesBounds( state));
+    } while (tries > 0 && (!c->psi(ru, *astate) || !atlas_->satisfiesBounds(astate)));
+
 
     if (tries == 0)
     {
-        // Consider decreasing rho and/or the exploration paramter if this
+        // Consider decreasing rho and/or the exploration parameter if this
         // becomes a problem.
         OMPL_WARN("ompl::base::AtlasStateSpaceNE::sampleUniform(): "
                   "Took too long; returning center of a random chart.");
@@ -233,9 +234,10 @@ ompl::base::AtlasStateSpaceNE::AtlasStateSpaceNE(const StateSpacePtr &ambientSpa
 
     k_ = ConstrainedStateSpace::k_;
 
+    exploration_ = ompl::magic::ATLAS_STATE_SPACE_EXPLORATION;
     setRho(delta_ * ompl::magic::ATLAS_STATE_SPACE_RHO_MULTIPLIER);
-    setAlpha(ompl::magic::ATLAS_STATE_SPACE_ALPHA);
     setExploration(ompl::magic::ATLAS_STATE_SPACE_EXPLORATION);
+    setAlpha(ompl::magic::ATLAS_STATE_SPACE_ALPHA);
 }
 
 ompl::base::AtlasStateSpaceNE::AtlasStateSpaceNE(const StateSpacePtr &ambientSpace,
@@ -263,9 +265,10 @@ ompl::base::AtlasStateSpaceNE::AtlasStateSpaceNE(const StateSpacePtr &ambientSpa
 
     k_ = nv - constraint->getCoDimension();
 
+    exploration_ = ompl::magic::ATLAS_STATE_SPACE_EXPLORATION;
     setRho(delta_ * ompl::magic::ATLAS_STATE_SPACE_RHO_MULTIPLIER);
-    setAlpha(ompl::magic::ATLAS_STATE_SPACE_ALPHA);
     setExploration(ompl::magic::ATLAS_STATE_SPACE_EXPLORATION);
+    setAlpha(ompl::magic::ATLAS_STATE_SPACE_ALPHA);
 }
 
 ompl::base::AtlasStateSpaceNE::~AtlasStateSpaceNE()

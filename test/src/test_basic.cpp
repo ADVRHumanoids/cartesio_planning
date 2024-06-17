@@ -6,6 +6,8 @@
 
 #include <cartesio_planning/constraints/cartesian_constraint.h>
 
+#include <cartesio_planning/constraints/contact_constraint.h>
+
 #include <cartesio_planning/trajectory_interpolation.h>
 
 #include <cartesian_interface/CartesianInterfaceImpl.h>
@@ -19,6 +21,8 @@ using TestBasic = TestWithModel;
 
 TEST_F(TestBasic, check1)
 {
+    model->getJoint(0)->setJointLimits(Eigen::VectorXd::Zero(6), Eigen::VectorXd::Zero(6));
+
     auto space = std::make_shared<StateSpace>();
 
     space->addRobotConfigurationSpace(model);
@@ -29,7 +33,14 @@ TEST_F(TestBasic, check1)
 
     auto qgoal = model->getRobotState("home");
 
-    EXPECT_TRUE(planner.solve(qstart, qgoal, 1.0, "RRTConnect"));
+    // check we can just interpolate start and goal
+    for(double tau = 0; tau <= 1.0; tau += 0.01)
+    {
+        auto qk = space->interpolate(qstart, qgoal, tau);
+        EXPECT_TRUE(space->checkValid(qk));
+    }
+
+    EXPECT_TRUE(planner.solve(qstart, qgoal, 10.0, "RRTConnect"));
 
     auto trj = planner.getSolutionPath(true);
 
@@ -358,6 +369,57 @@ c4:
     }
     double sample_t = TOC(sample_t);
     ProfilingData::instance().print(std::cout, sample_t);
+}
+
+
+
+TEST_F(TestBasic, checkContactConstraint)
+{
+    model->getJoint(0)->setJointLimits(-Eigen::VectorXd::Ones(6), Eigen::VectorXd::Ones(6));
+
+    auto space = std::make_shared<StateSpace>();
+
+    space->addRobotConfigurationSpace(model);
+
+    std::map<std::string, std::vector<int>> contacts = {
+        {"contact_1", {0, 1, 2}},
+        {"contact_2", {0, 1, 2}},
+        {"contact_3", {0, 1, 2}},
+        {"contact_4", {0, 1, 2}}
+    };
+
+
+    model->setJointPosition(model->getRobotState("home"));
+    model->update();
+
+    Eigen::VectorXd qstart = model->getJointPosition(), qgoal;
+
+    auto constr = std::make_shared<ContactConstraint>(model, contacts);
+    constr->bind(space);
+
+    ASSERT_TRUE(constr->checkJacobian(model->getJointPosition()));
+
+    ProfilingData::instance().reset();
+    TIC(sample_t);
+    for(int i = 0; i < 100; i++)
+    {
+        auto q = constr->sample();
+
+        EXPECT_LT(constr->value(q).norm(), 1e-3) <<
+            q.transpose().format(3);
+
+        EXPECT_TRUE(space->checkBounds(q)) << q.transpose();
+
+        ASSERT_TRUE(constr->checkJacobian(q));
+
+        qgoal = q;
+
+    }
+    double sample_t = TOC(sample_t);
+    ProfilingData::instance().print(std::cout, sample_t);
+
+    Planner pl(space, {});
+    EXPECT_TRUE(pl.solve(qstart, qgoal, 10.0, "RRTConnect"));
 }
 
 int main(int argc, char ** argv)

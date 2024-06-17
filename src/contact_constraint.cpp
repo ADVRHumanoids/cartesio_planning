@@ -53,7 +53,7 @@ void ContactConstraint::resetContactPose()
 
 void ContactConstraint::update(const Eigen::VectorXd &q) const
 {
-    if(q.cwiseEqual(_old_q).all())
+    if(_old_q.size() > 0 && q.cwiseEqual(_old_q).all())
     {
         return;
     }
@@ -106,7 +106,7 @@ Eigen::MatrixXd ContactConstraint::jacobian(const Eigen::VectorXd &q) const
 
         for(auto i : c.indices)
         {
-            _J.row(k++) = Jrot.row(i);
+            _J.row(k++) = -Jrot.row(i);
         }
     }
 

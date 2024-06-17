@@ -78,6 +78,8 @@ public:
 
     bool addStateValidityChecker(StateValidityChecker::ConstPtr svc);
 
+    bool checkBounds(const Eigen::VectorXd& q) const;
+
     bool checkValid(const Eigen::VectorXd &q,
                     bool force_verbose = false,
                     std::ostream &os = std::cout,

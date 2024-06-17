@@ -49,6 +49,11 @@ bool StateSpace::addStateValidityChecker(std::shared_ptr<const StateValidityChec
     return impl->addStateValidityChecker(svc);
 }
 
+bool StateSpace::checkBounds(const Eigen::VectorXd &q)
+{
+    return impl->checkBounds(q);
+}
+
 bool StateSpace::checkValid(const Eigen::VectorXd &q,
                             std::vector<std::string> *failed_checks,
                             std::ostream &report_os) const
@@ -624,6 +629,13 @@ bool StateSpace::Impl::addStateValidityChecker(StateValidityChecker::ConstPtr sv
 {
     _svc_map[svc->getName()] = svc;
     return true;
+}
+
+bool StateSpace::Impl::checkBounds(const Eigen::VectorXd &q) const
+{
+    ompl::base::ScopedState<> s(getStateSpace());
+    setValue(*s, q);
+    return getStateSpace()->satisfiesBounds(s.get());
 }
 
 bool StateSpace::Impl::isStateValid(const ompl::base::State &state,

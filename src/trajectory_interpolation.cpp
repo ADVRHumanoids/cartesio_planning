@@ -27,10 +27,15 @@ trajectory_msgs::JointTrajectory simpleInterpolation(StateSpace& ss,
     // loop over segments
     for(int s = 0; s < wp.cols()-1; s++)
     {
-        // vel = 1.875 / dur
-        // acc = 5.774 / dur^2
-        double segment_duration_velmax = (1.875 / max_vel.array()).maxCoeff();
-        double segment_duration_accmax = std::sqrt((5.774 / max_acc.array()).maxCoeff());
+        // endpoints and delta
+        const auto& qstart = wp.col(s);
+        const auto& qend = wp.col(s+1);
+        auto delta_q = ss.difference(qend, qstart);
+
+        // vel = dq * 1.875 / dur
+        // acc = dq * 5.774 / dur^2
+        double segment_duration_velmax = (1.875 * delta_q.array().abs() / max_vel.array()).maxCoeff();
+        double segment_duration_accmax = std::sqrt((5.774 * delta_q.array().abs() / max_acc.array()).maxCoeff());
         double segment_duration = std::max(segment_duration_velmax, segment_duration_accmax);
 
         // dt < 0 means don't interpolate, just compute node times
@@ -48,9 +53,6 @@ trajectory_msgs::JointTrajectory simpleInterpolation(StateSpace& ss,
         // interpolate
         const int n_nodes = std::ceil(segment_duration / dt);
         const double segment_start_time = trj.points.back().time_from_start.toSec();
-        const auto& qstart = wp.col(s);
-        const auto& qend = wp.col(s+1);
-        auto delta_q = ss.difference(qend, qstart);
 
         for(int i = 0; i < n_nodes + 1; i++)
         {

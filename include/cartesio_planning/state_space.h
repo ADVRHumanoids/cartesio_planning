@@ -80,6 +80,8 @@ public:
 
     bool addStateValidityChecker(std::shared_ptr<const StateValidityChecker> svc);
 
+    bool checkBounds(const Eigen::VectorXd& q);
+
     bool checkValid(const Eigen::VectorXd& q,
                     std::vector<std::string> * failed_checks = nullptr,
                     std::ostream& report_os = std::cerr) const;

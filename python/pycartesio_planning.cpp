@@ -119,7 +119,7 @@ PYBIND11_MODULE(pycartesio_planning, m)
              py::arg("state_space"), py::arg("options") = "")
         .def("solve", &Planner::solve,
              py::arg("qstart"), py::arg("qgoal"), py::arg("timeout"), py::arg("planner_type"))
-        .def("", &Planner::getSolutionPath,
+        .def("getSolutionPath", &Planner::getSolutionPath,
              py::arg("simplify") = false, py::arg("timeoue") = -1)
         ;
 
@@ -147,5 +147,6 @@ PYBIND11_MODULE(pycartesio_planning, m)
               }
 
               return std::make_tuple(time, pos, vel, acc);
-          });
+          },
+        py::arg("state_space"), py::arg("waypoints"), py::arg("max_vel"), py::arg("max_acc"), py::arg("dt"));
 }

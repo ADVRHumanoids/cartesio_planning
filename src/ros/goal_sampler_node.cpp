@@ -1,3 +1,5 @@
+#include <boost/algorithm/string/replace.hpp>
+
 #include <cartesio_planning/ros/robot_viz.h>
 
 #include <cartesio_planning/state_space.h>
@@ -40,6 +42,31 @@ int main(int argc, char **argv)
 
     auto ik_pb = YAML::Load(npr.param<std::string>("goal_problem_description", ""));
 
+    // set joint limits from params
+    std::map<std::string, double> joint_limits_min, joint_limits_max;
+    npr.getParam("joint_limits_min", joint_limits_min);
+    npr.getParam("joint_limits_max", joint_limits_max);
+    Eigen::VectorXd qmin, qmax;
+    model->getJointLimits(qmin, qmax);
+
+    for(auto [vname1, qmin_user] : joint_limits_min)
+    {
+        auto vname = boost::replace_all_copy(vname1, "__", "@");
+        ROS_INFO("setting qmin[%s] = %f", vname.c_str(), qmin_user);
+        qmin[model->getVIndexFromVName(vname)] = qmin_user;
+    }
+
+    for(auto [vname1, qmax_user] : joint_limits_max)
+    {
+        auto vname = boost::replace_all_copy(vname1, "__", "@");
+        ROS_INFO("setting qmax[%s] = %f", vname.c_str(), qmax_user);
+        qmax[model->getVIndexFromVName(vname)] = qmax_user;
+    }
+
+    model->setJointLimits(qmin, qmax);
+
+
+    // build ci
     auto params = std::make_shared<XBot::Cartesian::Parameters>(1.0);
 
     auto ctx = std::make_shared<XBot::Cartesian::Context>(params, model);
@@ -48,8 +75,10 @@ int main(int argc, char **argv)
 
     auto ci = XBot::Cartesian::CartesianInterfaceImpl::MakeInstance("OpenSot", pb, ctx);
 
+    XBot::Cartesian::RosServerClass ros_api(ci);
 
 
+    // build planner constraint
     YAML::Node planner_cfg;
 
     planner_cfg["Atlas"]["Rho"] = npr.param("atlas_rho", 2.0);
@@ -65,16 +94,20 @@ int main(int argc, char **argv)
               << std::endl;
     std::cout << constr->jacobian(model->getJointPosition()).jacobiSvd().singularValues() << std::endl;
 
-    XBot::Cartesian::RosServerClass ros_api(ci);
 
+    // loop
     ProfilingData::instance().reset();
     TIC();
+    ROS_INFO("started looping");
     while(ros::ok())
     {
         auto q = constr->sample();
 
+        ROS_INFO("sample");
         while(!space->checkValid(q))
         {
+            ROS_INFO("sample valid");
+            ros_api.run();
             q = constr->sample();
         }
 

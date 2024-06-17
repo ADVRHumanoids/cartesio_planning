@@ -28,6 +28,8 @@ void Constraint::reset()
 
 bool Constraint::project(Eigen::VectorXd &q) const
 {
+    // TODO handle state bounds
+
     TIKTOK(constr_project);
 
     if(!_space)
@@ -183,12 +185,21 @@ Eigen::VectorXd Constraint::Impl::sample() const
 
             if(!_api.project(qrand))
             {
+                std::cout << "[sample] project failed \n";
                 continue;
             }
 
             _ss->getImpl().setValue(**state, qrand);
 
+            if(!atlas->satisfiesBounds(atlas_state))
+            {
+                std::cout << "[sample] satisfiesBounds failed \n";
+                continue;
+            }
+
             atlas->newChart(atlas_state);
+
+            std::cout << "initial chart found \n";
 
             return qrand;
         }
