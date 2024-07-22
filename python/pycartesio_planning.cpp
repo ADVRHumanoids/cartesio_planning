@@ -51,17 +51,19 @@ bool svc_check_valid(StateValidityChecker& self,
     return self.checkValid(q, qnear);
 }
 
-CartesianConstraint::Ptr make_cartesian_constraint(XBot::Cartesian::CartesianInterfaceImpl::Ptr ci,
+CartesianConstraint::Ptr make_cartesian_constraint(std::shared_ptr<const StateSpace> space,
+                                                   XBot::Cartesian::CartesianInterfaceImpl::Ptr ci,
                                                    std::string options)
 {
-    return std::make_shared<CartesianConstraint>(ci, YAML::Load(options));
+    return std::make_shared<CartesianConstraint>(space, ci, YAML::Load(options));
 }
 
-ContactConstraint::Ptr make_contact_constraint(XBot::ModelInterface::Ptr model,
+ContactConstraint::Ptr make_contact_constraint(std::shared_ptr<const StateSpace> space,
+                                               XBot::ModelInterface::Ptr model,
                                                std::map<std::string, std::vector<int>> contact_map,
                                                std::string options)
 {
-    return std::make_shared<ContactConstraint>(model, contact_map, YAML::Load(options));
+    return std::make_shared<ContactConstraint>(space, model, contact_map, YAML::Load(options));
 }
 
 PYBIND11_MODULE(pycartesio_planning, m)

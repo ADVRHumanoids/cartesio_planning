@@ -70,6 +70,8 @@ public:
 
     Eigen::VectorXd interpolate(const Eigen::VectorXd& q1, const Eigen::VectorXd& q2, double tau);
 
+    Eigen::VectorXd neutral() const;
+
     void setSpaceInformation(ompl::base::SpaceInformation * si);
 
     Eigen::VectorXd ambientRandom() const;
@@ -99,6 +101,7 @@ private:
     std::vector<int> _v_index, _nv;
     int _ss_nv;
     std::vector<BinaryVectorOp> _f_sum, _f_diff;
+    Eigen::VectorXd _qneutral;
 
     ompl::base::StateSpacePtr _ss;
     std::shared_ptr<ompl::base::CompoundStateSpace> _ss_comp;

@@ -44,12 +44,22 @@ Eigen::VectorXd StateSpace::difference(const Eigen::VectorXd &q1, const Eigen::V
     return impl->ambientDiff(q1, q2);
 }
 
+Eigen::VectorXd StateSpace::neutral() const
+{
+    return impl->neutral();
+}
+
+std::pair<Eigen::VectorXd, Eigen::VectorXd> StateSpace::getBounds() const
+{
+    return impl->getBounds();
+}
+
 bool StateSpace::addStateValidityChecker(std::shared_ptr<const StateValidityChecker> svc)
 {
     return impl->addStateValidityChecker(svc);
 }
 
-bool StateSpace::checkBounds(const Eigen::VectorXd &q)
+bool StateSpace::checkBounds(const Eigen::VectorXd &q) const
 {
     return impl->checkBounds(q);
 }
@@ -183,35 +193,39 @@ int StateSpace::Impl::addEuclidean(Eigen::VectorXd qmin, Eigen::VectorXd qmax, s
 std::pair<Eigen::VectorXd, Eigen::VectorXd> StateSpace::Impl::getBounds() const
 {
     Eigen::VectorXd qmin, qmax;
-    qmin.setConstant(_ss->getDimension(), -INFINITY);
-    qmax.setConstant(_ss->getDimension(), INFINITY);
-
-    int i = 0;
 
     for(auto ss : _ss_vec)
     {
+        int i = qmin.size();
+
         if(auto se3 = std::dynamic_pointer_cast<ompl::base::SE3StateSpace>(ss))
         {
-            qmin.segment<3>(i) = vectorToEigen(se3->getBounds().low);
-            qmax.segment<3>(i) = vectorToEigen(se3->getBounds().high);
+            qmin.conservativeResize(qmin.size() + 6);
+            qmax.conservativeResizeLike(qmin);
+            qmin.segment<6>(i) = vectorToEigen(se3->getBounds().low);
+            qmax.segment<6>(i) = vectorToEigen(se3->getBounds().high);
         }
         else if(auto rn = std::dynamic_pointer_cast<ompl::base::RealVectorStateSpace>(ss))
         {
+            qmin.conservativeResize(qmin.size() + rn->getDimension());
+            qmax.conservativeResizeLike(qmin);
             qmin.segment(i, rn->getDimension()) = vectorToEigen(rn->getBounds().low);
             qmax.segment(i, rn->getDimension()) = vectorToEigen(rn->getBounds().high);
         }
         else if(auto rcs = std::dynamic_pointer_cast<RobotConfigurationSpace>(ss))
         {
-            qmin.segment(i, rn->getDimension()) = rcs->model()->getJointLimits().first;
-            qmax.segment(i, rn->getDimension()) = rcs->model()->getJointLimits().second;
+            qmin.conservativeResize(qmin.size() + rcs->model()->getNv());
+            qmax.conservativeResizeLike(qmin);
+            qmin.segment(i, rcs->model()->getNv()) = rcs->model()->getJointLimits().first;
+            qmax.segment(i, rcs->model()->getNv()) = rcs->model()->getJointLimits().second;
         }
         else
         {
             throw std::runtime_error("unknown state space type");
         }
 
-        i += ss->getDimension();
         continue;
+
     }
 
     return {qmin, qmax};
@@ -401,6 +415,7 @@ int StateSpace::Impl::addOmplSpace(ompl::base::StateSpacePtr ss,
     // save non-euclidean space information
     BinaryVectorOp fsum, fdiff;
     int nv = 0;
+    int qn_i = _qneutral.size();
 
     if(type == Type::EUCLIDEAN)
     {
@@ -415,6 +430,9 @@ int StateSpace::Impl::addOmplSpace(ompl::base::StateSpacePtr ss,
         {
             return q1 - q2;
         };
+
+        _qneutral.conservativeResize(qn_i + nv);
+        _qneutral.segment(qn_i, nv).setZero();
     }
     else if(type == Type::ROBOT_CONFIGURATION)
     {
@@ -430,6 +448,9 @@ int StateSpace::Impl::addOmplSpace(ompl::base::StateSpacePtr ss,
         {
             return model->difference(q1, q2);
         };
+
+        _qneutral.conservativeResize(qn_i + model->getNq());
+        _qneutral.segment(qn_i, model->getNq()) = model->getNeutralQ();
     }
     else if(type == Type::SO2)
     {
@@ -600,6 +621,11 @@ Eigen::VectorXd StateSpace::Impl::interpolate(const Eigen::VectorXd &q1,
     return getValue(*si);
 }
 
+Eigen::VectorXd StateSpace::Impl::neutral() const
+{
+    return _qneutral;
+}
+
 void StateSpace::Impl::setSpaceInformation(ompl::base::SpaceInformation *si)
 {
     if(_constr)
@@ -755,13 +781,57 @@ double RobotConfigurationSpace::getMeasure() const
 
 void RobotConfigurationSpace::enforceBounds(ompl::base::State *state) const
 {
-    _model->enforceJointLimits(getQ(state));
+    auto& q = getQ(state);
+
+    auto [qmin, qmax] = _model->getJointLimits();
+
+    for(auto j : _model->getJoints())
+    {
+        if(j->getType() != urdf::Joint::REVOLUTE &&
+            j->getType() != urdf::Joint::PRISMATIC &&
+            j->getType() != urdf::Joint::CONTINUOUS)
+        {
+            continue;
+        }
+
+        int qidx = j->getQIndex();
+
+        int vidx = j->getVIndex();
+
+        q[qidx] = std::max(qmin[vidx], std::min(q[qidx], qmax[vidx]));
+
+    }
 }
 
 bool RobotConfigurationSpace::satisfiesBounds(const ompl::base::State *state) const
 {
-    bool ok = _model->checkJointLimits(getQ(state));
-    return ok;
+    const auto& q = getQ(state);
+
+    auto [qmin, qmax] = _model->getJointLimits();
+
+    for(auto j : _model->getJoints())
+    {
+        if(j->getType() != urdf::Joint::REVOLUTE &&
+            j->getType() != urdf::Joint::PRISMATIC &&
+            j->getType() != urdf::Joint::CONTINUOUS)
+        {
+            continue;
+        }
+
+        int qidx = j->getQIndex();
+
+        int vidx = j->getVIndex();
+
+        if(q[qidx] > qmax[vidx] ||
+            q[qidx] < qmin[vidx])
+        {
+            std::cout << j->getName() << " out of bounds: " << q[qidx] << "\n";
+            return false;
+        }
+
+    }
+
+    return true;
 }
 
 void RobotConfigurationSpace::copyState(ompl::base::State *destination, const ompl::base::State *source) const
@@ -887,8 +957,7 @@ void RobotConfigurationSpace::printState(const ompl::base::State *state, std::os
 
 ConstraintWrapper::ConstraintWrapper(int ambient_dim,
                                      ::Constraint::Ptr constraint):
-    ompl::base::Constraint(ambient_dim,
-                           constraint->constraintSize()),
+    ompl::base::Constraint(ambient_dim, constraint->constraintSize()),
     _c(constraint)
 {
 
@@ -935,6 +1004,7 @@ void ConstraintWrapper::jacobian(
 
     out = std::move(J);
 }
+
 
 double *RobotConfigurationSpace::getValueAddressAtIndex(ompl::base::State *state,
                                                         unsigned int index) const

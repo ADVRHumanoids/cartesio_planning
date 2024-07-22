@@ -78,9 +78,13 @@ public:
 
     Eigen::VectorXd difference(const Eigen::VectorXd& q1, const Eigen::VectorXd& q2) const;
 
+    Eigen::VectorXd neutral() const;
+
+    std::pair<Eigen::VectorXd, Eigen::VectorXd> getBounds() const;
+
     bool addStateValidityChecker(std::shared_ptr<const StateValidityChecker> svc);
 
-    bool checkBounds(const Eigen::VectorXd& q);
+    bool checkBounds(const Eigen::VectorXd& q) const;
 
     bool checkValid(const Eigen::VectorXd& q,
                     std::vector<std::string> * failed_checks = nullptr,

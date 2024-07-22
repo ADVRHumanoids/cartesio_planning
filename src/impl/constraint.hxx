@@ -25,8 +25,6 @@ public:
 private:
 
     ::XBot::Cartesian::Planning::Constraint::Ptr _c;
-
-
 };
 
 
@@ -36,16 +34,24 @@ class Constraint::Impl
 public:
 
     Impl(Constraint& api,
+         StateSpace::ConstPtr ss,
          YAML::Node options):
         _api(api),
+        _ss(ss),
         _options(options)
     {
-
+        _qneutral = _ss->neutral();
     }
 
     void bind(StateSpace::ConstPtr ss);
 
     void reset();
+
+    int constraintSize();
+
+    Eigen::VectorXd value(const Eigen::VectorXd& q) const;
+
+    Eigen::MatrixXd jacobian(const Eigen::VectorXd& q) const;
 
     Eigen::VectorXd sample() const;
 
@@ -63,6 +69,10 @@ private:
     std::shared_ptr<ompl::base::AtlasStateSpaceNE> _atlas;
 
     StateSpace::ConstPtr _ss;
+
+    std::vector<int> _eq_idx;
+
+    Eigen::VectorXd _qmin, _qmax, _qneutral;
 
 };
 

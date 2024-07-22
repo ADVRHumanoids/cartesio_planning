@@ -35,6 +35,17 @@ int main(int argc, char **argv)
 
     auto coll = std::make_shared<XBot::Collision::CollisionModel>(model);
 
+    auto wall = XBot::Collision::Shape::Box();
+    wall.size << 0.1, 5, 5;
+    Eigen::Affine3d w_T_wall;
+    w_T_wall.setIdentity();
+    w_T_wall.translation() << 0, 0, 2.5;
+
+    coll->addCollisionShape("wall",
+                            "world",
+                            wall,
+                            w_T_wall);
+
     space->addStateValidityChecker(
         std::make_shared<CollisionValidityChecker>(
             space, coll)
@@ -86,7 +97,7 @@ int main(int argc, char **argv)
     planner_cfg["Atlas"]["Alpha"] = npr.param("atlas_alpha", M_PI/16.);
     planner_cfg["Atlas"]["Exploration"] = npr.param("atlas_exploration", 0.8);
 
-    auto constr = std::make_shared<CartesianConstraint>(ci, planner_cfg);
+    auto constr = std::make_shared<CartesianConstraint>(space, ci, planner_cfg);
 
     constr->bind(space);
 
@@ -104,12 +115,15 @@ int main(int argc, char **argv)
         auto q = constr->sample();
 
         ROS_INFO("sample");
-        while(!space->checkValid(q))
+        std::vector<std::string> failed_checks;
+        while(!space->checkValid(q, &failed_checks))
         {
             ROS_INFO("sample valid");
             ros_api.run();
             q = constr->sample();
         }
+
+
 
         // constr->refine(q);
 
@@ -119,10 +133,16 @@ int main(int argc, char **argv)
         // }
 
         model->setJointPosition(q);
-
         model->update();
-
         ros_api.run();
+
+        std::string input;
+        std::cin >> input;
+        if(input == "reset")
+        {
+            ROS_INFO("reset");
+            constr->reset();
+        }
 
         // ros::Duration(0.1).sleep();
     }

@@ -7,6 +7,7 @@
 
 namespace XBot::Cartesian::Planning
 {
+
 class StateSpace;
 
 class Constraint : public std::enable_shared_from_this<Constraint>
@@ -16,17 +17,18 @@ public:
 
     CARTESIO_PLANNING_DECLARE_SMART_PTR(Constraint);
 
-    Constraint(YAML::Node options = YAML::Node());
+    Constraint(std::shared_ptr<const StateSpace> space,
+               YAML::Node options = YAML::Node());
 
     void bind(std::shared_ptr<const StateSpace> space);
 
     void reset();
 
-    virtual int constraintSize() const = 0;
+    int constraintSize() const;
 
-    virtual Eigen::VectorXd value(const Eigen::VectorXd& q) const = 0;
+    Eigen::VectorXd value(const Eigen::VectorXd& q) const;
 
-    virtual Eigen::MatrixXd jacobian(const Eigen::VectorXd& q) const = 0;
+    Eigen::MatrixXd jacobian(const Eigen::VectorXd& q) const;
 
     virtual bool project(Eigen::VectorXd& q) const;
 
@@ -46,10 +48,17 @@ protected:
 
     std::unique_ptr<Impl> impl;
 
+    virtual Eigen::VectorXd _value(const Eigen::VectorXd& q) const = 0;
+
+    virtual Eigen::MatrixXd _jacobian(const Eigen::VectorXd& q) const = 0;
+
+    virtual int _constraintSize() const = 0;
+
 public:
 
     Impl& getImpl() const;
 };
+
 }
 
 #endif // CONSTRAINT_H

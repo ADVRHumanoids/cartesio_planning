@@ -132,21 +132,21 @@ class SphereConstraint : public Constraint
     // Constraint interface
 public:
     using Constraint::Constraint;
-    int constraintSize() const override;
-    Eigen::VectorXd value(const Eigen::VectorXd &q) const override;
-    Eigen::MatrixXd jacobian(const Eigen::VectorXd &q) const override;
+    int _constraintSize() const override;
+    Eigen::VectorXd _value(const Eigen::VectorXd &q) const override;
+    Eigen::MatrixXd _jacobian(const Eigen::VectorXd &q) const override;
 };
 
-int SphereConstraint::constraintSize() const { return 1; }
+int SphereConstraint::_constraintSize() const { return 1; }
 
-Eigen::VectorXd SphereConstraint::value(const Eigen::VectorXd &q) const
+Eigen::VectorXd SphereConstraint::_value(const Eigen::VectorXd &q) const
 {
     Eigen::VectorXd ret(1);
     ret << q.squaredNorm() - 1;
     return ret;
 }
 
-Eigen::MatrixXd SphereConstraint::jacobian(const Eigen::VectorXd &q) const
+Eigen::MatrixXd SphereConstraint::_jacobian(const Eigen::VectorXd &q) const
 {
     return 2*q.transpose();
 }
@@ -159,7 +159,7 @@ TEST_F(TestBasic, checkConstraint)
                         2.*Eigen::Vector3d::Ones(),
                         "3dspace");
 
-    auto c = std::make_shared<SphereConstraint>();
+    auto c = std::make_shared<SphereConstraint>(space);
     c->bind(space);
 
     EXPECT_TRUE(c->checkJacobian(Eigen::Vector3d::Random()));
@@ -247,7 +247,7 @@ c4:
     ci->reset(0);
     EXPECT_TRUE(ci->update(0, 0));
 
-    auto constr = std::make_shared<CartesianConstraint>(ci);
+    auto constr = std::make_shared<CartesianConstraint>(space, ci);
     constr->bind(space);
 
     EXPECT_EQ(constr->constraintSize(), 6*4);
@@ -355,7 +355,7 @@ c4:
     ci->reset(0);
     EXPECT_TRUE(ci->update(0, 0));
 
-    auto constr = std::make_shared<CartesianConstraint>(ci);
+    auto constr = std::make_shared<CartesianConstraint>(space, ci);
     constr->bind(space);
 
     ProfilingData::instance().reset();
@@ -394,7 +394,7 @@ TEST_F(TestBasic, checkContactConstraint)
 
     Eigen::VectorXd qstart = model->getJointPosition(), qgoal;
 
-    auto constr = std::make_shared<ContactConstraint>(model, contacts);
+    auto constr = std::make_shared<ContactConstraint>(space, model, contacts);
     constr->bind(space);
 
     ASSERT_TRUE(constr->checkJacobian(model->getJointPosition()));

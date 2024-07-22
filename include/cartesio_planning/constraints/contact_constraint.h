@@ -13,19 +13,20 @@ public:
 
     CARTESIO_PLANNING_DECLARE_SMART_PTR(ContactConstraint)
 
-    ContactConstraint(XBot::ModelInterface::Ptr model,
+    ContactConstraint(std::shared_ptr<const StateSpace> space,
+                      XBot::ModelInterface::Ptr model,
                       std::map<std::string, std::vector<int>> contact_map,
                       YAML::Node options = YAML::Node());
 
-    int constraintSize() const override;
+    int _constraintSize() const override;
 
     void resetContactPose();
 
     void update(const Eigen::VectorXd &q) const;
 
-    Eigen::VectorXd value(const Eigen::VectorXd &q) const override;
+    Eigen::VectorXd _value(const Eigen::VectorXd &q) const override;
 
-    Eigen::MatrixXd jacobian(const Eigen::VectorXd &q) const override;
+    Eigen::MatrixXd _jacobian(const Eigen::VectorXd &q) const override;
 
     bool refine(Eigen::VectorXd& q) const override;
 
@@ -40,7 +41,7 @@ private:
 
     std::map<std::string, Contact> _contact_map;
 
-    mutable Eigen::VectorXd _value;
+    mutable Eigen::VectorXd _val;
 
     mutable Eigen::MatrixXd _J;
 

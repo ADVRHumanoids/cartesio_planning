@@ -268,6 +268,7 @@ bool ompl::base::AtlasChartNE::psi(const Eigen::Ref<const Eigen::VectorXd> &u, E
         return true;
     }
 
+    std::cout << "psi failed " << std::sqrt(norm) << "\n";
     return false;
 }
 

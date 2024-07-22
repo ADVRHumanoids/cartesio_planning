@@ -6,10 +6,11 @@
 using namespace XBot::Cartesian::Planning;
 
 
-ContactConstraint::ContactConstraint(XBot::ModelInterface::Ptr model,
+ContactConstraint::ContactConstraint(std::shared_ptr<const StateSpace> space,
+                                     XBot::ModelInterface::Ptr model,
                                      std::map<std::string, std::vector<int> > contact_map,
                                      YAML::Node options):
-    Constraint(options),
+    Constraint(space, options),
     _model(model)
 {
     int csize = 0;
@@ -33,14 +34,14 @@ ContactConstraint::ContactConstraint(XBot::ModelInterface::Ptr model,
         _contact_map[cname].T = model->getPose(cname);
     }
 
-    _value.setZero(csize);
+    _val.setZero(csize);
 
     _J.setZero(csize, _model->getNv());
 }
 
-int ContactConstraint::constraintSize() const
+int ContactConstraint::_constraintSize() const
 {
-    return _value.size();
+    return _val.size();
 }
 
 void ContactConstraint::resetContactPose()
@@ -65,7 +66,7 @@ void ContactConstraint::update(const Eigen::VectorXd &q) const
     _old_q = q;
 }
 
-Eigen::VectorXd ContactConstraint::value(const Eigen::VectorXd &q) const
+Eigen::VectorXd ContactConstraint::_value(const Eigen::VectorXd &q) const
 {
     update(q);
 
@@ -81,14 +82,14 @@ Eigen::VectorXd ContactConstraint::value(const Eigen::VectorXd &q) const
 
         for(auto i : c.indices)
         {
-            _value[k++] = err[i];
+            _val[k++] = err[i];
         }
     }
 
-    return _value;
+    return _val;
 }
 
-Eigen::MatrixXd ContactConstraint::jacobian(const Eigen::VectorXd &q) const
+Eigen::MatrixXd ContactConstraint::_jacobian(const Eigen::VectorXd &q) const
 {
     update(q);
 

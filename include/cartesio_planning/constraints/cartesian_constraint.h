@@ -15,16 +15,17 @@ public:
 
     CARTESIO_PLANNING_DECLARE_SMART_PTR(CartesianConstraint)
 
-    CartesianConstraint(CartesianInterfaceImpl::Ptr ci,
+    CartesianConstraint(std::shared_ptr<const StateSpace> space,
+                        CartesianInterfaceImpl::Ptr ci,
                         YAML::Node options = YAML::Node());
 
-    int constraintSize() const override;
+    int _constraintSize() const override;
 
     void update(const Eigen::VectorXd &q) const;
 
-    Eigen::VectorXd value(const Eigen::VectorXd &q) const override;
+    Eigen::VectorXd _value(const Eigen::VectorXd &q) const override;
 
-    Eigen::MatrixXd jacobian(const Eigen::VectorXd &q) const override;
+    Eigen::MatrixXd _jacobian(const Eigen::VectorXd &q) const override;
 
     bool refine(Eigen::VectorXd& q) const override;
 

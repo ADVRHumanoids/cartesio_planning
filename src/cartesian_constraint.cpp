@@ -3,9 +3,10 @@
 
 using namespace XBot::Cartesian::Planning;
 
-CartesianConstraint::CartesianConstraint(CartesianInterfaceImpl::Ptr ci,
+CartesianConstraint::CartesianConstraint(std::shared_ptr<const StateSpace> space,
+                                         CartesianInterfaceImpl::Ptr ci,
                                          YAML::Node options):
-    Constraint(options),
+    Constraint(space, options),
     _ci(ci)
 {
     // update task error and jac
@@ -30,7 +31,7 @@ CartesianConstraint::CartesianConstraint(CartesianInterfaceImpl::Ptr ci,
 
 }
 
-int CartesianConstraint::constraintSize() const
+int CartesianConstraint::_constraintSize() const
 {
     return _nc;
 }
@@ -50,7 +51,7 @@ void CartesianConstraint::update(const Eigen::VectorXd &q) const
 
 }
 
-Eigen::VectorXd CartesianConstraint::value(const Eigen::VectorXd &q) const
+Eigen::VectorXd CartesianConstraint::_value(const Eigen::VectorXd &q) const
 {
     update(q);
 
@@ -79,7 +80,7 @@ Eigen::VectorXd CartesianConstraint::value(const Eigen::VectorXd &q) const
     return -ret;
 }
 
-Eigen::MatrixXd CartesianConstraint::jacobian(
+Eigen::MatrixXd CartesianConstraint::_jacobian(
     const Eigen::VectorXd &q) const
 {
     update(q);
