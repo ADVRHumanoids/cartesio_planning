@@ -96,8 +96,8 @@ public:
      * update() for collisions, either between robot links or with the environment.
      * @return true if collisions were found
      */
-    bool checkCollisions() const;   
-    bool checkSelfCollisions() const;
+    bool checkCollisions(bool verbose=false) const;   
+    bool checkSelfCollisions(bool verbose=false) const;
 
     double computeCollisionDistance() const;
     double computeSelfCollisionDistance() const;

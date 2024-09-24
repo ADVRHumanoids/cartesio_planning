@@ -469,27 +469,51 @@ void PlanningSceneWrapper::update()
     _monitor->triggerSceneUpdateEvent(planning_scene_monitor::PlanningSceneMonitor::UPDATE_STATE);
 }
 
-bool PlanningSceneWrapper::checkCollisions() const
+bool PlanningSceneWrapper::checkCollisions(bool verbose) const
 {
     MonitorLockguardRead lock_r(_monitor);
 
     collision_detection::CollisionRequest collision_request;
+    if (verbose) {
+        collision_request.verbose = true;
+        collision_request.contacts = true;
+    }
 
     collision_detection::CollisionResult collision_result;  
     
     _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
 
+    if (verbose && collision_result.collision) {
+        std::cout << "Collision detected " << std::boolalpha << collision_result.collision << std::endl;
+        for (const auto& it: collision_result.contacts) {
+            std::cout << "\tcolliding pair: " << it.first.first << " " << it.first.second << std::endl;
+        }
+        collision_result.print();
+    }
+
     return collision_result.collision;
 }
 
-bool PlanningSceneWrapper::checkSelfCollisions() const
+bool PlanningSceneWrapper::checkSelfCollisions(bool verbose) const
 {
     MonitorLockguardRead lock_r(_monitor);
 
     collision_detection::CollisionRequest collision_request;
+    if (verbose) {
+        collision_request.verbose = true;
+        collision_request.contacts = true;
+    }
     collision_detection::CollisionResult collision_result;
 
     _monitor->getPlanningScene()->checkSelfCollision(collision_request, collision_result);
+
+    if (verbose && collision_result.collision) {
+        std::cout << "Self collision detected" << std::endl;
+        for (const auto& it: collision_result.contacts) {
+            std::cout << "\t self colliding pair: " << it.first.first << " " << it.first.second << std::endl;
+        }
+        collision_result.print();
+    }
 
     return collision_result.collision;
 }
