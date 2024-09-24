@@ -229,12 +229,12 @@ bool PlanningSceneWrapper::updateOctomap()
 
         // filter PointCloud to ignore nearest points (assuming they belong to the robot)
         // TODO: add robot_body_filtering somehow
-        pcl::CropBox<pcl::PointXYZ> boxFilter;
-        boxFilter.setMin(Eigen::Vector4f(-0.7, -0.4, -1.0, 1));
-        boxFilter.setMax(Eigen::Vector4f(0.7, 0.4, 2.0, 1));
-        boxFilter.setNegative(true);
-        boxFilter.setInputCloud(pc);
-        boxFilter.filter(*pc);
+        // pcl::CropBox<pcl::PointXYZ> boxFilter;
+        // boxFilter.setMin(Eigen::Vector4f(-0.7, -0.4, -1.0, 1));
+        // boxFilter.setMax(Eigen::Vector4f(0.7, 0.4, 2.0, 1));
+        // boxFilter.setNegative(true);
+        // boxFilter.setInputCloud(pc);
+        // boxFilter.filter(*pc);
 
         octree.setInputCloud(pc);
         octree.addPointsFromInputCloud();
