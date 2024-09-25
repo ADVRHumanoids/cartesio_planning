@@ -57,7 +57,7 @@ public:
     /**
      * @brief start server for octomap compatibility
      */
-    void startOctomapServer(std::vector<std::string> input_topics);
+    void startOctomapServer(std::vector<std::string> input_topics, const double& resolution, const std::string& base_link);
 
     /**
      * @brief update octomap from subscribed point clouds
@@ -237,6 +237,9 @@ private:
     std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> _point_clouds;
 
     srdf_advr::Model _srdf;
+
+    double _octomap_resolution;
+    std::string _octomap_base_link;
 
 };
 

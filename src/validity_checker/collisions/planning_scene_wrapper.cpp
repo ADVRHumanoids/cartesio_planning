@@ -155,7 +155,8 @@ void PlanningSceneWrapper::startGetPlanningSceneServer()
 
 }
 
-void PlanningSceneWrapper::startOctomapServer(std::vector<std::string> input_topics)
+void PlanningSceneWrapper::startOctomapServer(std::vector<std::string> input_topics, 
+    const double &resolution, const std::string& base_link)
 {
     ros::NodeHandle nh("~");
     nh.setCallbackQueue(&_queue);
@@ -179,6 +180,9 @@ void PlanningSceneWrapper::startOctomapServer(std::vector<std::string> input_top
 
         i++;
     }
+
+    _octomap_resolution = resolution;
+    _octomap_base_link = base_link;
 
     _add_octomap_srv = nh.advertiseService("octomap_service", &PlanningSceneWrapper::octomap_service, this);
 }
@@ -214,10 +218,8 @@ bool PlanningSceneWrapper::updateOctomap()
 {
     std::lock_guard<std::mutex> lg(_pc_mtx);
 
-    double resolution = 0.05;
-
-    pcl::octree::OctreePointCloudVoxelCentroid<pcl::PointXYZ> octree(resolution);
-    octomap::OcTree final_octree(resolution);
+    pcl::octree::OctreePointCloudVoxelCentroid<pcl::PointXYZ> octree(_octomap_resolution);
+    octomap::OcTree final_octree(_octomap_resolution);
     std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > voxel_centers;
     
     for(auto pc : _point_clouds)
@@ -252,7 +254,7 @@ bool PlanningSceneWrapper::updateOctomap()
     octomap_msgs::binaryMapToMsg(final_octree, octomap);
 
     octomap_msgs::OctomapWithPose octomap_with_pose;
-    octomap_with_pose.header.frame_id = "base_link";
+    octomap_with_pose.header.frame_id = _octomap_base_link;
     octomap_with_pose.header.stamp = ros::Time::now();
     octomap_with_pose.octomap = octomap;
     moveit_msgs::PlanningScene ps;
