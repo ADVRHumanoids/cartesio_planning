@@ -128,7 +128,7 @@ public:
      * @brief applyPlanningScene
      * @param scene
      */
-    void applyPlanningScene(const moveit_msgs::PlanningScene& scene);
+    bool applyPlanningScene(const moveit_msgs::PlanningScene& scene);
 
     /**
      * @brief addCollisionObject

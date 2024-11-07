@@ -129,7 +129,7 @@ void PlanningSceneWrapper::pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Con
 
 bool PlanningSceneWrapper::apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request& req, moveit_msgs::ApplyPlanningScene::Response& res)
 {
-    applyPlanningScene(req.scene);
+    res.success = applyPlanningScene(req.scene);
     return true;
 }
 
@@ -375,7 +375,6 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
             for (double i = -0.6; i < 3.0; i += resolution)
             {
                 initial_octree->updateNode(vc.x, vc.y, i, true, false);
-                std::cout << "diocane" << std::endl;
             }
             saved_pts.push_back(pt);
         }
@@ -595,10 +594,10 @@ void XBot::Cartesian::Planning::PlanningSceneWrapper::setLinkPadding(std::map<st
 }
 
 
-void PlanningSceneWrapper::applyPlanningScene(const moveit_msgs::PlanningScene & scene)
+bool PlanningSceneWrapper::applyPlanningScene(const moveit_msgs::PlanningScene & scene)
 {
     _monitor->updateFrameTransforms();
-    _monitor->newPlanningSceneMessage(scene);
+    return _monitor->newPlanningSceneMessage(scene);
 }
 
 bool PlanningSceneWrapper::addCollisionObject(moveit_msgs::CollisionObject co,
