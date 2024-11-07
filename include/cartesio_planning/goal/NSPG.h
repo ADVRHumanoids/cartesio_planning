@@ -50,6 +50,8 @@ namespace XBot { namespace Cartesian { namespace Planning {
         
         RobotViz::Ptr _rviz;
 
+        std::map<std::string, int> _fail_map;
+
         std::chrono::time_point<std::chrono::high_resolution_clock> _time;
         
     };
