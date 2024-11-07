@@ -53,12 +53,35 @@ bool NSPG::sample ( double timeout )
     _time = std::chrono::high_resolution_clock::now();
 
     bool solved = _ik_solver->solve();
+
+    if(solved)
+        _rviz->publishMarkers(ros::Time::now(), {});
+
+    std::vector<std::string> failed_predicate;
     
-    while(!solved || !_vc_context.vc_aggregate.checkAll())
+    while(!solved || !_vc_context.vc_aggregate.checkAll(&failed_predicate))
     {
+        for (auto string : failed_predicate)
+        {
+            auto it = _fail_map.find(string);
+            if (it != _fail_map.end())
+            {
+                it->second += 1;
+            }
+            else
+            {
+                _fail_map[string] = 1;
+            }
+        }
         if(T >= timeout)
         {
             std::cout << "timeout" <<std::endl;
+            std::cout << "NSGP FAILS" << std::endl;
+            for (auto pair : _fail_map)
+            {
+                std::cout << pair.first << ": " << pair.second << std::endl;
+            }
+//            std::this_thread::sleep_for(std::chrono::seconds(2));
             return false;
         }
         
@@ -67,7 +90,7 @@ bool NSPG::sample ( double timeout )
         std::vector<XBot::ModelChain> colliding_chains {};
         
         // Generate a random velocity vector for colliding chains' joints only every n iterations
-        if (iter % 50 == 0)
+        if (iter % 100 == 0)
         {
             _ik_solver->getModel()->eigenToMap(x, joint_map);
             random_map = generateRandomVelocities(colliding_chains);  
@@ -99,7 +122,13 @@ bool NSPG::sample ( double timeout )
 
         _time = toc;
     }
-    
+    std::cout << "timeout" <<std::endl;
+    std::cout << "NSGP SUCCESS" << std::endl;
+    for (auto pair : _fail_map)
+    {
+        std::cout << pair.first << ": " << pair.second << std::endl;
+    }
+//    std::this_thread::sleep_for(std::chrono::seconds(2));
     return true;
 }
 
@@ -113,15 +142,15 @@ XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> 
     XBot::JointNameMap random_map, chain_map;
 
     random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom() * 50));
-    random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom() * 100));
+    random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom() * 50));
     random_map.insert(std::make_pair("VIRTUALJOINT_6", generateRandom() * 10));
 
-    random_map.insert(std::make_pair("J1_E", generateRandom() * 50));
-    random_map.insert(std::make_pair("J2_E", generateRandom() * 50));
-    random_map.insert(std::make_pair("J3_E", generateRandom() * 50));
-    random_map.insert(std::make_pair("J4_E", generateRandom() * 50));
-    random_map.insert(std::make_pair("J5_E", generateRandom() * 50));
-    random_map.insert(std::make_pair("J6_E", generateRandom() * 50));
+    random_map.insert(std::make_pair("J1_E", generateRandom() * 10));
+    random_map.insert(std::make_pair("J2_E", generateRandom() * 10));
+    random_map.insert(std::make_pair("J3_E", generateRandom() * 10));
+    random_map.insert(std::make_pair("J4_E", generateRandom() * 10));
+    random_map.insert(std::make_pair("J5_E", generateRandom() * 10));
+    random_map.insert(std::make_pair("J6_E", generateRandom() * 10));
 
     return random_map;
 }
