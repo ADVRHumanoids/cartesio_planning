@@ -98,6 +98,7 @@ PYBIND11_MODULE(validity_check, m)
         .def("addSphere", &PlanningSceneWrapper::addSphere, py::arg("id"), py::arg("radius"), py::arg("pose"), py::arg("frame_id") = "world", py::arg("attach_to_link") = "", py::arg("touch_links") = std::vector<std::string>())
         .def("addCylinder", &PlanningSceneWrapper::addCylinder, py::arg("id"), py::arg("radius"), py::arg("height"), py::arg("pose"), py::arg("frame_id") = "world", py::arg("attach_to_link") = "", py::arg("touch_links") = std::vector<std::string>())
         .def("removeCollisionObject", remove_collision_object)
+        .def("clearPlanningScene", &PlanningSceneWrapper::clearPlanningScene)
         .def("update", &PlanningSceneWrapper::update)
         .def("getCollidingLinks", &PlanningSceneWrapper::getCollidingLinks);
 

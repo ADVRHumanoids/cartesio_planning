@@ -203,6 +203,11 @@ public:
      */
     bool getPlanningScene(moveit_msgs::GetPlanningScene::Request& req,
                           moveit_msgs::GetPlanningScene::Response& res);
+
+    /**
+     * @brief clearPlanningScene
+     */
+    void clearPlanningScene();
     
     mutable collision_detection::AllowedCollisionMatrix acm;
 

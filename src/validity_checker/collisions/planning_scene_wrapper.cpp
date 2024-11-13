@@ -726,6 +726,23 @@ bool PlanningSceneWrapper::getPlanningScene(moveit_msgs::GetPlanningScene::Reque
 
 }
 
+void PlanningSceneWrapper::clearPlanningScene()
+{
+
+    moveit_msgs::GetPlanningSceneRequest ps_req;
+    moveit_msgs::GetPlanningSceneResponse ps_res;
+    ps_req.components.components = ~0;
+    getPlanningScene(ps_req, ps_res);
+
+    for(auto& co : ps_res.scene.world.collision_objects)
+    {
+        std::cout << "removing object " << std::quoted(co.id) << "\n";
+        co.operation = moveit_msgs::CollisionObject::REMOVE;
+    }
+
+    applyPlanningScene(ps_res.scene);
+}
+
 void PlanningSceneWrapper::computeChainToLinks()
 {
     const auto& urdf = _model->getUrdf();
