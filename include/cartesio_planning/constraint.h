@@ -32,11 +32,15 @@ public:
 
     virtual bool project(Eigen::VectorXd& q) const;
 
+    void setRefineTarget(const Eigen::VectorXd& q0);
+
     virtual bool refine(Eigen::VectorXd& q) const;
 
     bool checkJacobian(const Eigen::VectorXd& q) const;
 
     Eigen::VectorXd sample() const;
+
+    Eigen::VectorXd sampleGaussian(const Eigen::VectorXd& q0, double stddev) const;
 
     virtual ~Constraint();
 

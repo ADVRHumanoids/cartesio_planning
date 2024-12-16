@@ -21,7 +21,7 @@ if(${pybind11_FOUND} AND ${COMPILE_PYTHON_BINDINGS})
 
     pybind11_add_module(pycartesio_planning pycartesio_planning.cpp)
 
-    target_link_libraries(pycartesio_planning PUBLIC cartesio_planning)
+    target_link_libraries(pycartesio_planning PUBLIC cartesio_planning cartesio_planning_ros)
 
     install(TARGETS pycartesio_planning
         DESTINATION ${PYTHON_SITE}/cartesio_planning)

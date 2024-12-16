@@ -70,6 +70,8 @@ public:
 
     Eigen::VectorXd interpolate(const Eigen::VectorXd& q1, const Eigen::VectorXd& q2, double tau);
 
+    bool project(Eigen::VectorXd &q) const;
+
     Eigen::VectorXd neutral() const;
 
     void setSpaceInformation(ompl::base::SpaceInformation * si);

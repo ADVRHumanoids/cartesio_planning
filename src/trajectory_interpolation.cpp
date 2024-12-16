@@ -67,6 +67,8 @@ trajectory_msgs::JointTrajectory simpleInterpolation(StateSpace& ss,
             pt.time_from_start.fromSec(segment_start_time + node_time);
 
             trj.points.push_back(std::move(pt));
+
+            // std::cerr << s+1 << "/" << wp.cols()-1 << ", " << i+1 << "/" << n_nodes+1 << "\n";
         }
     }
 

@@ -1,0 +1,41 @@
+
+stack:
+ - [coll_avoid, postural]
+
+constraints: [c1, c2, c3, c4, ee]
+
+c1:
+  type: Cartesian
+  distal_link: contact_1
+  indices: [0, 1, 2]
+
+c2:
+  type: Cartesian
+  distal_link: contact_2
+  indices: [0, 1, 2]
+
+c3:
+  type: Cartesian
+  distal_link: contact_3
+  indices: [0, 1, 2]
+
+c4:
+  type: Cartesian
+  distal_link: contact_4
+  indices: [0, 1, 2]
+
+ee:
+  type: Cartesian
+  distal_link: dagana_1_base
+  indices: [0, 1, 2, 3, 4]
+
+coll_avoid:
+  type: CollisionTask
+  lib_name: libcartesio_collision_support.so
+  bound_scaling: 0.9
+  distance_threshold: 0.05
+  max_pairs: 30
+
+postural:
+  type: Postural
+  weight: 0.001

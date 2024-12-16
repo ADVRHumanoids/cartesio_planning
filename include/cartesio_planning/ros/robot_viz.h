@@ -36,6 +36,10 @@ public:
              ros::NodeHandle nh = ros::NodeHandle("~"),
              std::optional<color> rgba = std::nullopt);
 
+    RobotViz(ModelInterface::ConstPtr model,
+             std::string topic_name,
+             std::optional<color> rgba = std::nullopt);
+
     /**
      * @brief setPrefix
      * @param prefix added to header frame id of the marker (eg "planner/")

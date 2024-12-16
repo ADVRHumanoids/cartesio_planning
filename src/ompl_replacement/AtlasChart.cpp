@@ -171,7 +171,7 @@ ompl::base::AtlasChartNE::AtlasChartNE(const AtlasStateSpaceNE *atlas, const Atl
     , radius_(atlas->getRho_s())
     , atlas_(atlas)
 {
-    std::cout << "created chart \n";
+    // std::cout << "created chart \n";
 }
 
 ompl::base::AtlasChartNE::~AtlasChartNE()

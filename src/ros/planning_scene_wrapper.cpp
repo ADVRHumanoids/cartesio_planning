@@ -320,6 +320,11 @@ std::vector<std::string> PlanningSceneWrapper::getCollidingLinks() const
     return impl->getCollidingLinks();
 }
 
+bool PlanningSceneWrapper::addBox(std::string id, const Eigen::Vector3d &size, const Eigen::Affine3d &T, std::string frame_id, std::string attach_to_link, std::vector<std::string> touch_links)
+{
+    return impl->addBox(id, size, T, frame_id, attach_to_link, touch_links);
+}
+
 PlanningSceneWrapper::~PlanningSceneWrapper()
 {
 

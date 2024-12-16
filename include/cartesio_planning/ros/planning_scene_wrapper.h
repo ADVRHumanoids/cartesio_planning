@@ -203,6 +203,8 @@ class PlanningSceneChecker : public StateValidityChecker
 
 public:
 
+    CARTESIO_PLANNING_DECLARE_SMART_PTR(PlanningSceneChecker);
+
     PlanningSceneChecker(PlanningSceneWrapper::Ptr ps,
                          StateSpace::ConstPtr space,
                          std::string name = "planning_scene",
