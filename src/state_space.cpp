@@ -49,6 +49,11 @@ Eigen::VectorXd StateSpace::neutral() const
     return impl->neutral();
 }
 
+bool StateSpace::project(Eigen::VectorXd &q) const
+{
+    return impl->project(q);
+}
+
 std::pair<Eigen::VectorXd, Eigen::VectorXd> StateSpace::getBounds() const
 {
     return impl->getBounds();
@@ -609,16 +614,41 @@ Eigen::VectorXd StateSpace::Impl::interpolate(const Eigen::VectorXd &q1,
                                               const Eigen::VectorXd &q2,
                                               double tau)
 {
-    auto ss = getStateSpace();
-
-    ompl::base::ScopedState<> s1(ss), s2(ss), si(ss);
+    ompl::base::ScopedState<> s1(_ss), s2(_ss), si(_ss);
 
     setValue(*s1, q1);
     setValue(*s2, q2);
 
-    ss->interpolate(s1.get(), s2.get(), tau, si.get());
+    // interpolate in ambient space
+    _ss->interpolate(s1.get(), s2.get(), tau, si.get());
 
-    return getValue(*si);
+    auto qa = getValue(*si);
+
+    // project
+    if(!project(qa))
+    {
+        throw std::runtime_error("projection error during interpolate");
+    }
+
+    return qa;
+
+    // auto ss = getStateSpace();
+
+    // ompl::base::ScopedState<> s1(ss), s2(ss), si(ss);
+
+    // setValue(*s1, q1);
+    // setValue(*s2, q2);
+
+    // ss->interpolate(s1.get(), s2.get(), tau, si.get());
+
+    // return getValue(*si);
+}
+
+bool StateSpace::Impl::project(Eigen::VectorXd &q) const
+{
+    auto c = getConstraint();
+
+    return c ? c->project(q) : true;
 }
 
 Eigen::VectorXd StateSpace::Impl::neutral() const

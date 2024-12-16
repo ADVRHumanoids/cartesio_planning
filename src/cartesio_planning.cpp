@@ -87,7 +87,8 @@ bool Planner::Impl::solve(Eigen::VectorXd qstart,
         throw std::runtime_error("goal state is out of bounds");
     }
 
-    if(!_ss->checkValid(qgoal, nullptr))
+    std::vector<std::string> failed_checks;
+    if(!_ss->checkValid(qgoal, &failed_checks))
     {
         throw std::runtime_error("goal state is invalid");
     }
@@ -196,7 +197,12 @@ ompl::base::PlannerPtr Planner::Impl::make_planner(std::string planner_type)
         {"RRTConnect", std::make_shared<ompl::geometric::RRTConnect, SpaceInfoPtr>},
         {"RRTstar", std::make_shared<ompl::geometric::RRTstar, SpaceInfoPtr>},
         {"PRM", std::make_shared<ompl::geometric::PRM, SpaceInfoPtr>},
-        {"PRMstar", std::make_shared<ompl::geometric::PRMstar, SpaceInfoPtr>}
+        {"PRMstar", std::make_shared<ompl::geometric::PRMstar, SpaceInfoPtr>},
+        {"InformedRRTstar", std::make_shared<ompl::geometric::InformedRRTstar, SpaceInfoPtr>},
+        {"BiTRRT", std::make_shared<ompl::geometric::BiTRRT, SpaceInfoPtr>},
+        {"LazyPRM", std::make_shared<ompl::geometric::LazyPRM, SpaceInfoPtr>},
+        {"LazyPRMstar", std::make_shared<ompl::geometric::LazyPRMstar, SpaceInfoPtr>},
+        {"FMT", std::make_shared<ompl::geometric::FMT, SpaceInfoPtr>}
     };
 
     std::map<std::string, std::function<void()>> config_functions = {

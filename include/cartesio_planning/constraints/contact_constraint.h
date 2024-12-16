@@ -22,6 +22,9 @@ public:
 
     void resetContactPose();
 
+    void setContactPose(std::string name,
+                        Eigen::Affine3d T);
+
     void update(const Eigen::VectorXd &q) const;
 
     Eigen::VectorXd _value(const Eigen::VectorXd &q) const override;

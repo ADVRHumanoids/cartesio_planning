@@ -182,7 +182,8 @@ void ompl::base::AtlasStateSampler::sampleGaussian(State *state, const State *me
     {
         for (std::size_t i = 0; i < k; i++)
             rand[i] = ru[i] + rng_.gaussian(0, stdDev);
-    } while (--tries > 0 && !c->psi(rand, *astate));  // Try again if we can't project.
+    }
+    while (tries > 0 && (!c->psi(rand, *astate) || !atlas_->satisfiesBounds(astate)));
 
     if (tries == 0)
     {
@@ -190,8 +191,6 @@ void ompl::base::AtlasStateSampler::sampleGaussian(State *state, const State *me
                   "Took too long; returning initial point.");
         atlas_->copyState(state, mean);
     }
-
-    space_->enforceBounds(state);
 
     c->psiInverse(*astate, ru);
     if (!c->inPolytope(ru))

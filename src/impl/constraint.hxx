@@ -41,6 +41,7 @@ public:
         _options(options)
     {
         _qneutral = _ss->neutral();
+        _qrefinetgt = _qneutral;
     }
 
     void bind(StateSpace::ConstPtr ss);
@@ -49,11 +50,17 @@ public:
 
     int constraintSize();
 
+    void setRefineTarget(const Eigen::VectorXd& q0);
+
+    const Eigen::VectorXd& getRefineTarget() const;
+
     Eigen::VectorXd value(const Eigen::VectorXd& q) const;
 
     Eigen::MatrixXd jacobian(const Eigen::VectorXd& q) const;
 
     Eigen::VectorXd sample() const;
+
+    Eigen::VectorXd sampleGaussian(const Eigen::VectorXd& q0, double stddev) const;
 
     std::shared_ptr<ompl::base::AtlasStateSpaceNE> getAtlas() const;
 
@@ -72,7 +79,7 @@ private:
 
     std::vector<int> _eq_idx;
 
-    Eigen::VectorXd _qmin, _qmax, _qneutral;
+    Eigen::VectorXd _qmin, _qmax, _qneutral, _qrefinetgt;
 
 };
 

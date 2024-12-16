@@ -52,6 +52,11 @@ void ContactConstraint::resetContactPose()
     }
 }
 
+void ContactConstraint::setContactPose(std::string name, Eigen::Affine3d T)
+{
+    _contact_map.at(name).T = T;
+}
+
 void ContactConstraint::update(const Eigen::VectorXd &q) const
 {
     if(_old_q.size() > 0 && q.cwiseEqual(_old_q).all())
@@ -78,7 +83,7 @@ Eigen::VectorXd ContactConstraint::_value(const Eigen::VectorXd &q) const
 
         auto err = XBot::Utils::computePoseError(c.T, T);
 
-        Utils::rotate(err, T.linear().transpose());
+        // Utils::rotate(err, T.linear().transpose());
 
         for(auto i : c.indices)
         {
@@ -103,7 +108,9 @@ Eigen::MatrixXd ContactConstraint::_jacobian(const Eigen::VectorXd &q) const
 
         Eigen::MatrixXd Jrot(J.rows(), J.cols());
 
-        Utils::rotate(J, T.linear().transpose(), Jrot);
+        // Utils::rotate(J, T.linear().transpose(), Jrot);
+
+        Jrot = J;
 
         for(auto i : c.indices)
         {
@@ -116,5 +123,5 @@ Eigen::MatrixXd ContactConstraint::_jacobian(const Eigen::VectorXd &q) const
 
 bool ContactConstraint::refine(Eigen::VectorXd &q) const
 {
-    return false;
+    return Constraint::refine(q);
 }

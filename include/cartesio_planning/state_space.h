@@ -82,6 +82,8 @@ public:
 
     Eigen::VectorXd neutral() const;
 
+    bool project(Eigen::VectorXd &q) const;
+
     std::pair<Eigen::VectorXd, Eigen::VectorXd> getBounds() const;
 
     bool addStateValidityChecker(std::shared_ptr<const StateValidityChecker> svc);
