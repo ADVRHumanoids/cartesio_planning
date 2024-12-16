@@ -28,7 +28,7 @@ add_definitions(-DCP_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
 set(TestLibs
     ${GTEST_BOTH_LIBRARIES}
     pthread
-    cartesio_planning)
+    cartesio_planning_library)
 
 # function to ease adding tests with correct options
 function(compile_test_executable name)

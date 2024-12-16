@@ -1,6 +1,8 @@
 #ifndef STATE_SPACE_H
 #define STATE_SPACE_H
 
+#include <iostream>
+
 #include <cartesio_planning/common/types.h>
 
 #include <xbot2_interface/xbotinterface2.h>

@@ -141,7 +141,7 @@ PYBIND11_MODULE(pycartesio_planning, m)
 
               for(int i = 0; i < time.size(); i++)
               {
-                  time[i] = trj.points[i].time_from_start.toSec();
+                  time[i] = trj.points[i].time_from_start;
                   pos.col(i) = Eigen::VectorXd::Map(trj.points[i].positions.data(), ss.getNq());
                   vel.col(i) = Eigen::VectorXd::Map(trj.points[i].velocities.data(), ss.getNv());
                   acc.col(i) = Eigen::VectorXd::Map(trj.points[i].accelerations.data(), ss.getNv());

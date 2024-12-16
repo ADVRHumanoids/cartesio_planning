@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(cartesio_planning VERSION 1.0.0)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -14,7 +14,7 @@ find_package(cartesian_interface REQUIRED)
 
 find_package(ompl REQUIRED)
 
-add_library(cartesio_planning SHARED
+add_library(cartesio_planning_library SHARED
     include/cartesio_planning/state_space.h
     include/cartesio_planning/cartesio_planning.h
     include/cartesio_planning/common/types.h
@@ -42,7 +42,7 @@ add_library(cartesio_planning SHARED
     src/contact_constraint.cpp
 )
 
-target_include_directories(cartesio_planning
+target_include_directories(cartesio_planning_library
     PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
@@ -51,19 +51,21 @@ target_include_directories(cartesio_planning
     ${OMPL_INCLUDE_DIRS}
 )
 
-target_link_libraries(cartesio_planning
+target_link_libraries(cartesio_planning_library
     PUBLIC
     cartesian_interface::CartesianInterface
     PRIVATE
     ${OMPL_LIBRARIES}
 )
 
-install(TARGETS cartesio_planning
+set_target_properties(cartesio_planning_library PROPERTIES OUTPUT_NAME "cartesio_planning")
+
+install(TARGETS cartesio_planning_library
     EXPORT ${PROJECT_NAME}Targets
     DESTINATION lib
 )
 
-add_subdirectory(src/ros)
+add_subdirectory(src/ros2)
 
 export_project()
 

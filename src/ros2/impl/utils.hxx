@@ -21,12 +21,12 @@ public:
     MonitorLockguardWrite(planning_scene_monitor::PlanningSceneMonitorPtr monitor)
     {
         _monitor = monitor;
-        _monitor->lockSceneWrite();
+        // _monitor->lockSceneWrite();
     }
 
     ~MonitorLockguardWrite()
     {
-        _monitor->unlockSceneWrite();
+        // _monitor->unlockSceneWrite();
     }
 
 private:
@@ -49,12 +49,12 @@ public:
     MonitorLockguardRead(planning_scene_monitor::PlanningSceneMonitorPtr monitor)
     {
         _monitor = monitor;
-        _monitor->lockSceneRead();
+        // _monitor->lockSceneRead();
     }
 
     ~MonitorLockguardRead()
     {
-        _monitor->unlockSceneRead();
+        // _monitor->unlockSceneRead();
     }
 
 private:

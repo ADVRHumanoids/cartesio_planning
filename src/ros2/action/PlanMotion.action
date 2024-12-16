@@ -1,0 +1,44 @@
+# goal
+string type  # pose, joint, robot_state, goal_generation
+
+# start
+sensor_msgs/JointState start_joint
+
+# goal
+string[] goal_frame
+sensor_msgs/JointState goal_joint
+string goal_robot_state
+
+# goal generation
+geometry_msgs/PoseStamped[] goal_pose
+string goal_generation_param_name
+float64 goal_generation_timeout
+string[] goal_generation_validity_checks
+
+# planner settings
+string planner_type
+float64 planner_timeout
+string[] planner_validity_checks
+
+# constraints
+string constraint_param_name
+
+# interpolation settings
+float64 max_velocity
+float64 max_acceleration
+float64 trajectory_dt
+
+# custom joint limits
+string[] joint_limit_names
+float64[] joint_limit_lower
+float64[] joint_limit_upper
+---
+# result
+trajectory_msgs/JointTrajectory trajectory
+sensor_msgs/JointState goal_configuration
+bool success
+string message
+---
+# feedback
+string current_phase
+float64 trj_execution_perc
