@@ -129,7 +129,7 @@ public:
      * @brief applyPlanningScene
      * @param scene
      */
-    void applyPlanningScene(const moveit_msgs::PlanningScene& scene);
+    bool applyPlanningScene(const moveit_msgs::PlanningScene& scene);
 
     /**
      * @brief addCollisionObject
@@ -204,6 +204,11 @@ public:
      */
     bool getPlanningScene(moveit_msgs::GetPlanningScene::Request& req,
                           moveit_msgs::GetPlanningScene::Response& res);
+
+    /**
+     * @brief clearPlanningScene
+     */
+    void clearPlanningScene();
     
     mutable collision_detection::AllowedCollisionMatrix acm;
 

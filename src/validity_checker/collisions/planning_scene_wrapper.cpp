@@ -129,7 +129,7 @@ void PlanningSceneWrapper::pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Con
 
 bool PlanningSceneWrapper::apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request& req, moveit_msgs::ApplyPlanningScene::Response& res)
 {
-    applyPlanningScene(req.scene);
+    res.success = applyPlanningScene(req.scene);
     return true;
 }
 
@@ -361,10 +361,30 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
     octree.addPointsFromInputCloud();
     octree.getOccupiedVoxelCenters(voxel_centers);
 
+//    for (const auto & vc: voxel_centers)
+//    {
+//        initial_octree->updateNode(vc.x, vc.y, vc.z, true, false);
+//    }
+    std::vector<pcl::PointXY> saved_pts;
     for (const auto & vc: voxel_centers)
     {
-        initial_octree->updateNode(vc.x, vc.y, vc.z, true, false);
+        pcl::PointXY pt;
+        pt.x = vc.x;    pt.y = vc.y;
+        auto samePointXY = [&pt](pcl::PointXY p)
+        {
+            return pt.x == p.x && pt.y == p.y;
+        };
+
+        if (std::find_if(saved_pts.begin(), saved_pts.end(), samePointXY) == saved_pts.end())
+        {
+            for (double i = -0.6; i < 3.0; i += resolution)
+            {
+                initial_octree->updateNode(vc.x, vc.y, i, true, false);
+            }
+            saved_pts.push_back(pt);
+        }
     }
+
 
     initial_octree->updateInnerOccupancy();
 
@@ -603,10 +623,10 @@ void XBot::Cartesian::Planning::PlanningSceneWrapper::setLinkPadding(std::map<st
 }
 
 
-void PlanningSceneWrapper::applyPlanningScene(const moveit_msgs::PlanningScene & scene)
+bool PlanningSceneWrapper::applyPlanningScene(const moveit_msgs::PlanningScene & scene)
 {
     _monitor->updateFrameTransforms();
-    _monitor->newPlanningSceneMessage(scene);
+    return _monitor->newPlanningSceneMessage(scene);
 }
 
 bool PlanningSceneWrapper::addCollisionObject(moveit_msgs::CollisionObject co,
@@ -733,6 +753,23 @@ bool PlanningSceneWrapper::getPlanningScene(moveit_msgs::GetPlanningScene::Reque
 
     return true;
 
+}
+
+void PlanningSceneWrapper::clearPlanningScene()
+{
+
+    moveit_msgs::GetPlanningSceneRequest ps_req;
+    moveit_msgs::GetPlanningSceneResponse ps_res;
+    ps_req.components.components = ~0;
+    getPlanningScene(ps_req, ps_res);
+
+    for(auto& co : ps_res.scene.world.collision_objects)
+    {
+        std::cout << "removing object " << std::quoted(co.id) << "\n";
+        co.operation = moveit_msgs::CollisionObject::REMOVE;
+    }
+
+    applyPlanningScene(ps_res.scene);
 }
 
 void PlanningSceneWrapper::computeChainToLinks()
