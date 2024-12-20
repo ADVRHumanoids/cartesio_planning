@@ -867,7 +867,7 @@ void PlanningSceneWrapper::computeChainToLinks()
         // failure
         if(!ok)
         {
-            throw std::runtime_error("unable to find chain for link '" + link->name + "'");
+            //throw std::runtime_error("unable to find chain for link '" + link->name + "'");
         }
 
     }
