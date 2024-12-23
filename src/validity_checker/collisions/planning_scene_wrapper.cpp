@@ -112,7 +112,7 @@ void PlanningSceneWrapper::startMonitor()
     _apply_planning_scene_srv = nh.advertiseService("apply_planning_scene_service", &PlanningSceneWrapper::apply_planning_scene_service, this);
 }
 
-void PlanningSceneWrapper::pc_callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg, int i)
+void PlanningSceneWrapper::pc_callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg, const int& i, const std::string& base_link)
 {
     if(!_point_clouds[i])
     {
@@ -124,7 +124,7 @@ void PlanningSceneWrapper::pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Con
 
     std::lock_guard<std::mutex> lg(_pc_mtx);
 
-    transform_point_cloud(pc, _point_clouds[i], "base_link");
+    transform_point_cloud(pc, _point_clouds[i], base_link);
 }
 
 bool PlanningSceneWrapper::apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request& req, moveit_msgs::ApplyPlanningScene::Response& res)
@@ -169,9 +169,9 @@ void PlanningSceneWrapper::startOctomapServer(std::vector<std::string> input_top
     {
         std::cout << "startOctomapServer: subscribed to " << topic << "\n";
 
-        auto cb = [this, i](const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg)
+        auto cb = [this, i, base_link](const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg)
         {
-            pc_callback(msg, i);
+            pc_callback(msg, i, base_link);
         };
 
         auto sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZ>>(topic, 1, cb);

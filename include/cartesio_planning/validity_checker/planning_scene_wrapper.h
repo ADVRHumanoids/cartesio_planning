@@ -218,7 +218,7 @@ private:
     bool octomap_service(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
     bool apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request & req, moveit_msgs::ApplyPlanningScene::Response & res);
     
-    void pc_callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg, int i);
+    void pc_callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg, const int& i, const std::string& base_link);
 
     void transform_point_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, std::string frame_id);
 
