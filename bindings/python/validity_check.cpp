@@ -86,7 +86,8 @@ PYBIND11_MODULE(validity_check, m)
              py::arg("local_lb") = Eigen::Vector3d::Zero(),
              py::arg("local_ub") = Eigen::Vector3d::Zero(),
              py::arg("base_lb") = Eigen::Vector3d::Zero(),
-             py::arg("base_ub") = Eigen::Vector3d::Zero())
+             py::arg("base_ub") = Eigen::Vector3d::Zero(),
+             py::arg("base_link") = "base_link")
         .def("setPadding", &PlanningSceneWrapper::setPadding)
         .def("setLinkPadding", &PlanningSceneWrapper::setLinkPadding)
         .def("checkCollisions", &PlanningSceneWrapper::checkCollisions)

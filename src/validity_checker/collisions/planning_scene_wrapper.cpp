@@ -112,7 +112,7 @@ void PlanningSceneWrapper::startMonitor()
     _apply_planning_scene_srv = nh.advertiseService("apply_planning_scene_service", &PlanningSceneWrapper::apply_planning_scene_service, this);
 }
 
-void PlanningSceneWrapper::pc_callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg, int i)
+void PlanningSceneWrapper::pc_callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg, const int& i, const std::string& base_link)
 {
     if(!_point_clouds[i])
     {
@@ -124,7 +124,7 @@ void PlanningSceneWrapper::pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Con
 
     std::lock_guard<std::mutex> lg(_pc_mtx);
 
-    transform_point_cloud(pc, _point_clouds[i], "base_link");
+    transform_point_cloud(pc, _point_clouds[i], base_link);
 }
 
 bool PlanningSceneWrapper::apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request& req, moveit_msgs::ApplyPlanningScene::Response& res)
@@ -155,7 +155,8 @@ void PlanningSceneWrapper::startGetPlanningSceneServer()
 
 }
 
-void PlanningSceneWrapper::startOctomapServer(std::vector<std::string> input_topics)
+void PlanningSceneWrapper::startOctomapServer(std::vector<std::string> input_topics, 
+    const double &resolution, const std::string& base_link)
 {
     ros::NodeHandle nh("~");
     nh.setCallbackQueue(&_queue);
@@ -168,9 +169,9 @@ void PlanningSceneWrapper::startOctomapServer(std::vector<std::string> input_top
     {
         std::cout << "startOctomapServer: subscribed to " << topic << "\n";
 
-        auto cb = [this, i](const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg)
+        auto cb = [this, i, base_link](const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg)
         {
-            pc_callback(msg, i);
+            pc_callback(msg, i, base_link);
         };
 
         auto sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZ>>(topic, 1, cb);
@@ -179,6 +180,9 @@ void PlanningSceneWrapper::startOctomapServer(std::vector<std::string> input_top
 
         i++;
     }
+
+    _octomap_resolution = resolution;
+    _octomap_base_link = base_link;
 
     _add_octomap_srv = nh.advertiseService("octomap_service", &PlanningSceneWrapper::octomap_service, this);
 }
@@ -214,10 +218,8 @@ bool PlanningSceneWrapper::updateOctomap()
 {
     std::lock_guard<std::mutex> lg(_pc_mtx);
 
-    double resolution = 0.05;
-
-    pcl::octree::OctreePointCloudVoxelCentroid<pcl::PointXYZ> octree(resolution);
-    octomap::OcTree final_octree(resolution);
+    pcl::octree::OctreePointCloudVoxelCentroid<pcl::PointXYZ> octree(_octomap_resolution);
+    octomap::OcTree final_octree(_octomap_resolution);
     std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > voxel_centers;
     
     for(auto pc : _point_clouds)
@@ -229,12 +231,12 @@ bool PlanningSceneWrapper::updateOctomap()
 
         // filter PointCloud to ignore nearest points (assuming they belong to the robot)
         // TODO: add robot_body_filtering somehow
-        pcl::CropBox<pcl::PointXYZ> boxFilter;
-        boxFilter.setMin(Eigen::Vector4f(-0.7, -0.4, -1.0, 1));
-        boxFilter.setMax(Eigen::Vector4f(0.7, 0.4, 2.0, 1));
-        boxFilter.setNegative(true);
-        boxFilter.setInputCloud(pc);
-        boxFilter.filter(*pc);
+        // pcl::CropBox<pcl::PointXYZ> boxFilter;
+        // boxFilter.setMin(Eigen::Vector4f(-0.7, -0.4, -1.0, 1));
+        // boxFilter.setMax(Eigen::Vector4f(0.7, 0.4, 2.0, 1));
+        // boxFilter.setNegative(true);
+        // boxFilter.setInputCloud(pc);
+        // boxFilter.filter(*pc);
 
         octree.setInputCloud(pc);
         octree.addPointsFromInputCloud();
@@ -252,7 +254,7 @@ bool PlanningSceneWrapper::updateOctomap()
     octomap_msgs::binaryMapToMsg(final_octree, octomap);
 
     octomap_msgs::OctomapWithPose octomap_with_pose;
-    octomap_with_pose.header.frame_id = "base_link";
+    octomap_with_pose.header.frame_id = _octomap_base_link;
     octomap_with_pose.header.stamp = ros::Time::now();
     octomap_with_pose.octomap = octomap;
     moveit_msgs::PlanningScene ps;
@@ -276,7 +278,8 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
                                                   Eigen::Vector3d local_min,
                                                   Eigen::Vector3d local_max,
                                                   Eigen::Vector3d base_min,
-                                                  Eigen::Vector3d base_max)
+                                                  Eigen::Vector3d base_max,
+                                                  std::string base_link)
 {
     auto pc_msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(pc_topic, ros::Duration(5.0));
 
@@ -306,7 +309,7 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
     }
 
     // transform to base link
-    transform_point_cloud(pc, pc, "base_link");
+    transform_point_cloud(pc, pc, base_link);
 
     // apply global filter if any
     if(!base_min.isZero() || !base_max.isZero())
@@ -324,12 +327,14 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
     }
 
     // apply ground filter
-    pcl::CropBox<pcl::PointXYZ> boxFilter;
-    boxFilter.setMin(Eigen::Vector4f(-5., -5., ground_height, 1.0));
-    boxFilter.setMax(Eigen::Vector4f(5., 5., ground_height + 3.0, 1.0));
-    boxFilter.setNegative(false);
-    boxFilter.setInputCloud(pc);
-    boxFilter.filter(*pc);
+    if (ground_height>0) {
+        pcl::CropBox<pcl::PointXYZ> boxFilter;
+        boxFilter.setMin(Eigen::Vector4f(-5., -5., ground_height, 1.0));
+        boxFilter.setMax(Eigen::Vector4f(5., 5., ground_height + 3.0, 1.0));
+        boxFilter.setNegative(false);
+        boxFilter.setInputCloud(pc);
+        boxFilter.filter(*pc);
+    }
 
     // get initial octomap (we're going to add this point cloud on top)
     moveit_msgs::GetPlanningSceneRequest ps_req;
@@ -387,7 +392,7 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
     octomap_msgs::binaryMapToMsg(*initial_octree, octomap);
 
     octomap_msgs::OctomapWithPose octomap_with_pose;
-    octomap_with_pose.header.frame_id = "base_link";
+    octomap_with_pose.header.frame_id = base_link;
     octomap_with_pose.header.stamp = ros::Time::now();
     octomap_with_pose.octomap = octomap;
     moveit_msgs::PlanningScene ps;
@@ -486,27 +491,51 @@ void PlanningSceneWrapper::update()
     _monitor->triggerSceneUpdateEvent(planning_scene_monitor::PlanningSceneMonitor::UPDATE_STATE);
 }
 
-bool PlanningSceneWrapper::checkCollisions() const
+bool PlanningSceneWrapper::checkCollisions(bool verbose) const
 {
     MonitorLockguardRead lock_r(_monitor);
 
     collision_detection::CollisionRequest collision_request;
+    if (verbose) {
+        collision_request.verbose = true;
+        collision_request.contacts = true;
+    }
 
     collision_detection::CollisionResult collision_result;  
     
     _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
 
+    if (verbose && collision_result.collision) {
+        std::cout << "Collision detected " << std::boolalpha << collision_result.collision << std::endl;
+        for (const auto& it: collision_result.contacts) {
+            std::cout << "\tcolliding pair: " << it.first.first << " " << it.first.second << std::endl;
+        }
+        collision_result.print();
+    }
+
     return collision_result.collision;
 }
 
-bool PlanningSceneWrapper::checkSelfCollisions() const
+bool PlanningSceneWrapper::checkSelfCollisions(bool verbose) const
 {
     MonitorLockguardRead lock_r(_monitor);
 
     collision_detection::CollisionRequest collision_request;
+    if (verbose) {
+        collision_request.verbose = true;
+        collision_request.contacts = true;
+    }
     collision_detection::CollisionResult collision_result;
 
     _monitor->getPlanningScene()->checkSelfCollision(collision_request, collision_result);
+
+    if (verbose && collision_result.collision) {
+        std::cout << "Self collision detected" << std::endl;
+        for (const auto& it: collision_result.contacts) {
+            std::cout << "\t self colliding pair: " << it.first.first << " " << it.first.second << std::endl;
+        }
+        collision_result.print();
+    }
 
     return collision_result.collision;
 }
@@ -838,7 +867,7 @@ void PlanningSceneWrapper::computeChainToLinks()
         // failure
         if(!ok)
         {
-            throw std::runtime_error("unable to find chain for link '" + link->name + "'");
+            //throw std::runtime_error("unable to find chain for link '" + link->name + "'");
         }
 
     }

@@ -57,7 +57,7 @@ public:
     /**
      * @brief start server for octomap compatibility
      */
-    void startOctomapServer(std::vector<std::string> input_topics);
+    void startOctomapServer(std::vector<std::string> input_topics, const double& resolution, const std::string& base_link);
 
     /**
      * @brief update octomap from subscribed point clouds
@@ -82,7 +82,8 @@ public:
                                 double resolution,
                                 double ground_height,
                                 Eigen::Vector3d local_min, Eigen::Vector3d local_max,
-                                Eigen::Vector3d base_min, Eigen::Vector3d base_max);
+                                Eigen::Vector3d base_min, Eigen::Vector3d base_max, 
+                                std::string base_link="base_link");
 
     /**
      * @brief update method updates the internal collision detector model state
@@ -95,8 +96,8 @@ public:
      * update() for collisions, either between robot links or with the environment.
      * @return true if collisions were found
      */
-    bool checkCollisions() const;   
-    bool checkSelfCollisions() const;
+    bool checkCollisions(bool verbose=false) const;   
+    bool checkSelfCollisions(bool verbose=false) const;
 
     double computeCollisionDistance() const;
     double computeSelfCollisionDistance() const;
@@ -217,7 +218,7 @@ private:
     bool octomap_service(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
     bool apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request & req, moveit_msgs::ApplyPlanningScene::Response & res);
     
-    void pc_callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg, int i);
+    void pc_callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg, const int& i, const std::string& base_link);
 
     void transform_point_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, std::string frame_id);
 
@@ -241,6 +242,9 @@ private:
     std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> _point_clouds;
 
     srdf_advr::Model _srdf;
+
+    double _octomap_resolution;
+    std::string _octomap_base_link;
 
 };
 

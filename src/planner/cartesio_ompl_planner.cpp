@@ -479,7 +479,11 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd& start,
         _planner->clearQuery();
     }
 
-    // set start and goal
+    // clear previous planned things
+    _pdef->clearStartStates();
+    _pdef->clearGoal();
+    _pdef->clearSolutionPaths();
+
     _pdef->setStartAndGoalStates(ompl_start, ompl_goal, threshold);
 
     // trigger callback
@@ -514,6 +518,8 @@ void OmplPlanner::setStartAndGoalStates(const Eigen::VectorXd & start,
 
     // set start and goal
     _pdef->clearStartStates();
+    _pdef->clearGoal();
+    _pdef->clearSolutionPaths();
     _pdef->addStartState(ompl_start);
     goal->setThreshold(threshold);
     _pdef->setGoal(goal);
