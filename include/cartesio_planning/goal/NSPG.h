@@ -20,8 +20,8 @@ namespace XBot { namespace Cartesian { namespace Planning {
         typedef std::shared_ptr<NSPG> Ptr;
         
         NSPG(PositionCartesianSolver::Ptr ik_solver,
-             Planning::ValidityCheckContext vc_context);
-               
+             Planning::ValidityCheckContext vc_context,
+             bool rviz_debug = true);                  
         void setIKSolver(PositionCartesianSolver::Ptr new_ik_solver);
         
         /**
@@ -48,6 +48,7 @@ namespace XBot { namespace Cartesian { namespace Planning {
         
         Planning::ValidityCheckContext _vc_context;
         
+        bool _rviz_debug;
         RobotViz::Ptr _rviz;
 
         std::map<std::string, int> _fail_map;

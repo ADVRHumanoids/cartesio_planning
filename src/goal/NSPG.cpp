@@ -5,22 +5,25 @@ using namespace XBot::Cartesian::Planning;
 static std::default_random_engine randGenerator;
 static std::uniform_real_distribution<double> randDistribution(-1.0, 1.0);
 
-NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_context ):
+NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_context, bool rviz_debug):
     _ik_solver(ik_solver),
     _vc_context(vc_context),
-    _fb_step_size(1)
+    _fb_step_size(1),
+    _rviz_debug(rviz_debug)
     {
         auto a = std::chrono::system_clock::now();
         time_t b = std::chrono::system_clock::to_time_t(a);
         randGenerator.seed(b);
         
-        ros::NodeHandle rviz_nh("~");
-        _rviz = std::make_shared<RobotViz>(ik_solver->getModel(),
-                                           "nspg",
-                                           rviz_nh,
-                                           Eigen::Vector4d(1.0, 1.0, 0.1, 1.0)
-                                           );
-        _rviz->setPrefix("planner/");
+        if (_rviz_debug) {
+            ros::NodeHandle rviz_nh("~");
+            _rviz = std::make_shared<RobotViz>(ik_solver->getModel(),
+                                            "nspg",
+                                            rviz_nh,
+                                            Eigen::Vector4d(1.0, 1.0, 0.1, 1.0)
+                                            );
+            _rviz->setPrefix("planner/");
+        }
     }
     
 void NSPG::setIKSolver ( PositionCartesianSolver::Ptr new_ik_solver )
@@ -55,8 +58,9 @@ bool NSPG::sample ( double timeout )
 
     bool solved = _ik_solver->solve();
 
-    if(solved)
+    if(solved && _rviz_debug) {
         _rviz->publishMarkers(ros::Time::now(), {});
+    }
 
     std::vector<std::string> failed_predicate;
     
@@ -76,8 +80,7 @@ bool NSPG::sample ( double timeout )
         }
         if(T >= timeout)
         {
-            std::cout << "timeout" <<std::endl;
-            std::cout << "NSGP FAILS" << std::endl;
+            std::cout << "NSGP timeout" <<std::endl;
             for (auto pair : _fail_map)
             {
                 std::cout << pair.first << ": " << pair.second << std::endl;
@@ -114,20 +117,23 @@ bool NSPG::sample ( double timeout )
             std::chrono::duration<float> fsec = toc-_time;
             T += fsec.count();
             _time = toc;
-            _rviz->publishMarkers(ros::Time::now(), {});
+            if (_rviz_debug) {
+                _rviz->publishMarkers(ros::Time::now(), {});
+            }
             continue;
         }
 
-        _rviz->publishMarkers(ros::Time::now(), {});
-
+        if (_rviz_debug) {
+            _rviz->publishMarkers(ros::Time::now(), {});
+        }
+        
         auto toc = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> fsec = toc-_time;
         T += fsec.count();
 
         _time = toc;
     }
-    std::cout << "timeout" <<std::endl;
-    std::cout << "NSGP SUCCESS" << std::endl;
+    //std::cout << "NSGP SUCCESS" << std::endl;
     _fb_step_size = 1;
     for (auto pair : _fail_map)
     {
