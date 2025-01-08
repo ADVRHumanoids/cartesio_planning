@@ -567,10 +567,11 @@ bool OmplPlanner::solve(const double timeout,
     ompl::base::PlannerData pdata(_space_info);
     _planner->getPlannerData(pdata);
 
-    auto pdata_mat = PlannerDataToMatMata(pdata, *_sw);
-    auto logger = MatLogger2::MakeLogger("/tmp/cartesio_ompl_planner");
-    logger->save("planner_data", pdata_mat);
-    logger.reset();
+    //this sometimes crashes because pdata.numVertices() and pdata.numEdges() are zero
+    // auto pdata_mat = PlannerDataToMatMata(pdata, *_sw);
+    // auto logger = MatLogger2::MakeLogger("/tmp/cartesio_ompl_planner");
+    // logger->save("planner_data", pdata_mat);
+    // logger.reset();
 
 
     return _solved;
