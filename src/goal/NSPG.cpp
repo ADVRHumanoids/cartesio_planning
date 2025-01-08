@@ -8,13 +8,14 @@ static std::uniform_real_distribution<double> randDistribution(-1.0, 1.0);
 NSPG::NSPG ( PositionCartesianSolver::Ptr ik_solver, ValidityCheckContext vc_context, bool rviz_debug):
     _ik_solver(ik_solver),
     _vc_context(vc_context),
-    _fb_step_size(1)
+    _fb_step_size(1),
+    _rviz_debug(rviz_debug)
     {
         auto a = std::chrono::system_clock::now();
         time_t b = std::chrono::system_clock::to_time_t(a);
         randGenerator.seed(b);
         
-        if (rviz_debug) {
+        if (_rviz_debug) {
             ros::NodeHandle rviz_nh("~");
             _rviz = std::make_shared<RobotViz>(ik_solver->getModel(),
                                             "nspg",
