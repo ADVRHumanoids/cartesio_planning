@@ -24,6 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
     moveit_ros_planning_interface
     visualization_msgs
     message_generation
+    pcl_ros
     )
 
 find_package(casadi REQUIRED)

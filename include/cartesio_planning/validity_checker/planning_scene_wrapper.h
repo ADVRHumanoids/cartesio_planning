@@ -12,6 +12,9 @@
 
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/filters/crop_hull.h>
+#include <pcl/surface/convex_hull.h>
+#include <pcl/filters/extract_indices.h>
 
 #include <XBotInterface/ModelInterface.h>
 
@@ -57,7 +60,7 @@ public:
     /**
      * @brief start server for octomap compatibility
      */
-    void startOctomapServer(std::vector<std::string> input_topics, const double& resolution, const std::string& base_link);
+    bool startOctomapServer();
 
     /**
      * @brief update octomap from subscribed point clouds
@@ -245,6 +248,15 @@ private:
 
     double _octomap_resolution;
     std::string _octomap_base_link;
+    bool filterOutPlanningSceneObjects(pcl::PointCloud<pcl::PointXYZ>::Ptr pc);
+    bool _filter_out_planning_scene_objects;
+    double _filter_out_objects_pad;
+    std::vector<std::string> _ignored_planning_scene_objects;
+    moveit_msgs::GetPlanningScene _get_planning_scene_srv;
+    pcl::CropHull<pcl::PointXYZ> _crop_hull_filter;
+    pcl::ExtractIndices<pcl::PointXYZ> _extract_indeces_filter;
+    Eigen::Isometry3f w_T_obj, w_T_b, b_T_obj;
+
 
 };
 

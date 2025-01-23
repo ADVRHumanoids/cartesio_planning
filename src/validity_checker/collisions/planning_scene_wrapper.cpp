@@ -124,7 +124,14 @@ void PlanningSceneWrapper::pc_callback(const pcl::PointCloud<pcl::PointXYZ>::Con
 
     std::lock_guard<std::mutex> lg(_pc_mtx);
 
-    transform_point_cloud(pc, _point_clouds[i], base_link);
+    if (pc->header.frame_id.compare(base_link) != 0)
+    {
+       transform_point_cloud(pc, _point_clouds[i], base_link);
+    }
+    else
+    {
+        _point_clouds[i] = pc;
+    }
 }
 
 bool PlanningSceneWrapper::apply_planning_scene_service(moveit_msgs::ApplyPlanningScene::Request& req, moveit_msgs::ApplyPlanningScene::Response& res)
@@ -155,11 +162,34 @@ void PlanningSceneWrapper::startGetPlanningSceneServer()
 
 }
 
-void PlanningSceneWrapper::startOctomapServer(std::vector<std::string> input_topics, 
-    const double &resolution, const std::string& base_link)
+bool PlanningSceneWrapper::startOctomapServer()
 {
     ros::NodeHandle nh("~");
     nh.setCallbackQueue(&_queue);
+
+    std::vector<std::string> input_topics;
+    nh.param<std::vector<std::string>>("pc_topics", input_topics, {});
+    if (input_topics.empty())
+    {
+        ROS_ERROR("No point cloud topics specified as param '%s'", (nh.getNamespace() + "/pc_topics").c_str());
+        return false;
+    }
+
+    if (!nh.getParam("octomap_base_link", _octomap_base_link))
+    {
+        ROS_ERROR("No octomap_base_link specified as param '%s'", (nh.getNamespace() + "/octomap_base_link").c_str());
+        return false;
+    }
+
+    if (!nh.getParam("octomap_resolution", _octomap_resolution))
+    {
+        ROS_ERROR("No octomap_resolution specified as param '%s'", (nh.getNamespace() + "/octomap_resolution").c_str());
+        return false;
+    }
+
+    nh.param<bool>("filter_out_planning_scene_objects", _filter_out_planning_scene_objects, false);
+    nh.param<double>("filter_out_objects_pad", _filter_out_objects_pad, 0);
+    nh.param<std::vector<std::string>>("ignored_planning_scene_objects", _ignored_planning_scene_objects, {});
 
     _point_clouds.resize(input_topics.size());
 
@@ -169,9 +199,9 @@ void PlanningSceneWrapper::startOctomapServer(std::vector<std::string> input_top
     {
         std::cout << "startOctomapServer: subscribed to " << topic << "\n";
 
-        auto cb = [this, i, base_link](const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg)
+        auto cb = [this, i](const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg)
         {
-            pc_callback(msg, i, base_link);
+            pc_callback(msg, i, _octomap_base_link);
         };
 
         auto sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZ>>(topic, 1, cb);
@@ -181,10 +211,22 @@ void PlanningSceneWrapper::startOctomapServer(std::vector<std::string> input_top
         i++;
     }
 
-    _octomap_resolution = resolution;
-    _octomap_base_link = base_link;
-
     _add_octomap_srv = nh.advertiseService("octomap_service", &PlanningSceneWrapper::octomap_service, this);
+
+    ROS_INFO("Octomap server started with %lu topics, octomap resolution %f, octomap_base_link %s, filter_out_planning_scene_objects %d",
+            input_topics.size(), _octomap_resolution, _octomap_base_link.c_str(), _filter_out_planning_scene_objects);
+
+    if (_filter_out_planning_scene_objects) {
+        _get_planning_scene_srv.request.components.components = 
+            _get_planning_scene_srv.request.components.WORLD_OBJECT_GEOMETRY | 
+            _get_planning_scene_srv.request.components.OCTOMAP;
+
+        ROS_INFO("Octomap server filtering planning scene objects, with pad %f and %lu ignored objects", 
+            _filter_out_objects_pad,
+            _ignored_planning_scene_objects.size());
+    }
+
+    return true;
 }
 
 void PlanningSceneWrapper::transform_point_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, std::string frame_id)
@@ -222,6 +264,12 @@ bool PlanningSceneWrapper::updateOctomap()
     octomap::OcTree final_octree(_octomap_resolution);
     std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > voxel_centers;
     
+    if (_filter_out_planning_scene_objects && 
+        !getPlanningScene(_get_planning_scene_srv.request, _get_planning_scene_srv.response)) {
+        ROS_ERROR("Failed to getPlanningScene");
+        return false;
+    }
+
     for(auto pc : _point_clouds)
     {
         if(!pc)
@@ -229,14 +277,11 @@ bool PlanningSceneWrapper::updateOctomap()
             continue;
         }
 
-        // filter PointCloud to ignore nearest points (assuming they belong to the robot)
-        // TODO: add robot_body_filtering somehow
-        // pcl::CropBox<pcl::PointXYZ> boxFilter;
-        // boxFilter.setMin(Eigen::Vector4f(-0.7, -0.4, -1.0, 1));
-        // boxFilter.setMax(Eigen::Vector4f(0.7, 0.4, 2.0, 1));
-        // boxFilter.setNegative(true);
-        // boxFilter.setInputCloud(pc);
-        // boxFilter.filter(*pc);
+        if (_filter_out_planning_scene_objects && 
+            !filterOutPlanningSceneObjects(pc)) {
+            ROS_ERROR("Failed to filter out planning scene objects");
+            return false;
+        }
 
         octree.setInputCloud(pc);
         octree.addPointsFromInputCloud();
@@ -252,10 +297,14 @@ bool PlanningSceneWrapper::updateOctomap()
 
     octomap_msgs::Octomap octomap;
     octomap_msgs::binaryMapToMsg(final_octree, octomap);
+    //super annoying print "Writing XXX nodes to output stream" inside binaryMapToMsg seems impossible to remove
+    //because flagged with compilation flag. At least lest go newline
+    std::cout << std::endl;
 
     octomap_msgs::OctomapWithPose octomap_with_pose;
     octomap_with_pose.header.frame_id = _octomap_base_link;
     octomap_with_pose.header.stamp = ros::Time::now();
+    octomap_with_pose.origin.orientation.w = 1.0; //avoid warnings
     octomap_with_pose.octomap = octomap;
     moveit_msgs::PlanningScene ps;
     ps.world.octomap = octomap_with_pose;
@@ -309,7 +358,10 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
     }
 
     // transform to base link
-    transform_point_cloud(pc, pc, base_link);
+    if (pc->header.frame_id.compare(base_link) != 0)
+    {
+       transform_point_cloud(pc, pc, base_link);
+    }
 
     // apply global filter if any
     if(!base_min.isZero() || !base_max.isZero())
@@ -390,11 +442,13 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
 
     octomap_msgs::Octomap octomap;
     octomap_msgs::binaryMapToMsg(*initial_octree, octomap);
+    std::cout << std::endl;
 
     octomap_msgs::OctomapWithPose octomap_with_pose;
     octomap_with_pose.header.frame_id = base_link;
     octomap_with_pose.header.stamp = ros::Time::now();
     octomap_with_pose.octomap = octomap;
+    octomap_with_pose.origin.orientation.w = 1.0; //avoid warnings
     moveit_msgs::PlanningScene ps;
     ps.world.octomap = octomap_with_pose;
 
@@ -403,6 +457,156 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
     applyPlanningScene(ps);
 
     delete initial_octree;
+
+    return true;
+}
+
+bool PlanningSceneWrapper::filterOutPlanningSceneObjects(pcl::PointCloud<pcl::PointXYZ>::Ptr pc) {
+
+    for (const auto& obj : _get_planning_scene_srv.response.scene.world.collision_objects) {
+
+        if (std::find(std::begin(_ignored_planning_scene_objects), 
+                std::end(_ignored_planning_scene_objects), 
+                obj.id) != std::end(_ignored_planning_scene_objects))
+        {
+            continue;
+        }
+
+        w_T_obj.translation() << obj.pose.position.x, obj.pose.position.y, obj.pose.position.z;
+        w_T_obj.linear() = Eigen::Quaternionf(obj.pose.orientation.w,
+                                                    obj.pose.orientation.x,
+                                                    obj.pose.orientation.y,
+                                                    obj.pose.orientation.z).toRotationMatrix();
+
+        w_T_b.translation() << _get_planning_scene_srv.response.scene.world.octomap.origin.position.x,
+            _get_planning_scene_srv.response.scene.world.octomap.origin.position.y,
+            _get_planning_scene_srv.response.scene.world.octomap.origin.position.z;
+        w_T_b.linear() = Eigen::Quaternionf(_get_planning_scene_srv.response.scene.world.octomap.origin.orientation.w,
+                                            _get_planning_scene_srv.response.scene.world.octomap.origin.orientation.x,
+                                            _get_planning_scene_srv.response.scene.world.octomap.origin.orientation.y,
+                                            _get_planning_scene_srv.response.scene.world.octomap.origin.orientation.z).toRotationMatrix();
+
+        b_T_obj = w_T_b.inverse() * w_T_obj;
+
+        //BOX filter no good with rotated object (OOBB)
+        //pcl::CropBox<pcl::PointXYZ> boxFilter;
+        // Eigen::Vector3f b_dim = b_T_obj * Eigen::Vector3f(obj.primitives[0].dimensions[0]/2, obj.primitives[0].dimensions[1]/2, obj.primitives[0].dimensions[2]/2);
+        // b_dim = b_dim.cwiseAbs();
+        // std::cout << "b_T_obj:\n " << b_T_obj.matrix() << std::endl;
+        // std::cout << "b_dim: " << b_dim.transpose() << std::endl;
+
+        // boxFilter.setMin(Eigen::Vector4f(
+        //     b_T_obj.translation().x() - b_dim.x(),
+        //     b_T_obj.translation().y() - b_dim.y(),
+        //     b_T_obj.translation().z() - b_dim.z(),
+        //     1.0));
+        // boxFilter.setMax(Eigen::Vector4f(
+        //     b_T_obj.translation().x() + b_dim.x(),
+        //     b_T_obj.translation().y() + b_dim.y(),
+        //     b_T_obj.translation().z() + b_dim.z(),
+        //     1.0));
+            
+        // std::cout << b_T_obj.matrix().col(3).transpose();
+        // std::cout << -srv.response.scene.world.octomap.origin.position.x + obj.pose.position.x - obj.primitives[0].dimensions[0]/2 << std::endl;
+
+        // std::cout << "removing a box of " <<
+        //     obj.primitives[0].dimensions[0] << " " <<
+        //     obj.primitives[0].dimensions[1] << " " <<
+        //     obj.primitives[0].dimensions[2] << " " <<
+        //     std::endl;
+        // std::cout << "positioned at " <<
+        //     obj.pose.position.x << " " <<
+        //     obj.pose.position.y << " " <<
+        //     obj.pose.position.z << " " <<
+        //     std::endl;
+        // boxFilter.setNegative(true);
+        // boxFilter.setInputCloud(pc);
+        // boxFilter.filter(*pc);
+
+        //hardcoded consider only boxes for now
+        if (obj.primitives[0].type != shape_msgs::SolidPrimitive::BOX) {
+            continue;
+        }
+        pcl::PointCloud<pcl::PointXYZ>::Ptr boundingbox_ptr (new pcl::PointCloud<pcl::PointXYZ>);
+        boundingbox_ptr->header.frame_id = pc->header.frame_id;
+        std::vector<Eigen::Vector3f> vertices;
+        vertices.resize(8);
+        
+        vertices.at(0) = b_T_obj * Eigen::Vector3f(
+            obj.primitives[0].dimensions[0]/2 + _filter_out_objects_pad, 
+            obj.primitives[0].dimensions[1]/2 + _filter_out_objects_pad, 
+            obj.primitives[0].dimensions[2]/2 + _filter_out_objects_pad);
+        vertices.at(1) = b_T_obj * Eigen::Vector3f(
+            obj.primitives[0].dimensions[0]/2 + _filter_out_objects_pad,
+            obj.primitives[0].dimensions[1]/2 + _filter_out_objects_pad,
+            -obj.primitives[0].dimensions[2]/2 - _filter_out_objects_pad);
+        vertices.at(2) = b_T_obj * Eigen::Vector3f(
+            obj.primitives[0].dimensions[0]/2 +_filter_out_objects_pad, 
+            -obj.primitives[0].dimensions[1]/2 -_filter_out_objects_pad, 
+            obj.primitives[0].dimensions[2]/2 +_filter_out_objects_pad);
+        vertices.at(3) = b_T_obj * Eigen::Vector3f(
+            obj.primitives[0].dimensions[0]/2 +_filter_out_objects_pad, 
+            -obj.primitives[0].dimensions[1]/2 -_filter_out_objects_pad, 
+            -obj.primitives[0].dimensions[2]/2 -_filter_out_objects_pad);
+        vertices.at(4) = b_T_obj * Eigen::Vector3f(
+            -obj.primitives[0].dimensions[0]/2 -_filter_out_objects_pad, 
+            obj.primitives[0].dimensions[1]/2 +_filter_out_objects_pad, 
+            obj.primitives[0].dimensions[2]/2 +_filter_out_objects_pad);
+        vertices.at(5) = b_T_obj * Eigen::Vector3f(
+            -obj.primitives[0].dimensions[0]/2 -_filter_out_objects_pad, 
+            obj.primitives[0].dimensions[1]/2 +_filter_out_objects_pad, 
+            -obj.primitives[0].dimensions[2]/2 -_filter_out_objects_pad);
+        vertices.at(6) = b_T_obj * Eigen::Vector3f(
+            -obj.primitives[0].dimensions[0]/2 -_filter_out_objects_pad, 
+            -obj.primitives[0].dimensions[1]/2 -_filter_out_objects_pad, 
+            obj.primitives[0].dimensions[2]/2 +_filter_out_objects_pad);
+        vertices.at(7) = b_T_obj * Eigen::Vector3f(
+            -obj.primitives[0].dimensions[0]/2 -_filter_out_objects_pad, 
+            -obj.primitives[0].dimensions[1]/2 -_filter_out_objects_pad, 
+            -obj.primitives[0].dimensions[2]/2 -_filter_out_objects_pad);
+
+        boundingbox_ptr->resize(vertices.size());
+        for (int i = 0; i < boundingbox_ptr->size(); i++)
+        {
+            boundingbox_ptr->at(i).x = vertices.at(i).x();
+            boundingbox_ptr->at(i).y = vertices.at(i).y();
+            boundingbox_ptr->at(i).z = vertices.at(i).z();
+            // std::cout << "vertice " << i << " " << vertices.at(i).transpose() << std::endl;
+        }
+
+        pcl::ConvexHull<pcl::PointXYZ> hull;
+        hull.setDimension(3);
+        hull.setInputCloud(boundingbox_ptr);
+        hull.setComputeAreaVolume(true);
+
+        // Construct the hull
+        std::vector<pcl::Vertices> polygons;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZ>);
+        hull_points->header.frame_id = pc->header.frame_id;
+        hull.reconstruct(*hull_points, polygons);
+
+
+        //cropHullFilter.setUserFilterValue(1.0);
+        _crop_hull_filter.setDim(hull.getDimension());
+        _crop_hull_filter.setKeepOrganized(true);
+        _crop_hull_filter.setHullCloud(hull_points);
+        _crop_hull_filter.setHullIndices(polygons);
+        _crop_hull_filter.setInputCloud(pc);
+
+        //I want false but it is bugged in pcl1.10, solved only in 1.13
+        //even cropHullFilter.getRemovedIndices(*p_outside_indices) seems broken
+        //so we crop inside, and then use the indices to extract the outside with extractindices set negatively
+        _crop_hull_filter.setCropOutside(true);
+        pcl::PointIndices::Ptr p_inside_indices(new pcl::PointIndices);
+        p_inside_indices->indices.reserve(pc->size());
+        _crop_hull_filter.filter(p_inside_indices->indices);
+
+        _extract_indeces_filter.setInputCloud(pc);
+        _extract_indeces_filter.setKeepOrganized(false);
+        _extract_indeces_filter.setIndices(p_inside_indices);
+        _extract_indeces_filter.setNegative(true);
+        _extract_indeces_filter.filter(*pc);
+    }
 
     return true;
 }
