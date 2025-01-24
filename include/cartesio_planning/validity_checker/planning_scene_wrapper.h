@@ -15,6 +15,7 @@
 #include <pcl/filters/crop_hull.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/segmentation/extract_clusters.h>
 
 #include <XBotInterface/ModelInterface.h>
 
@@ -252,6 +253,7 @@ private:
     void computeCollisionObjectVertices(const moveit_msgs::CollisionObject& obj, std::vector<Eigen::Vector3d>& vertices);
     void computeAttachedCollisionObjectVertices(const moveit_msgs::AttachedCollisionObject& obj, std::vector<Eigen::Vector3d>& vertices);
     void filterWithConvexHull(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, const std::vector<Eigen::Vector3d>& vertices);
+    bool filterOutClusters(pcl::PointCloud<pcl::PointXYZ>::Ptr pc);
     bool _filter_out_planning_scene_objects;
     double _filter_out_objects_pad;
     double _filter_out_attached_objects_pad;
@@ -260,6 +262,9 @@ private:
     pcl::CropHull<pcl::PointXYZ> _crop_hull_filter;
     pcl::ExtractIndices<pcl::PointXYZ> _extract_indeces_filter;
     Eigen::Affine3d w_T_obj, b_T_w, b_T_obj, bAttached_T_aObj, b_T_aObj, w_T_bAttached;
+    bool _filter_out_clusters;
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr _cluster_tree;
+    pcl::EuclideanClusterExtraction<pcl::PointXYZ> _cluster_extractor;
 
 };
 

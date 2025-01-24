@@ -191,6 +191,7 @@ bool PlanningSceneWrapper::startOctomapServer()
     nh.param<double>("filter_out_objects_pad", _filter_out_objects_pad, 0);
     nh.param<double>("filter_out_attached_objects_pad", _filter_out_attached_objects_pad, 0);
     nh.param<std::vector<std::string>>("ignored_planning_scene_objects", _ignored_planning_scene_objects, {});
+    nh.param<bool>("filter_out_clusters", _filter_out_clusters, false);
 
     _point_clouds.resize(input_topics.size());
 
@@ -226,6 +227,22 @@ bool PlanningSceneWrapper::startOctomapServer()
         ROS_INFO("Octomap server filtering planning scene objects, with pad %f and %lu ignored objects", 
             _filter_out_objects_pad,
             _ignored_planning_scene_objects.size());
+    }
+
+    if (_filter_out_clusters) {
+        double filter_out_clusters_tol;
+        int filter_out_clusters_max_size;
+        nh.param<double>("filter_out_clusters_tolerance", filter_out_clusters_tol, 0.02); //in meters
+        nh.param<int>("filter_out_clusters_max_size", filter_out_clusters_max_size, 50);
+        _cluster_tree = pcl::search::KdTree<pcl::PointXYZ>::Ptr(new pcl::search::KdTree<pcl::PointXYZ>);
+        _cluster_extractor.setClusterTolerance(filter_out_clusters_tol);
+        _cluster_extractor.setMaxClusterSize(filter_out_clusters_max_size);
+        _cluster_extractor.setSearchMethod(_cluster_tree);
+
+        ROS_INFO("Octomap server filtering clusters with tolerance %f and max size %d", 
+            filter_out_clusters_tol,
+            filter_out_clusters_max_size);
+
     }
 
     return true;
@@ -282,6 +299,12 @@ bool PlanningSceneWrapper::updateOctomap()
         if (_filter_out_planning_scene_objects && 
             !filterOutPlanningSceneObjects(pc)) {
             ROS_ERROR("Failed to filter out planning scene objects");
+            return false;
+        }
+
+        if (_filter_out_clusters && 
+            !filterOutClusters(pc)) {
+            ROS_ERROR("Failed to filter out clusters");
             return false;
         }
 
@@ -707,6 +730,29 @@ void PlanningSceneWrapper::filterWithConvexHull(pcl::PointCloud<pcl::PointXYZ>::
     _extract_indeces_filter.setIndices(p_inside_indices);
     _extract_indeces_filter.setNegative(true);
     _extract_indeces_filter.filter(*pc);
+}
+
+bool PlanningSceneWrapper::filterOutClusters(pcl::PointCloud<pcl::PointXYZ>::Ptr pc) {
+
+    _cluster_tree->setInputCloud(pc);
+    _cluster_extractor.setInputCloud(pc);
+    std::vector<pcl::PointIndices> cluster_indices;
+    _cluster_extractor.extract (cluster_indices);
+    pcl::PointIndices::Ptr merged_indices(new pcl::PointIndices);
+
+    for (const auto& cluster : cluster_indices) {
+        for (const auto& idx : cluster.indices) {
+            merged_indices->indices.push_back(idx);
+        }
+    }
+    
+    _extract_indeces_filter.setInputCloud(pc);
+    _extract_indeces_filter.setKeepOrganized(false);
+    _extract_indeces_filter.setIndices(merged_indices);
+    _extract_indeces_filter.setNegative(true);
+    _extract_indeces_filter.filter(*pc);
+
+    return true;
 }
 
 void PlanningSceneWrapper::update()
