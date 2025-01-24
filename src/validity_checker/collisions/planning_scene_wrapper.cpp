@@ -189,6 +189,7 @@ bool PlanningSceneWrapper::startOctomapServer()
 
     nh.param<bool>("filter_out_planning_scene_objects", _filter_out_planning_scene_objects, false);
     nh.param<double>("filter_out_objects_pad", _filter_out_objects_pad, 0);
+    nh.param<double>("filter_out_attached_objects_pad", _filter_out_attached_objects_pad, 0);
     nh.param<std::vector<std::string>>("ignored_planning_scene_objects", _ignored_planning_scene_objects, {});
 
     _point_clouds.resize(input_topics.size());
@@ -218,6 +219,7 @@ bool PlanningSceneWrapper::startOctomapServer()
 
     if (_filter_out_planning_scene_objects) {
         _get_planning_scene_srv.request.components.components = 
+            _get_planning_scene_srv.request.components.ROBOT_STATE_ATTACHED_OBJECTS |
             _get_planning_scene_srv.request.components.WORLD_OBJECT_GEOMETRY | 
             _get_planning_scene_srv.request.components.OCTOMAP;
 
@@ -463,6 +465,16 @@ bool PlanningSceneWrapper::updateOctomapFromTopic(std::string pc_topic,
 
 bool PlanningSceneWrapper::filterOutPlanningSceneObjects(pcl::PointCloud<pcl::PointXYZ>::Ptr pc) {
 
+    b_T_w.translation() << _get_planning_scene_srv.response.scene.world.octomap.origin.position.x,
+        _get_planning_scene_srv.response.scene.world.octomap.origin.position.y,
+        _get_planning_scene_srv.response.scene.world.octomap.origin.position.z;
+    b_T_w.linear() = Eigen::Quaterniond(_get_planning_scene_srv.response.scene.world.octomap.origin.orientation.w,
+                                        _get_planning_scene_srv.response.scene.world.octomap.origin.orientation.x,
+                                        _get_planning_scene_srv.response.scene.world.octomap.origin.orientation.y,
+                                        _get_planning_scene_srv.response.scene.world.octomap.origin.orientation.z).toRotationMatrix();
+
+    b_T_w = b_T_w.inverse();
+
     for (const auto& obj : _get_planning_scene_srv.response.scene.world.collision_objects) {
 
         if (std::find(std::begin(_ignored_planning_scene_objects), 
@@ -472,143 +484,229 @@ bool PlanningSceneWrapper::filterOutPlanningSceneObjects(pcl::PointCloud<pcl::Po
             continue;
         }
 
-        w_T_obj.translation() << obj.pose.position.x, obj.pose.position.y, obj.pose.position.z;
-        w_T_obj.linear() = Eigen::Quaternionf(obj.pose.orientation.w,
-                                                    obj.pose.orientation.x,
-                                                    obj.pose.orientation.y,
-                                                    obj.pose.orientation.z).toRotationMatrix();
-
-        w_T_b.translation() << _get_planning_scene_srv.response.scene.world.octomap.origin.position.x,
-            _get_planning_scene_srv.response.scene.world.octomap.origin.position.y,
-            _get_planning_scene_srv.response.scene.world.octomap.origin.position.z;
-        w_T_b.linear() = Eigen::Quaternionf(_get_planning_scene_srv.response.scene.world.octomap.origin.orientation.w,
-                                            _get_planning_scene_srv.response.scene.world.octomap.origin.orientation.x,
-                                            _get_planning_scene_srv.response.scene.world.octomap.origin.orientation.y,
-                                            _get_planning_scene_srv.response.scene.world.octomap.origin.orientation.z).toRotationMatrix();
-
-        b_T_obj = w_T_b.inverse() * w_T_obj;
-
-        //BOX filter no good with rotated object (OOBB)
-        //pcl::CropBox<pcl::PointXYZ> boxFilter;
-        // Eigen::Vector3f b_dim = b_T_obj * Eigen::Vector3f(obj.primitives[0].dimensions[0]/2, obj.primitives[0].dimensions[1]/2, obj.primitives[0].dimensions[2]/2);
-        // b_dim = b_dim.cwiseAbs();
-        // std::cout << "b_T_obj:\n " << b_T_obj.matrix() << std::endl;
-        // std::cout << "b_dim: " << b_dim.transpose() << std::endl;
-
-        // boxFilter.setMin(Eigen::Vector4f(
-        //     b_T_obj.translation().x() - b_dim.x(),
-        //     b_T_obj.translation().y() - b_dim.y(),
-        //     b_T_obj.translation().z() - b_dim.z(),
-        //     1.0));
-        // boxFilter.setMax(Eigen::Vector4f(
-        //     b_T_obj.translation().x() + b_dim.x(),
-        //     b_T_obj.translation().y() + b_dim.y(),
-        //     b_T_obj.translation().z() + b_dim.z(),
-        //     1.0));
-            
-        // std::cout << b_T_obj.matrix().col(3).transpose();
-        // std::cout << -srv.response.scene.world.octomap.origin.position.x + obj.pose.position.x - obj.primitives[0].dimensions[0]/2 << std::endl;
-
-        // std::cout << "removing a box of " <<
-        //     obj.primitives[0].dimensions[0] << " " <<
-        //     obj.primitives[0].dimensions[1] << " " <<
-        //     obj.primitives[0].dimensions[2] << " " <<
-        //     std::endl;
-        // std::cout << "positioned at " <<
-        //     obj.pose.position.x << " " <<
-        //     obj.pose.position.y << " " <<
-        //     obj.pose.position.z << " " <<
-        //     std::endl;
-        // boxFilter.setNegative(true);
-        // boxFilter.setInputCloud(pc);
-        // boxFilter.filter(*pc);
-
-        //hardcoded consider only boxes for now
-        if (obj.primitives[0].type != shape_msgs::SolidPrimitive::BOX) {
+        std::vector<Eigen::Vector3d> vertices;
+        computeCollisionObjectVertices(obj, vertices);
+        if (vertices.size() == 0) {
             continue;
         }
-        pcl::PointCloud<pcl::PointXYZ>::Ptr boundingbox_ptr (new pcl::PointCloud<pcl::PointXYZ>);
-        boundingbox_ptr->header.frame_id = pc->header.frame_id;
-        std::vector<Eigen::Vector3f> vertices;
-        vertices.resize(8);
-        
-        vertices.at(0) = b_T_obj * Eigen::Vector3f(
-            obj.primitives[0].dimensions[0]/2 + _filter_out_objects_pad, 
-            obj.primitives[0].dimensions[1]/2 + _filter_out_objects_pad, 
-            obj.primitives[0].dimensions[2]/2 + _filter_out_objects_pad);
-        vertices.at(1) = b_T_obj * Eigen::Vector3f(
-            obj.primitives[0].dimensions[0]/2 + _filter_out_objects_pad,
-            obj.primitives[0].dimensions[1]/2 + _filter_out_objects_pad,
-            -obj.primitives[0].dimensions[2]/2 - _filter_out_objects_pad);
-        vertices.at(2) = b_T_obj * Eigen::Vector3f(
-            obj.primitives[0].dimensions[0]/2 +_filter_out_objects_pad, 
-            -obj.primitives[0].dimensions[1]/2 -_filter_out_objects_pad, 
-            obj.primitives[0].dimensions[2]/2 +_filter_out_objects_pad);
-        vertices.at(3) = b_T_obj * Eigen::Vector3f(
-            obj.primitives[0].dimensions[0]/2 +_filter_out_objects_pad, 
-            -obj.primitives[0].dimensions[1]/2 -_filter_out_objects_pad, 
-            -obj.primitives[0].dimensions[2]/2 -_filter_out_objects_pad);
-        vertices.at(4) = b_T_obj * Eigen::Vector3f(
-            -obj.primitives[0].dimensions[0]/2 -_filter_out_objects_pad, 
-            obj.primitives[0].dimensions[1]/2 +_filter_out_objects_pad, 
-            obj.primitives[0].dimensions[2]/2 +_filter_out_objects_pad);
-        vertices.at(5) = b_T_obj * Eigen::Vector3f(
-            -obj.primitives[0].dimensions[0]/2 -_filter_out_objects_pad, 
-            obj.primitives[0].dimensions[1]/2 +_filter_out_objects_pad, 
-            -obj.primitives[0].dimensions[2]/2 -_filter_out_objects_pad);
-        vertices.at(6) = b_T_obj * Eigen::Vector3f(
-            -obj.primitives[0].dimensions[0]/2 -_filter_out_objects_pad, 
-            -obj.primitives[0].dimensions[1]/2 -_filter_out_objects_pad, 
-            obj.primitives[0].dimensions[2]/2 +_filter_out_objects_pad);
-        vertices.at(7) = b_T_obj * Eigen::Vector3f(
-            -obj.primitives[0].dimensions[0]/2 -_filter_out_objects_pad, 
-            -obj.primitives[0].dimensions[1]/2 -_filter_out_objects_pad, 
-            -obj.primitives[0].dimensions[2]/2 -_filter_out_objects_pad);
+        filterWithConvexHull(pc, vertices);
+    }
 
-        boundingbox_ptr->resize(vertices.size());
-        for (int i = 0; i < boundingbox_ptr->size(); i++)
+    for (const auto& att_obj : _get_planning_scene_srv.response.scene.robot_state.attached_collision_objects) {
+
+        if (std::find(std::begin(_ignored_planning_scene_objects), 
+                std::end(_ignored_planning_scene_objects), 
+                att_obj.object.id) != std::end(_ignored_planning_scene_objects))
         {
-            boundingbox_ptr->at(i).x = vertices.at(i).x();
-            boundingbox_ptr->at(i).y = vertices.at(i).y();
-            boundingbox_ptr->at(i).z = vertices.at(i).z();
-            // std::cout << "vertice " << i << " " << vertices.at(i).transpose() << std::endl;
+            continue;
         }
 
-        pcl::ConvexHull<pcl::PointXYZ> hull;
-        hull.setDimension(3);
-        hull.setInputCloud(boundingbox_ptr);
-        hull.setComputeAreaVolume(true);
-
-        // Construct the hull
-        std::vector<pcl::Vertices> polygons;
-        pcl::PointCloud<pcl::PointXYZ>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZ>);
-        hull_points->header.frame_id = pc->header.frame_id;
-        hull.reconstruct(*hull_points, polygons);
-
-
-        //cropHullFilter.setUserFilterValue(1.0);
-        _crop_hull_filter.setDim(hull.getDimension());
-        _crop_hull_filter.setKeepOrganized(true);
-        _crop_hull_filter.setHullCloud(hull_points);
-        _crop_hull_filter.setHullIndices(polygons);
-        _crop_hull_filter.setInputCloud(pc);
-
-        //I want false but it is bugged in pcl1.10, solved only in 1.13
-        //even cropHullFilter.getRemovedIndices(*p_outside_indices) seems broken
-        //so we crop inside, and then use the indices to extract the outside with extractindices set negatively
-        _crop_hull_filter.setCropOutside(true);
-        pcl::PointIndices::Ptr p_inside_indices(new pcl::PointIndices);
-        p_inside_indices->indices.reserve(pc->size());
-        _crop_hull_filter.filter(p_inside_indices->indices);
-
-        _extract_indeces_filter.setInputCloud(pc);
-        _extract_indeces_filter.setKeepOrganized(false);
-        _extract_indeces_filter.setIndices(p_inside_indices);
-        _extract_indeces_filter.setNegative(true);
-        _extract_indeces_filter.filter(*pc);
+        std::vector<Eigen::Vector3d> vertices;
+        computeAttachedCollisionObjectVertices(att_obj, vertices);
+        if (vertices.size() == 0) {
+            continue;
+        }
+        filterWithConvexHull(pc, vertices);
+        
     }
 
     return true;
+}
+
+void PlanningSceneWrapper::computeCollisionObjectVertices(const moveit_msgs::CollisionObject& obj, std::vector<Eigen::Vector3d>& vertices) {
+
+    //hardcoded consider only boxes for now
+    if (obj.primitives[0].type != shape_msgs::SolidPrimitive::BOX) {
+        ROS_WARN("Planning scene object is not a box, skipping\n");
+        return;
+    }
+
+    w_T_obj.translation() << obj.pose.position.x, obj.pose.position.y, obj.pose.position.z;
+    w_T_obj.linear() = Eigen::Quaterniond(obj.pose.orientation.w,
+                                                obj.pose.orientation.x,
+                                                obj.pose.orientation.y,
+                                                obj.pose.orientation.z).toRotationMatrix();
+
+    b_T_obj = b_T_w * w_T_obj;
+
+    //BOX filter no good with rotated object (OOBB)
+    //pcl::CropBox<pcl::PointXYZ> boxFilter;
+    // Eigen::Vector3d b_dim = b_T_obj * Eigen::Vector3d(obj.primitives[0].dimensions[0]/2, obj.primitives[0].dimensions[1]/2, obj.primitives[0].dimensions[2]/2);
+    // b_dim = b_dim.cwiseAbs();
+    // std::cout << "b_T_obj:\n " << b_T_obj.matrix() << std::endl;
+    // std::cout << "b_dim: " << b_dim.transpose() << std::endl;
+
+    // boxFilter.setMin(Eigen::Vector4f(
+    //     b_T_obj.translation().x() - b_dim.x(),
+    //     b_T_obj.translation().y() - b_dim.y(),
+    //     b_T_obj.translation().z() - b_dim.z(),
+    //     1.0));
+    // boxFilter.setMax(Eigen::Vector4f(
+    //     b_T_obj.translation().x() + b_dim.x(),
+    //     b_T_obj.translation().y() + b_dim.y(),
+    //     b_T_obj.translation().z() + b_dim.z(),
+    //     1.0));
+        
+    // std::cout << b_T_obj.matrix().col(3).transpose();
+    // std::cout << -srv.response.scene.world.octomap.origin.position.x + obj.pose.position.x - obj.primitives[0].dimensions[0]/2 << std::endl;
+
+    // std::cout << "removing a box of " <<
+    //     obj.primitives[0].dimensions[0] << " " <<
+    //     obj.primitives[0].dimensions[1] << " " <<
+    //     obj.primitives[0].dimensions[2] << " " <<
+    //     std::endl;
+    // std::cout << "positioned at " <<
+    //     obj.pose.position.x << " " <<
+    //     obj.pose.position.y << " " <<
+    //     obj.pose.position.z << " " <<
+    //     std::endl;
+    // boxFilter.setNegative(true);
+    // boxFilter.setInputCloud(pc);
+    // boxFilter.filter(*pc);
+
+    vertices.resize(8);
+    
+    vertices.at(0) = b_T_obj * Eigen::Vector3d(
+        obj.primitives[0].dimensions[0]/2 + _filter_out_objects_pad, 
+        obj.primitives[0].dimensions[1]/2 + _filter_out_objects_pad, 
+        obj.primitives[0].dimensions[2]/2 + _filter_out_objects_pad);
+    vertices.at(1) = b_T_obj * Eigen::Vector3d(
+        obj.primitives[0].dimensions[0]/2 + _filter_out_objects_pad,
+        obj.primitives[0].dimensions[1]/2 + _filter_out_objects_pad,
+        -obj.primitives[0].dimensions[2]/2 - _filter_out_objects_pad);
+    vertices.at(2) = b_T_obj * Eigen::Vector3d(
+        obj.primitives[0].dimensions[0]/2 +_filter_out_objects_pad, 
+        -obj.primitives[0].dimensions[1]/2 -_filter_out_objects_pad, 
+        obj.primitives[0].dimensions[2]/2 +_filter_out_objects_pad);
+    vertices.at(3) = b_T_obj * Eigen::Vector3d(
+        obj.primitives[0].dimensions[0]/2 +_filter_out_objects_pad, 
+        -obj.primitives[0].dimensions[1]/2 -_filter_out_objects_pad, 
+        -obj.primitives[0].dimensions[2]/2 -_filter_out_objects_pad);
+    vertices.at(4) = b_T_obj * Eigen::Vector3d(
+        -obj.primitives[0].dimensions[0]/2 -_filter_out_objects_pad, 
+        obj.primitives[0].dimensions[1]/2 +_filter_out_objects_pad, 
+        obj.primitives[0].dimensions[2]/2 +_filter_out_objects_pad);
+    vertices.at(5) = b_T_obj * Eigen::Vector3d(
+        -obj.primitives[0].dimensions[0]/2 -_filter_out_objects_pad, 
+        obj.primitives[0].dimensions[1]/2 +_filter_out_objects_pad, 
+        -obj.primitives[0].dimensions[2]/2 -_filter_out_objects_pad);
+    vertices.at(6) = b_T_obj * Eigen::Vector3d(
+        -obj.primitives[0].dimensions[0]/2 -_filter_out_objects_pad, 
+        -obj.primitives[0].dimensions[1]/2 -_filter_out_objects_pad, 
+        obj.primitives[0].dimensions[2]/2 +_filter_out_objects_pad);
+    vertices.at(7) = b_T_obj * Eigen::Vector3d(
+        -obj.primitives[0].dimensions[0]/2 -_filter_out_objects_pad, 
+        -obj.primitives[0].dimensions[1]/2 -_filter_out_objects_pad, 
+        -obj.primitives[0].dimensions[2]/2 -_filter_out_objects_pad);
+}
+
+void PlanningSceneWrapper::computeAttachedCollisionObjectVertices(
+    const moveit_msgs::AttachedCollisionObject& att_obj, std::vector<Eigen::Vector3d>& vertices) { 
+    //hardcoded consider only boxes for now
+    if (att_obj.object.primitives[0].type != shape_msgs::SolidPrimitive::BOX) {
+        ROS_WARN("Planning scene attached object is not a box, skipping\n");
+        return;
+    }
+
+    if (! _model->getPose(att_obj.object.header.frame_id, _get_planning_scene_srv.response.scene.world.octomap.header.frame_id, w_T_bAttached))
+    {
+        ROS_ERROR("Failed to get pose from %s to %s", 
+            _get_planning_scene_srv.response.scene.world.octomap.header.frame_id.c_str(),
+             att_obj.object.header.frame_id.c_str());
+        return;
+    }
+
+    bAttached_T_aObj.translation() << att_obj.object.pose.position.x, att_obj.object.pose.position.y, att_obj.object.pose.position.z;
+    bAttached_T_aObj.linear() = Eigen::Quaterniond(att_obj.object.pose.orientation.w,
+                                            att_obj.object.pose.orientation.x,
+                                            att_obj.object.pose.orientation.y,
+                                            att_obj.object.pose.orientation.z).toRotationMatrix();
+
+
+    b_T_aObj = b_T_w * w_T_bAttached * bAttached_T_aObj;
+
+    vertices.resize(8);
+    vertices.at(0) = b_T_aObj * Eigen::Vector3d(
+        att_obj.object.primitives[0].dimensions[0]/2 + _filter_out_attached_objects_pad, 
+        att_obj.object.primitives[0].dimensions[1]/2 + _filter_out_attached_objects_pad, 
+        att_obj.object.primitives[0].dimensions[2]/2 + _filter_out_attached_objects_pad);
+    vertices.at(1) = b_T_aObj * Eigen::Vector3d(
+        att_obj.object.primitives[0].dimensions[0]/2 + _filter_out_attached_objects_pad,
+        att_obj.object.primitives[0].dimensions[1]/2 + _filter_out_attached_objects_pad,
+        -att_obj.object.primitives[0].dimensions[2]/2 - _filter_out_attached_objects_pad);
+    vertices.at(2) = b_T_aObj * Eigen::Vector3d(
+        att_obj.object.primitives[0].dimensions[0]/2 + _filter_out_attached_objects_pad, 
+        -att_obj.object.primitives[0].dimensions[1]/2 - _filter_out_attached_objects_pad, 
+        att_obj.object.primitives[0].dimensions[2]/2 + _filter_out_attached_objects_pad);
+    vertices.at(3) = b_T_aObj * Eigen::Vector3d(
+        att_obj.object.primitives[0].dimensions[0]/2 + _filter_out_attached_objects_pad, 
+        -att_obj.object.primitives[0].dimensions[1]/2 - _filter_out_attached_objects_pad, 
+        -att_obj.object.primitives[0].dimensions[2]/2 - _filter_out_attached_objects_pad);
+    vertices.at(4) = b_T_aObj * Eigen::Vector3d(
+        -att_obj.object.primitives[0].dimensions[0]/2 - _filter_out_attached_objects_pad, 
+        att_obj.object.primitives[0].dimensions[1]/2 + _filter_out_attached_objects_pad , 
+        att_obj.object.primitives[0].dimensions[2]/2 + _filter_out_attached_objects_pad );
+    vertices.at(5) = b_T_aObj * Eigen::Vector3d(
+        -att_obj.object.primitives[0].dimensions[0]/2 - _filter_out_attached_objects_pad, 
+        att_obj.object.primitives[0].dimensions[1]/2 + _filter_out_attached_objects_pad, 
+        -att_obj.object.primitives[0].dimensions[2]/2 - _filter_out_attached_objects_pad);
+    vertices.at(6) = b_T_aObj * Eigen::Vector3d(
+        -att_obj.object.primitives[0].dimensions[0]/2 - _filter_out_attached_objects_pad, 
+        -att_obj.object.primitives[0].dimensions[1]/2 - _filter_out_attached_objects_pad, 
+        att_obj.object.primitives[0].dimensions[2]/2 + _filter_out_attached_objects_pad);
+    vertices.at(7) = b_T_aObj * Eigen::Vector3d(
+        -att_obj.object.primitives[0].dimensions[0]/2 - _filter_out_attached_objects_pad, 
+        -att_obj.object.primitives[0].dimensions[1]/2 - _filter_out_attached_objects_pad, 
+        -att_obj.object.primitives[0].dimensions[2]/2 - _filter_out_attached_objects_pad);
+
+}
+
+
+void PlanningSceneWrapper::filterWithConvexHull(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, const std::vector<Eigen::Vector3d>& vertices) {
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr hull_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+    hull_cloud->header.frame_id = pc->header.frame_id;
+    hull_cloud->resize(vertices.size());
+    for (int i = 0; i < hull_cloud->size(); i++)
+    {
+        hull_cloud->at(i).x = vertices.at(i).x();
+        hull_cloud->at(i).y = vertices.at(i).y();
+        hull_cloud->at(i).z = vertices.at(i).z();
+        // std::cout << "vertice " << i << " " << vertices.at(i).transpose() << std::endl;
+    }
+
+    pcl::ConvexHull<pcl::PointXYZ> hull;
+    hull.setDimension(3);
+    hull.setInputCloud(hull_cloud);
+    hull.setComputeAreaVolume(true);
+
+    // Construct the hull
+    std::vector<pcl::Vertices> polygons;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZ>);
+    hull_points->header.frame_id = pc->header.frame_id;
+    hull.reconstruct(*hull_points, polygons);
+
+
+    //cropHullFilter.setUserFilterValue(1.0);
+    _crop_hull_filter.setDim(hull.getDimension());
+    _crop_hull_filter.setKeepOrganized(true);
+    _crop_hull_filter.setHullCloud(hull_points);
+    _crop_hull_filter.setHullIndices(polygons);
+    _crop_hull_filter.setInputCloud(pc);
+
+    //I want false but it is bugged in pcl1.10, solved only in 1.13
+    //even cropHullFilter.getRemovedIndices(*p_outside_indices) seems broken
+    //so we crop inside, and then use the indices to extract the outside with extractindices set negatively
+    _crop_hull_filter.setCropOutside(true);
+    pcl::PointIndices::Ptr p_inside_indices(new pcl::PointIndices);
+    p_inside_indices->indices.reserve(pc->size());
+    _crop_hull_filter.filter(p_inside_indices->indices);
+
+    _extract_indeces_filter.setInputCloud(pc);
+    _extract_indeces_filter.setKeepOrganized(false);
+    _extract_indeces_filter.setIndices(p_inside_indices);
+    _extract_indeces_filter.setNegative(true);
+    _extract_indeces_filter.filter(*pc);
 }
 
 void PlanningSceneWrapper::update()

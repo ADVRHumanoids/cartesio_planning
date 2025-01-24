@@ -249,14 +249,17 @@ private:
     double _octomap_resolution;
     std::string _octomap_base_link;
     bool filterOutPlanningSceneObjects(pcl::PointCloud<pcl::PointXYZ>::Ptr pc);
+    void computeCollisionObjectVertices(const moveit_msgs::CollisionObject& obj, std::vector<Eigen::Vector3d>& vertices);
+    void computeAttachedCollisionObjectVertices(const moveit_msgs::AttachedCollisionObject& obj, std::vector<Eigen::Vector3d>& vertices);
+    void filterWithConvexHull(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, const std::vector<Eigen::Vector3d>& vertices);
     bool _filter_out_planning_scene_objects;
     double _filter_out_objects_pad;
+    double _filter_out_attached_objects_pad;
     std::vector<std::string> _ignored_planning_scene_objects;
     moveit_msgs::GetPlanningScene _get_planning_scene_srv;
     pcl::CropHull<pcl::PointXYZ> _crop_hull_filter;
     pcl::ExtractIndices<pcl::PointXYZ> _extract_indeces_filter;
-    Eigen::Isometry3f w_T_obj, w_T_b, b_T_obj;
-
+    Eigen::Affine3d w_T_obj, b_T_w, b_T_obj, bAttached_T_aObj, b_T_aObj, w_T_bAttached;
 
 };
 
