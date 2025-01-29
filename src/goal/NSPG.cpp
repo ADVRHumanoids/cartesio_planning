@@ -80,7 +80,7 @@ bool NSPG::sample ( double timeout )
         }
         if(T >= timeout)
         {
-            std::cout << "NSGP timeout" <<std::endl;
+            std::cout << "[NSGP] timeout with " << _fail_map.size() << " fail map elements:" <<std::endl;
             for (auto pair : _fail_map)
             {
                 std::cout << pair.first << ": " << pair.second << std::endl;
@@ -112,15 +112,11 @@ bool NSPG::sample ( double timeout )
         solved = _ik_solver->solve();
         if (!solved)
         {
-            std::cout << "[NSPG]: unable to solve" << std::endl;
-            auto toc = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<float> fsec = toc-_time;
-            T += fsec.count();
-            _time = toc;
-            if (_rviz_debug) {
-                _rviz->publishMarkers(ros::Time::now(), {});
+            std::cout << "[NSPG]: unable to solve with " << failed_predicate.size() << " failed predicates:" << std::endl;
+            for (const auto string : failed_predicate) {
+                std::cout << string << std::endl;
             }
-            continue;
+
         }
 
         if (_rviz_debug) {
