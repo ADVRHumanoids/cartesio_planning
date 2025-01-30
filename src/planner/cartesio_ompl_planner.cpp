@@ -263,36 +263,81 @@ void OmplPlanner::set_control_bounds(const Eigen::VectorXd& control_min,
 
 void OmplPlanner::setup_problem_definition(std::shared_ptr<ompl::base::SpaceInformation> space_info)
 {
-    auto vss_alloc = [](const ompl::base::SpaceInformation * si)
+    unsigned int nAttempts;
+    if (_options && _options["num_attempts"]) {
+        nAttempts = _options["num_attempts"].as<unsigned>();
+    } else {
+        nAttempts = 10000;
+    }
+    std::cout << "[PLANNER::SETUPPROBLEMDEF] Using nAttempts: " << nAttempts << std::endl;
+
+    auto vss_alloc = [nAttempts](const ompl::base::SpaceInformation * si)
     {
         auto vss = std::make_shared<ompl::base::UniformValidStateSampler>(si);
-        vss->setNrAttempts(10000);
+        vss->setNrAttempts(nAttempts);
         return vss;
     };
 
     space_info->setValidStateSamplerAllocator(vss_alloc);
     _pdef = std::make_shared<ompl::base::ProblemDefinition>(space_info);
-    //    _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(space_info));
+
+    if (_options && _options["opt_obj"]) {
+
+        std::string opt_obj = _options["opt_obj"].as<std::string>();
+        
+        if (opt_obj.compare("PathLengthOptimizationObjective") == 0) {
+            std::cout << "[PLANNER::SETUPPROBLEMDEF] Using PathLengthOptimizationObjective" << std::endl;
+            _pdef->setOptimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(space_info));
+
+        } else {
+            std::cout << "Optimization objective '" << opt_obj  << "' invalid" << std::endl;
+        }
+
+    } else {
+        std::cout << "[PLANNER::SETUPPROBLEMDEF] NOT Using any optimization objective" << std::endl;
+    }
 }
 
+ompl::base::PlannerPtr OmplPlanner::make_RRTConnect()
+{
+    std::cout << "Making RRTConnect... " << std::endl;
+    auto planner = std::make_shared<ompl::geometric::RRTConnect>(_space_info);
+
+    if(!_options || !_options["RRTConnect"])
+    {
+        std::cout << "RRTConnect: No options detected, using defaults" << std::endl;
+
+    } else {
+
+        auto opt = _options["RRTConnect"];
+
+        PLANNER_PARSE_OPTION(Range, double);
+    }
+
+    std::cout << "RRTConnect made!" << std::endl;
+    return planner;
+}
 
 ompl::base::PlannerPtr OmplPlanner::make_RRTstar()
 {
-
+    std::cout << "Making RRTstar... " << std::endl;
     auto planner = std::make_shared<ompl::geometric::RRTstar>(_space_info);
 
     if(!_options || !_options["RRTstar"])
     {
-        std::cout << "No options detected" << std::endl;
-        return planner;
+        std::cout << "RRTstar: No options detected, using defaults" << std::endl;
+
+    } else {
+
+        auto opt = _options["RRTstar"];
+
+        PLANNER_PARSE_OPTION(GoalBias, double);
+        PLANNER_PARSE_OPTION(Range, int);
+        PLANNER_PARSE_OPTION(KNearest, bool);
+
     }
 
-    auto opt = _options["RRTstar"];
-
-    PLANNER_PARSE_OPTION(GoalBias, double);
-    PLANNER_PARSE_OPTION(Range, int);
-    PLANNER_PARSE_OPTION(KNearest, bool);
-
+    std::cout << "RRTstar made!" << std::endl;
     return planner;
 }
 
@@ -673,7 +718,8 @@ ompl::base::PlannerPtr OmplPlanner::make_planner(const std::string &planner_type
 
         ADD_PLANNER_AND_IF("RRTConnect")
         {
-            return std::make_shared<ompl::geometric::RRTConnect>(_space_info);
+            
+            return make_RRTConnect();
         }
 
         ADD_PLANNER_AND_IF("RRTsharp")
