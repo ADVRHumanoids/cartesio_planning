@@ -341,6 +341,28 @@ std::vector<std::string> PlanningSceneWrapper::getCollidingLinks() const
     return impl->getCollidingLinks();
 }
 
+bool PlanningSceneWrapper::addCollisionObject(moveit_msgs::msg::CollisionObject co, std::string attach_to_link, std::vector<std::string> touch_links)
+{
+    return impl->addCollisionObject(co, attach_to_link, touch_links);
+}
+
+bool PlanningSceneWrapper::addBox(std::string id, const Eigen::Vector3d &size, const Eigen::Affine3d &T, std::string frame_id, std::string attach_to_link, std::vector<std::string> touch_links)
+{
+    return impl->addBox(id, size, T, frame_id, attach_to_link, touch_links);
+}
+
+bool PlanningSceneWrapper::addSphere(std::string id, double radius, const Eigen::Affine3d &T, std::string frame_id, std::string attach_to_link, std::vector<std::string> touch_links)
+{
+    return impl->addSphere(id, radius, T, frame_id, attach_to_link, touch_links);
+}
+
+bool PlanningSceneWrapper::addCylinder(std::string id, double radius, double height, const Eigen::Affine3d &T, std::string frame_id, std::string attach_to_link, std::vector<std::string> touch_links)
+{
+    return impl->addCylinder(id, radius, height, T, frame_id, attach_to_link, touch_links);
+}
+
+
+
 PlanningSceneWrapper::~PlanningSceneWrapper()
 {
 }

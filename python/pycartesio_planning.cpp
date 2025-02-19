@@ -4,9 +4,9 @@
 #include <cartesio_planning/constraints/contact_constraint.h>
 #include <cartesio_planning/trajectory_interpolation.h>
 
-#include <cartesio_planning/ros/planning_scene_wrapper.h>
-#include <cartesio_planning/ros/robot_viz.h>
-#include <cartesio_planning/ros/robot_viz_dummy_checker.h>
+#include <cartesio_planning/ros2/planning_scene_wrapper.h>
+#include <cartesio_planning/ros2/robot_viz.h>
+#include <cartesio_planning/ros2/robot_viz_dummy_checker.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
@@ -16,6 +16,8 @@
 using namespace XBot::Cartesian::Planning;
 namespace py = pybind11;
 using rvp = py::return_value_policy;
+
+
 
 
 void eigenToStd(Eigen::Ref<const Eigen::VectorXd> qeig,
@@ -188,14 +190,14 @@ PYBIND11_MODULE(pycartesio_planning, m)
     // ROS
     auto mros = m.def_submodule("ros");
 
-    mros.def("init_ros",
+    mros.def("init_rclcpp",
              [](std::string name,
                 std::vector<std::string> args)
              {
                  std::vector<const char*> aargs;
                  for(auto& a : args) aargs.push_back(a.c_str());
                  int argc = args.size();
-                 ros::init(argc, (char**)aargs.data(), name, ros::init_options::NoSigintHandler);
+                 rclcpp::init(argc, (char**)aargs.data(), rclcpp::InitOptions(), rclcpp::SignalHandlerOptions::None);
              },
         py::arg("name"), py::arg("args") = std::vector<std::string>());
 
@@ -234,7 +236,7 @@ PYBIND11_MODULE(pycartesio_planning, m)
         .def("publishMarkers",
              [](RobotViz& self, std::vector<std::string> red_links)
              {
-                self.publishMarkers(ros::Time::now(), red_links);
+                self.publishMarkers(self.getNode().get_clock()->now(), red_links);
             }, py::arg("red_links") = std::vector<std::string>())
         ;
 }

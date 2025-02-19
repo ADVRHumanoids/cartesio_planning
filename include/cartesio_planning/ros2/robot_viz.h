@@ -1,8 +1,8 @@
 #ifndef CP_ROBOT_VIZ_H
 #define CP_ROBOT_VIZ_H
 
-#include <ros/ros.h>
-#include <visualization_msgs/MarkerArray.h>
+#include <rclcpp/rclcpp.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include <xbot2_interface/xbotinterface2.h>
 
@@ -33,7 +33,11 @@ public:
      */
     RobotViz(ModelInterface::ConstPtr model,
              std::string topic_name,
-             ros::NodeHandle nh = ros::NodeHandle("~"),
+             rclcpp::Node::SharedPtr node = nullptr,
+             std::optional<color> rgba = std::nullopt);
+
+    RobotViz(ModelInterface::ConstPtr model,
+             std::string topic_name,
              std::optional<color> rgba = std::nullopt);
 
     /**
@@ -59,7 +63,13 @@ public:
      * @param time
      * @param red_links these links will be publisged with the _reserved_color
      */
-    void publishMarkers(const ros::Time& time, const std::vector<std::string>& red_links);
+    void publishMarkers(const rclcpp::Time& time, const std::vector<std::string>& red_links);
+
+    /**
+     * @brief getNode
+     * @return
+     */
+    rclcpp::Node& getNode();
 
 private:
 
@@ -69,8 +79,8 @@ private:
     const color _reserved_color;
 
     XBot::ModelInterface::ConstPtr _model;
-    ros::NodeHandle _nh;
-    ros::Publisher collision_robot_pub;
+    rclcpp::Node::SharedPtr _node;
+    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _collision_robot_pub;
     std::string _prefix;
     color _rgba;
 

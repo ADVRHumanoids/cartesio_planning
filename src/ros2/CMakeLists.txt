@@ -47,9 +47,10 @@ target_include_directories(cartesio_planning_ros
 target_link_libraries(cartesio_planning_ros
     PUBLIC
     cartesio_planning_library
+    rclcpp::rclcpp
     PRIVATE
     ${OMPL_LIBRARIES}
-    rclcpp::rclcpp
+
     geometry_msgs::geometry_msgs__rosidl_generator_cpp
     trajectory_msgs::trajectory_msgs__rosidl_generator_cpp
     sensor_msgs::sensor_msgs__rosidl_generator_cpp
