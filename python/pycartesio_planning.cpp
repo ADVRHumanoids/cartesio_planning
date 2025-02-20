@@ -18,6 +18,45 @@ namespace py = pybind11;
 using rvp = py::return_value_policy;
 
 
+// constraint trampoline
+class PyConstraint : public Constraint
+{
+public:
+
+    CARTESIO_DECLARE_SMART_PTR(PyConstraint);
+
+    using Constraint::Constraint;
+
+    Eigen::VectorXd _value(const Eigen::VectorXd& q) const override
+    {
+        PYBIND11_OVERLOAD_PURE(
+            Eigen::VectorXd,
+            Constraint,
+            _value,
+            q
+        );
+    }
+
+    Eigen::MatrixXd _jacobian(const Eigen::VectorXd& q) const override
+    {
+        PYBIND11_OVERLOAD_PURE(
+            Eigen::MatrixXd,
+            Constraint,
+            _jacobian,
+            q
+        );
+    }
+
+    int _constraintSize() const override
+    {
+        PYBIND11_OVERLOAD_PURE(
+            int,
+            Constraint,
+            _constraintSize
+        );
+    }
+
+};
 
 
 void eigenToStd(Eigen::Ref<const Eigen::VectorXd> qeig,
@@ -57,6 +96,13 @@ bool svc_check_valid(StateValidityChecker& self,
     return self.checkValid(q, qnear);
 }
 
+PyConstraint::Ptr make_pyconstraint(std::shared_ptr<const StateSpace> space,
+                                           std::string options)
+{
+    return std::make_shared<PyConstraint>(space, YAML::Load(options));
+}
+
+
 CartesianConstraint::Ptr make_cartesian_constraint(std::shared_ptr<const StateSpace> space,
                                                    XBot::Cartesian::CartesianInterfaceImpl::Ptr ci,
                                                    std::string options)
@@ -74,7 +120,8 @@ ContactConstraint::Ptr make_contact_constraint(std::shared_ptr<const StateSpace>
 
 PYBIND11_MODULE(pycartesio_planning, m)
 {
-    py::class_<Constraint, Constraint::Ptr>(m, "Constraint")
+    py::class_<Constraint, PyConstraint, Constraint::Ptr>(m, "Constraint")
+        .def(py::init<std::shared_ptr<const StateSpace>, std::string>())
         .def("constraintSize", &Constraint::constraintSize)
         .def("bind", &Constraint::bind)
         .def("checkJacobian", &Constraint::checkJacobian)

@@ -10,6 +10,14 @@ using namespace XBot::Cartesian::Planning;
 
 
 Constraint::Constraint(std::shared_ptr<const StateSpace> space,
+           std::string options):
+    Constraint(space, YAML::Load(options))
+{
+
+}
+
+
+Constraint::Constraint(std::shared_ptr<const StateSpace> space,
                        YAML::Node options):
     _space(space)
 {

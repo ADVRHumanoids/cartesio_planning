@@ -18,6 +18,9 @@ public:
     CARTESIO_PLANNING_DECLARE_SMART_PTR(Constraint);
 
     Constraint(std::shared_ptr<const StateSpace> space,
+               std::string options);
+
+    Constraint(std::shared_ptr<const StateSpace> space,
                YAML::Node options = YAML::Node());
 
     void bind(std::shared_ptr<const StateSpace> space);
