@@ -1,24 +1,35 @@
 # main imports
 import numpy as np
 from copy import deepcopy
-import rospy
+import time 
+
+import rclpy
+import rclpy.qos
 
 from cartesio_planning import pycartesio_planning as pl
-from xbot2_interface import pyxbot2_interface as xbi
-from xbot2_interface.pyaffine3 import Affine3
+from xbot2_interface_python import pyxbot2_interface as xbi
+from xbot2_interface_python.pyaffine3 import Affine3
+import std_msgs.msg
 
 np.set_printoptions(precision=2, suppress=True)
 
 # init rospy and roscpp
-pl.ros.init_ros('planning_scene_test_node_cpp')
-rospy.init_node('planning_scene_test_node')
+pl.ros.init_rclcpp('planning_scene_test_node_cpp')
+rclpy.init()
+node = rclpy.create_node('planning_scene_test_node')
 
 # load urdf, srdf
 import nb_location
 curr_dir = nb_location.get_nb_location()
 urdf = open(curr_dir + '/../../test/resources/centauro_capsule.urdf', 'r').read()
 srdf = open(curr_dir + '/../../test/resources/centauro_capsule.srdf', 'r').read()
-rospy.set_param('planning_scene_test_node/robot_description', urdf)
+
+# publish urdf to ros topic 
+# use transient local qos
+qos = rclpy.qos.QoSProfile(depth=1, durability=rclpy.qos.QoSDurabilityPolicy.TRANSIENT_LOCAL)
+urdf_pub = node.create_publisher(std_msgs.msg.String, '~/robot_description', qos)
+urdf_msg = std_msgs.msg.String(data=urdf)
+urdf_pub.publish(urdf_msg)
 
 # build model
 model = xbi.ModelInterface2(urdf, srdf, 'pin')
@@ -130,7 +141,6 @@ time_vec, pos, vel, acc = pl.simpleTrajectoryInterpolation(ss, trj, max_vel, max
 # visualize trj
 npt = len(time_vec)
 i = 0
-rate = rospy.Rate(1./trj_dt)
 
 while True:
 
@@ -139,9 +149,9 @@ while True:
     model.update()
     planviz.publishMarkers()
     i += 1
-    rate.sleep()
+    time.sleep(trj_dt)
 
     if i == npt:
         i = 0
-        rospy.sleep(rospy.Duration(1.0))
+        time.sleep(1.0)
 
