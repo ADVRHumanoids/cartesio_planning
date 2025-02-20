@@ -30,6 +30,8 @@ PlanningSceneWrapper::Impl::Impl(ModelInterface::ConstPtr model,
     // provide get planning scene server
     _monitor->providePlanningSceneService();
 
+    _monitor->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
+
     // provide apply planning scene service
     _apply_planning_scene_srv
         = _node->create_service<moveit_msgs::srv::ApplyPlanningScene>(
