@@ -198,7 +198,7 @@ bool GoalSamplerBase::sampleGoalPostural(Eigen::VectorXd &q, const unsigned int 
         auto qrand = generateRandomSeed();
         
         // set it as postural;
-        model->eigenToMap(qrand, jmap);
+        model->qToMap(qrand, jmap);
         jmap["neck_velodyne"] = neck_velodyne;
         _ik_solver->getCI()->setReferencePosture(jmap);
         

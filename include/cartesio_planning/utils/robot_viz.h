@@ -1,7 +1,7 @@
 #ifndef _ROBOT_VIZ_H_
 #define _ROBOT_VIZ_H_
 
-#include <XBotInterface/ModelInterface.h>
+#include <xbot2_interface/xbotinterface2.h>
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
 

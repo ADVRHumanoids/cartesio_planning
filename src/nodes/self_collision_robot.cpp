@@ -1,7 +1,7 @@
 #include <cartesio_planning/validity_checker/planning_scene_wrapper.h>
 #include <sensor_msgs/JointState.h>
-#include <XBotInterface/ModelInterface.h>
-#include <RobotInterfaceROS/ConfigFromParam.h>
+#include <xbot2_interface/xbotinterface2.h>
+#include <xbot2_interface/ros/config_from_param.hpp>
 #include <cartesio_planning/utils/robot_viz.h>
 
 using namespace XBot::Cartesian;
@@ -11,7 +11,7 @@ int main(int argc, char ** argv)
     ros::init(argc, argv, "self_collision_robot");
     ros::NodeHandle nh;
 
-    auto cfg = XBot::ConfigOptionsFromParamServer();
+    auto cfg = XBot::Utils::ConfigOptionsFromParamServer();
     XBot::ModelInterface::Ptr model = XBot::ModelInterface::getModel(cfg);
 
     Planning::PlanningSceneWrapper ps(model);

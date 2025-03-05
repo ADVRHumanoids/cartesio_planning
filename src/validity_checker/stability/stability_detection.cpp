@@ -26,19 +26,19 @@ bool ConvexHullStability::getConvexHull(PlanarInclusionDetectionBase::Polygon& p
     if(_polygon_frames.empty())
             return false;
 
-    std::list<KDL::Vector> points_KDL;
-    if(!_huller->getSupportPolygonPoints(points_KDL, _polygon_frames, *_model, "COM"))
+    std::list<Eigen::Vector3d> points;
+    if(!_huller->getSupportPolygonPoints(points, _polygon_frames, *_model, "COM"))
         return false;
 
-    std::vector<KDL::Vector> ch_KDL;
-    if(!_huller->getConvexHull(points_KDL, ch_KDL))
+    std::vector<Eigen::Vector3d> ch;
+    if(!_huller->getConvexHull(points, ch))
         return false;
 
     PlanarInclusionDetectionBase::Point2 p;
-    for(unsigned int i = 0; i < ch_KDL.size(); ++i)
+    for(unsigned int i = 0; i < ch.size(); ++i)
     {
-        p[0] = ch_KDL[i].x();
-        p[1] = ch_KDL[i].y();
+        p[0] = ch[i].x();
+        p[1] = ch[i].y();
         poly.push_back(p);
     }
 

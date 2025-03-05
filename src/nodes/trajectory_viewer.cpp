@@ -3,8 +3,8 @@
 
 #include <cartesian_interface/utils/RobotStatePublisher.h>
 
-#include <XBotInterface/ModelInterface.h>
-#include <RobotInterfaceROS/ConfigFromParam.h>
+#include <xbot2_interface/xbotinterface2.h>
+#include <xbot2_interface/ros/config_from_param.hpp>
 
 int main(int argc, char ** argv)
 {
@@ -13,8 +13,8 @@ int main(int argc, char ** argv)
     ros::NodeHandle nh("planner");
 
     // retrieve xbot model
-    auto opt = XBot::ConfigOptionsFromParamServer();
-    auto model = XBot::ModelInterface::getModel(opt);
+    auto opt = XBot::Utils::ConfigOptionsFromParamServer();
+    XBot::ModelInterface::Ptr model = XBot::ModelInterface::getModel(opt);
 
 
     std::shared_ptr<ros::Rate> rate;
@@ -23,6 +23,8 @@ int main(int argc, char ** argv)
     // on trajectory received callback
     auto on_trj_received = [&trj_points, &k, &rate](const trajectory_msgs::JointTrajectoryConstPtr& msg)
     {
+        ROS_INFO("Joint trajectory received!");
+
         trj_points.clear();
         for(auto pi : msg->points)
         {
@@ -51,8 +53,6 @@ int main(int argc, char ** argv)
         {
             rate->sleep();
 
-            ros::spinOnce();
-            
             // evaluate trajectory at time
             auto qi = trj_points[k];
 
@@ -80,7 +80,7 @@ int main(int argc, char ** argv)
             
             rspub.publishTransforms(ros::Time::now(), "planner");
             fixed_rate.sleep();
-            ros::spinOnce();
         }
+        ros::spinOnce();
     }
 }

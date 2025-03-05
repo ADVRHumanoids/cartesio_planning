@@ -6,7 +6,7 @@
 #include <thread>
 #include <random>
 
-#include <XBotInterface/ModelInterface.h>
+#include <xbot2_interface/xbotinterface2.h>
 #include <cartesio_planning/validity_checker/validity_checker_context.h>
 #include <cartesio_planning/utils/robot_viz.h>
 #include <cartesian_interface/utils/RobotStatePublisher.h>
@@ -41,8 +41,8 @@ namespace XBot { namespace Cartesian { namespace Planning {
         
         double generateRandom();
         
-    private:        
-        XBot::JointNameMap generateRandomVelocities(std::vector<XBot::ModelChain> colliding_chains);
+    private:
+        XBot::JointNameMap generateRandomVelocities(std::vector<XBot::v2::Chain::Ptr> colliding_chains);
         
         PositionCartesianSolver::Ptr _ik_solver;
         

@@ -1,4 +1,5 @@
 #include <cartesio_planning/goal/NSPG.h>
+#include <xbot2_interface/chain.h>
 
 using namespace XBot::Cartesian::Planning;
 
@@ -88,13 +89,13 @@ bool NSPG::sample ( double timeout )
         }
         
         // Acquire colliding chains
-//        auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
-        std::vector<XBot::ModelChain> colliding_chains {};
+        //auto colliding_chains = _vc_context.planning_scene->getCollidingChains();
+        std::vector<XBot::v2::Chain::Ptr> colliding_chains {};
         
         // Generate a random velocity vector for colliding chains' joints only every n iterations
         if (iter % 100 == 0)
         {
-            _ik_solver->getModel()->eigenToMap(x, joint_map);
+            _ik_solver->getModel()->qToMap(x, joint_map);
             random_map = generateRandomVelocities(colliding_chains);  
             _fb_step_size *= 10;
         }
@@ -141,15 +142,15 @@ double NSPG::generateRandom()
     return randDistribution(randGenerator);
 }
 
-XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::ModelChain> colliding_chains) 
+XBot::JointNameMap NSPG::generateRandomVelocities(std::vector<XBot::v2::Chain::Ptr> colliding_chains)
 {
-    XBot::JointNameMap random_map, chain_map, velocityLim_map;
+    XBot::v2::JointNameMap random_map, chain_map, velocityLim_map;
     Eigen::VectorXd velocity_lim;
 
     _ik_solver->getModel()->getVelocityLimits(velocity_lim);
 
     _ik_solver->getCI()->getReferencePosture(velocityLim_map);
-    _ik_solver->getModel()->eigenToMap(velocity_lim, velocityLim_map);
+    _ik_solver->getModel()->vToMap(velocity_lim, velocityLim_map);
 
     random_map.insert(std::make_pair("VIRTUALJOINT_1", generateRandom() * _fb_step_size));
     random_map.insert(std::make_pair("VIRTUALJOINT_2", generateRandom() * _fb_step_size));

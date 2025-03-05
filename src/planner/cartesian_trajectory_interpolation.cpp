@@ -1,10 +1,10 @@
 #include <cartesio_planning/interpolator/cartesian_trajectory_interpolation.h>
 #include <cartesio_planning/planner/trajectory_interpolation.h>
-#include <RobotInterfaceROS/ConfigFromParam.h>
+#include <xbot2_interface/ros/config_from_param.hpp>
 
 CartesianTrajectoryInterpolation::CartesianTrajectoryInterpolation()
 {
-    auto cfg = XBot::ConfigOptionsFromParamServer();
+    auto cfg = XBot::Utils::ConfigOptionsFromParamServer();
     _model = XBot::ModelInterface::getModel(cfg);
 
     _interpolator = std::make_shared<TrajectoryInterpolation>(_model->getJointNum());
@@ -86,6 +86,6 @@ void CartesianTrajectoryInterpolation::evaluate(double t, const std::string& bas
     else
     {
         _model->getPose(distal_link, base_link, pose);
-        _model->getVelocityTwist(distal_link, base_link, twist);
+        _model->getRelativeVelocityTwist(distal_link, base_link, twist);
     }
 }

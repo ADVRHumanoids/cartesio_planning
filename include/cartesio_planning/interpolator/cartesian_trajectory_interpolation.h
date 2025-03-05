@@ -1,7 +1,7 @@
 #ifndef CARTESIAN_TRAJECTORY_INTERPOLATION_H
 #define CARTESIAN_TRAJECTORY_INTERPOLATION_H
 
-#include <XBotInterface/ModelInterface.h>
+#include <xbot2_interface/xbotinterface2.h>
 
 class TrajectoryInterpolation;
 

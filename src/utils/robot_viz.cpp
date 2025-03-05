@@ -42,7 +42,7 @@ void XBot::Cartesian::Planning::RobotViz::publishMarkers(const ros::Time & time,
     ros::Time t = time;
 
     std::vector<urdf::LinkSharedPtr> links;
-    _model->getUrdf().getLinks(links);
+    _model->getUrdf()->getLinks(links);
 
     int id = 0;
     for(auto link : links)

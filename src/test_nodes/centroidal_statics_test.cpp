@@ -1,6 +1,6 @@
 #include <sensor_msgs/JointState.h>
-#include <XBotInterface/ModelInterface.h>
-#include <RobotInterfaceROS/ConfigFromParam.h>
+#include <xbot2_interface/xbotinterface2.h>
+#include <xbot2_interface/ros/config_from_param.hpp>
 #include "validity_checker/stability/centroidal_statics.h"
 #include <std_srvs/Empty.h>
 #include <cartesio_planning/SetContactFrames.h>
@@ -17,7 +17,7 @@ int main(int argc, char ** argv)
     ros::NodeHandle nh;
     ros::NodeHandle nhp("~");
 
-    auto cfg = XBot::ConfigOptionsFromParamServer();
+    auto cfg = XBot::Utils::ConfigOptionsFromParamServer();
     XBot::ModelInterface::Ptr model = XBot::ModelInterface::getModel(cfg);
 
     std::vector<std::string> links_in_contact;

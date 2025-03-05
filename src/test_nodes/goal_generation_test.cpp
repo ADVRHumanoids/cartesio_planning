@@ -22,7 +22,7 @@ int main(int argc, char ** argv)
     ros::NodeHandle nh("planner");
 
     // obtain robot model from param server
-    auto cfg = LoadOptions(LoadFrom::PARAM);
+    auto cfg = LoadOptionsFromParamServer();
     XBot::ModelInterface::Ptr model = XBot::ModelInterface::getModel(cfg);
 
     Eigen::VectorXd qhome, qmin, qmax;
@@ -37,7 +37,7 @@ int main(int argc, char ** argv)
     model->update();
 
     // obtain ci object from param server
-    auto ik_yaml = LoadProblemDescription(LoadFrom::PARAM);
+    auto ik_yaml = LoadProblemDescription();
     double ci_period = 0.01;
     auto ci_ctx = std::make_shared<Context>(
                 std::make_shared<Parameters>(ci_period),
@@ -83,7 +83,7 @@ int main(int argc, char ** argv)
             res.status.val = res.status.EXACT_SOLUTION;
             res.status.msg.data = "EXACT_SOLUTION";
 
-            res.sampled_goal.name = ci->getModel()->getEnabledJointNames();
+            res.sampled_goal.name = ci->getModel()->getJointNames();
             res.sampled_goal.position.resize(q.size());
             Eigen::VectorXd::Map(&res.sampled_goal.position[0], q.size()) = q;
             res.sampled_goal.header.stamp = ros::Time::now();

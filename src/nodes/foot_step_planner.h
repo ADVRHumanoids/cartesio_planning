@@ -41,8 +41,8 @@
 
 #include <boost/math/constants/constants.hpp>
 
-#include <XBotInterface/ModelInterface.h>
-#include <RobotInterfaceROS/ConfigFromParam.h>
+#include <xbot2_interface/xbotinterface2.h>
+#include <xbot2_interface/ros/config_from_param.hpp>
 #include <cartesian_interface/utils/LoadConfig.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
 #include <cartesian_interface/utils/RobotStatePublisher.h>

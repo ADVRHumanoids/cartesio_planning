@@ -1,7 +1,7 @@
 #ifndef _GOAL_GENERATION_H_
 #define _GOAL_GENERATION_H_
 
-#include <XBotInterface/ModelInterface.h>
+#include <xbot2_interface/xbotinterface2.h>
 #include <ros/node_handle.h>
 #include <cartesio_planning/validity_checker/validity_checker_context.h>
 #include <cartesio_planning/goal/goal_sampler.h>

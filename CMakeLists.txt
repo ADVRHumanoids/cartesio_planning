@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(cartesio_planning)
 
 ## Compile as C++14, supported in ROS Kinetic and newer
-add_compile_options(-std=c++14)
+set(CMAKE_CXX_STANDARD 20)
 
 option(COMPILE_TESTS "Compile internal tests" FALSE)
 
@@ -25,6 +25,8 @@ find_package(catkin REQUIRED COMPONENTS
     visualization_msgs
     message_generation
     )
+
+find_package(xbot2_interface REQUIRED)
 
 find_package(casadi REQUIRED)
 
@@ -155,6 +157,7 @@ include_directories( SYSTEM
     ${cartesian_interface_INCLUDE_DIRS}
     ${cartesio_acceleration_support_INCLUDE_DIRS}
     ${casadi_INCLUDE_DIRS}
+    ${XBotInterface_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS} # note: must be the last in the include list
     )
 
@@ -165,7 +168,7 @@ add_library(trajectory_interpolation SHARED src/planner/trajectory_interpolation
 target_link_libraries( trajectory_interpolation PRIVATE casadi)
 
 add_library(cartesian_trajectory_interpolation SHARED src/planner/cartesian_trajectory_interpolation.cpp)
-target_link_libraries(cartesian_trajectory_interpolation PRIVATE trajectory_interpolation ${XBotInterface_LIBRARIES})
+target_link_libraries(cartesian_trajectory_interpolation PRIVATE trajectory_interpolation xbot2_interface::xbot2_interface)
 
 # Main library
 add_library(cartesio_planning SHARED
@@ -193,6 +196,7 @@ add_library(cartesio_planning SHARED
 target_link_libraries(cartesio_planning
     PUBLIC
     ${OMPL_LIBRARIES}
+    xbot2_interface::xbot2_interface
     ${cartesian_interface_LIBRARIES}
     ${catkin_LIBRARIES}
     yaml-cpp
@@ -207,11 +211,11 @@ target_include_directories(cartesio_planning PUBLIC ${OMPL_INCLUDE_DIRS})
 
 # Stability test exe
 add_executable(stability_test src/test_nodes/stability_test.cpp)
-target_link_libraries(stability_test cartesio_planning ${XBotInterface_LIBRARIES} matlogger2::matlogger2 ${catkin_LIBRARIES})
+target_link_libraries(stability_test cartesio_planning xbot2_interface::xbot2_interface matlogger2::matlogger2 ${catkin_LIBRARIES})
 
 # ompl_test_control exe
 add_executable(ompl_control_test src/ompl_test_control.cpp)
-target_link_libraries(ompl_control_test cartesio_planning ${XBotInterface_LIBRARIES} matlogger2::matlogger2 ${catkin_LIBRARIES})
+target_link_libraries(ompl_control_test cartesio_planning xbot2_interface::xbot2_interface matlogger2::matlogger2 ${catkin_LIBRARIES})
 
 
 # Previewer node
@@ -222,7 +226,7 @@ add_executable(previewer
 target_link_libraries(previewer
     ${cartesian_interface_LIBRARIES}
     trajectory_interpolation
-    ${XBotInterface_LIBRARIES}
+    xbot2_interface::xbot2_interface
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
     
@@ -232,7 +236,7 @@ add_executable(publisher
     )
 
 target_link_libraries(publisher   
-    ${XBotInterface_LIBRARIES}
+    xbot2_interface::xbot2_interface
     ${catkin_LIBRARIES}
     )
 
@@ -245,7 +249,7 @@ target_link_libraries(self_collision_robot ${OMPL_LIBRARIES}
     yaml-cpp
     dl
     cartesio_planning
-    ${XBotInterface_LIBRARIES}
+    xbot2_interface::xbot2_interface
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
 
@@ -259,7 +263,7 @@ target_link_libraries(goal_generation_test ${OMPL_LIBRARIES}
     dl
     cartesio_planning
     ${cartesian_interface_LIBRARIES}
-    ${XBotInterface_LIBRARIES}
+    xbot2_interface::xbot2_interface
     ${catkin_LIBRARIES}
     matlogger2::matlogger2)
 
@@ -278,7 +282,7 @@ target_link_libraries(planning_server ${catkin_LIBRARIES} matlogger2::matlogger2
 
 # Octomap Collision Main
 add_executable(octomap_collision_main src/utils/octomap_collision_main.cpp)
-target_link_libraries(octomap_collision_main cartesio_planning ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(octomap_collision_main cartesio_planning xbot2_interface::xbot2_interface ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 # Point Cloud test
 add_executable(point_cloud_test src/test_nodes/point_cloud_test.cpp)
@@ -286,7 +290,7 @@ target_link_libraries(point_cloud_test cartesio_planning ${catkin_LIBRARIES} ${P
 
 # Centroidal Statics test
 add_executable(centroidal_statics_test src/test_nodes/centroidal_statics_test.cpp)
-target_link_libraries(centroidal_statics_test centroidal_statics ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
+target_link_libraries(centroidal_statics_test centroidal_statics xbot2_interface::xbot2_interface ${catkin_LIBRARIES} ${cartesian_interface_LIBRARIES})
 
 
 ## Add cmake target dependencies of the library

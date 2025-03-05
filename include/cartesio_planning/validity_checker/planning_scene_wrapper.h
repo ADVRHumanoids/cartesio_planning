@@ -13,7 +13,7 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <XBotInterface/ModelInterface.h>
+#include <xbot2_interface/xbotinterface2.h>
 
 #include <std_srvs/Trigger.h>
 
@@ -110,7 +110,7 @@ public:
      * @brief getCollidingChains
      * @return vector of colliding chains (computed from colliding links)
      */
-    std::vector<XBot::ModelChain> getCollidingChains() const;
+    std::vector<XBot::v2::Chain::ConstPtr> getCollidingChains() const;
 
     /**
      * @brief set padding around the robot links for more conservative
@@ -240,7 +240,6 @@ private:
     std::vector<ros::Subscriber> _pc_subs;
     std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> _point_clouds;
 
-    srdf_advr::Model _srdf;
 
 };
 

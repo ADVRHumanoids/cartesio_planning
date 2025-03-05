@@ -8,7 +8,7 @@
 #include <moveit_msgs/GetPlanningScene.h>
 #include <moveit_msgs/ApplyPlanningScene.h>
 
-#include <XBotInterface/ModelInterface.h>
+#include <xbot2_interface/xbotinterface2.h>
 
 #include <cartesian_interface/utils/RobotStatePublisher.h>
 

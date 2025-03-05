@@ -1,6 +1,6 @@
 #include <sensor_msgs/JointState.h>
-#include <XBotInterface/ModelInterface.h>
-#include <RobotInterfaceROS/ConfigFromParam.h>
+#include <xbot2_interface/xbotinterface2.h>
+#include <xbot2_interface/xbot2_interface/ros/config_from_param.hpp>
 #include "validity_checker/stability/stability_detection.h"
 #include <visualization_msgs/Marker.h>
 
@@ -13,7 +13,7 @@ int main(int argc, char ** argv)
 
 
 
-    auto cfg = XBot::ConfigOptionsFromParamServer();
+    auto cfg = XBot::Utils::ConfigOptionsFromParamServer();
     XBot::ModelInterface::Ptr model = XBot::ModelInterface::getModel(cfg);
 
     ConvexHullStability ch(model);

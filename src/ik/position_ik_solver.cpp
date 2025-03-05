@@ -110,7 +110,8 @@ bool PositionCartesianSolver::solve()
                 break;
             }
 
-            q = qcurr + step_size*dq;
+            _model->sum(q, step_size*dq);
+            //q = qcurr + step_size*dq;
             _model->setJointPosition(q);
             _model->update();
             getError(error);
@@ -297,7 +298,7 @@ void PositionCartesianSolver::CartesianTaskData::update(XBot::ModelInterface& mo
     }
     else
     {
-        model.getJacobian(distal_link, base_link, Ji);
+        model.getRelativeJacobian(distal_link, base_link, Ji);
     }
 
     Ji.bottomRows<3>() = L * Ji.bottomRows<3>();

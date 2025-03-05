@@ -5,7 +5,7 @@
 
 #include <trajectory_msgs/JointTrajectory.h>
 
-#include <RobotInterfaceROS/ConfigFromParam.h>
+#include <xbot2_interface/ros/config_from_param.hpp>
 
 #include <cartesian_interface/utils/LoadConfig.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
@@ -91,7 +91,7 @@ void PlannerExecutor::run()
 
 void PlannerExecutor::init_load_model()
 {
-    auto cfg = XBot::ConfigOptionsFromParamServer();
+    auto cfg = XBot::Utils::ConfigOptionsFromParamServer();
     _model = XBot::ModelInterface::getModel(cfg);
     _start_model = XBot::ModelInterface::getModel(cfg);
     _goal_model = XBot::ModelInterface::getModel(cfg);
@@ -195,6 +195,9 @@ void PlannerExecutor::init_load_planner()
         ROS_INFO("Planner works in state space!");
     }
 
+    /**
+     * todo: fix floating base!
+     * **/
     if(_model->isFloatingBase())
     {
         qmax.head<6>() << 1.0, 1.0, 1.0, 100*M_PI, 100*M_PI, 100*M_PI;
@@ -309,12 +312,12 @@ void PlannerExecutor::init_subscribe_start_goal()
         _goal_sub = _nh.subscribe("goal/joint_states", 1,
                                   &PlannerExecutor::on_goal_state_recv, this);
 
-    _start_viz = std::make_shared<Planning::RobotViz>(_model,
+    _start_viz = std::make_shared<Planning::RobotViz>(_start_model,
                                                       "start/robot_markers",
                                                       _nh);
     _start_viz->setPrefix("planner/start/");
 
-    _goal_viz = std::make_shared<Planning::RobotViz>(_model,
+    _goal_viz = std::make_shared<Planning::RobotViz>(_goal_model,
                                                      "goal/robot_markers",
                                                      _nh);
     _goal_viz->setPrefix("planner/goal/");
@@ -443,7 +446,7 @@ bool PlannerExecutor::goal_sampler_service(cartesio_planning::CartesioGoal::Requ
         res.status.val = res.status.EXACT_SOLUTION;
         res.status.msg.data = "EXACT_SOLUTION";
 
-        res.sampled_goal.name = _goal_model->getEnabledJointNames();
+        res.sampled_goal.name = _goal_model->getJointNames();
         res.sampled_goal.position.resize(q.size());
         Eigen::VectorXd::Map(&res.sampled_goal.position[0], q.size()) = q;
         res.sampled_goal.header.stamp = ros::Time::now();
@@ -484,7 +487,7 @@ bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
 {
     if(_model != model)
     {
-        _model->syncFrom(*model, XBot::Sync::Position);
+        _model->syncFrom(*model, XBot::ControlMode::POSITION);
     }
 
     bool valid = true;
@@ -517,7 +520,7 @@ bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
         {
             if(q[i] < qmin[i] || q[i] > qmax[i])
             {
-                std::cout << _model->getEnabledJointNames().at(i) <<
+                std::cout << _model->getJointNames().at(i) <<
                              ": " << qmin[i] << " <= " << q[i] <<
                              " <= " << qmax[i] << "\n";
             }
@@ -555,7 +558,7 @@ void PlannerExecutor::setStartState(const XBot::JointNameMap& q)
     {
         if(_model != _start_model)
         {
-            _model->syncFrom(*_start_model, XBot::Sync::Position);
+            _model->syncFrom(*_start_model, XBot::ControlMode::POSITION);
         }
         _manifold->reset(); // note: manifold is set according to start state
     }
@@ -667,7 +670,7 @@ bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Reques
     if(res.status.val == 6 || res.status.val == 5)
     {
         trajectory_msgs::JointTrajectory msg;
-        msg.joint_names = _model->getEnabledJointNames();
+        msg.joint_names = _model->getJointNames();
         auto t = ros::Duration(0.);
 
         for(auto x : trajectory)

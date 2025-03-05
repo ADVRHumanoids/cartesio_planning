@@ -84,7 +84,6 @@ PlanningSceneWrapper::PlanningSceneWrapper(ModelInterface::ConstPtr model):
     // planning scene monitor automatically updates planning scene from topics
     _monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>(rml);
 
-    _srdf = _model->getSrdf();
 
     computeChainToLinks();
 }
@@ -415,7 +414,7 @@ void PlanningSceneWrapper::update()
     _model->getJointPosition(q);
 
     // update planning scene from model
-    for(const auto& jpair : _model->getUrdf().joints_)
+    for(const auto& jpair : _model->getUrdf()->joints_)
     {
         auto jname = jpair.first; // joint name
         auto jmodel = jpair.second; // urdf::Joint model
@@ -549,7 +548,7 @@ std::vector<std::string> PlanningSceneWrapper::getCollidingLinks() const
     return links;
 }
 
-std::vector<XBot::ModelChain> PlanningSceneWrapper::getCollidingChains() const 
+std::vector<XBot::v2::Chain::ConstPtr> PlanningSceneWrapper::getCollidingChains() const
 {
     std::vector<std::string> colliding_links = getCollidingLinks();
     std::set<std::string> colliding_chain_names;
@@ -567,10 +566,10 @@ std::vector<XBot::ModelChain> PlanningSceneWrapper::getCollidingChains() const
         }
     }
 
-    std::vector<XBot::ModelChain> colliding_chains;
+    std::vector<XBot::v2::Chain::ConstPtr> colliding_chains;
     for(auto cc : colliding_chain_names)
     {
-        colliding_chains.push_back(_model->chain(cc));
+        colliding_chains.push_back(_model->getChain(cc));
     }
 
     return colliding_chains;
@@ -756,10 +755,10 @@ void PlanningSceneWrapper::computeChainToLinks()
             continue;
         }
 
-        auto base_name = _model->chain(ch).getBaseLinkName();
+        auto base_name = _model->getChain(ch)->getBaseLink();
 
-        auto link_name = _model->chain(ch).getTipLinkName();
-        auto link = urdf.getLink(link_name);
+        auto link_name = _model->getChain(ch)->getTipLink();
+        auto link = urdf->getLink(link_name);
 
         std::cout << "[" << ch << "] started traversal from tip link " << link_name << "\n";
         std::set<std::string> links = {link_name};
@@ -778,7 +777,7 @@ void PlanningSceneWrapper::computeChainToLinks()
                 break;
             }
 
-            link = urdf.getLink(link_name);
+            link = urdf->getLink(link_name);
         }
 
         if(link_name != base_name)
@@ -791,7 +790,7 @@ void PlanningSceneWrapper::computeChainToLinks()
 
     // complete mapping with all fixed links
     std::vector<urdf::LinkSharedPtr> urdf_links;
-    urdf.getLinks(urdf_links);
+    urdf->getLinks(urdf_links);
     for(auto link : urdf_links)
     {
         // link already present, skip
@@ -823,7 +822,7 @@ void PlanningSceneWrapper::computeChainToLinks()
                 break;
             }
 
-            current_link = urdf.getLink(current_link->parent_joint->parent_link_name);
+            current_link = urdf->getLink(current_link->parent_joint->parent_link_name);
 
             // known link found, add link to its chain
             if(_link_to_chain.count(current_link->name) > 0)

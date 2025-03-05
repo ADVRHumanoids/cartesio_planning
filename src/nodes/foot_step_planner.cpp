@@ -71,7 +71,7 @@ void FootStepPlanner::init_load_config()
 
 void FootStepPlanner::init_load_model ()
 {
-    auto cfg = XBot::ConfigOptionsFromParamServer();
+    auto cfg = XBot::Utils::ConfigOptionsFromParamServer();
     _model = XBot::ModelInterface::getModel(cfg);
     _start_model = XBot::ModelInterface::getModel(cfg);
     _goal_model = XBot::ModelInterface::getModel(cfg);
@@ -372,7 +372,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         _ci->getReferencePosture(jmap);
         _ci->getReferencePosture(jmap_home);
         
-        _model->eigenToMap(_qhome, jmap_home);
+        _model->qToMap(_qhome, jmap_home);
        
         // Check if the start state has been already explored and pick the relative postural
         // at the beginning, the postural is equal to the home state 
@@ -414,7 +414,7 @@ void FootStepPlanner::setStateValidityPredicate(StateValidityPredicate svp)
         {
             Eigen::VectorXd qpost(_solver->getModel()->getJointNum());
             qpost = it->second.postural; 
-            _model->eigenToMap(qpost, jmap);
+            _model->qToMap(qpost, jmap);
             _ci->setReferencePosture(jmap);
         }
         else // reset postural to home state
@@ -762,7 +762,7 @@ bool FootStepPlanner::planner_service ( cartesio_planning::FootStepPlanner::Requ
             t += ros::Duration(1.);
         }
         
-        trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
+        trj.joint_names.assign(_model->getJointNames().data(), _model->getJointNames().data() + _model->getJointNames().size());
         
         _trj_publisher.publish(trj);
         return true;
@@ -856,7 +856,7 @@ void FootStepPlanner::interpolate()
             jmap["ankle_yaw_4"] += dangle4/(Tmax/dt);
                          
             Eigen::VectorXd tmp(_model->getJointNum());
-            _model->mapToEigen(jmap, tmp);
+            _model->mapToQ(jmap, tmp);
            
             _q_traj.push_back(tmp);
             T += dt;
@@ -879,7 +879,7 @@ void FootStepPlanner::interpolate()
                 double q = a0*T*T*T + a1*T*T + a3;
                 tmp(j) = q;             
             }
-            _model->eigenToMap(tmp, jmap);
+            _model->qToMap(tmp, jmap);
             if (inv_rot[0] == 1)
                 jmap["ankle_yaw_1"] = -dtheta[0] - jmap["hip_yaw_1"] + jmap["VIRTUALJOINT_6"] - boost::math::constants::pi<double>();
             else if (inv_rot[0] == -1)
@@ -951,7 +951,7 @@ void FootStepPlanner::interpolate()
                      
             rot.clear();
 
-            _model->mapToEigen(jmap, tmp);
+            _model->mapToQ(jmap, tmp);
             
             _model->setJointPosition(tmp);
             _model->update();
@@ -969,7 +969,7 @@ void FootStepPlanner::interpolate()
     }
     
     // Check for collisions during interpolation
-    auto config = XBot::ConfigOptionsFromParamServer();
+    auto config = XBot::Utils::ConfigOptionsFromParamServer();
     std::string urdf;
     
     if (!_nhpr.getParam("urdf", urdf))
@@ -987,7 +987,7 @@ void FootStepPlanner::interpolate()
     
     std::cout << "collisions after urdf change: " << q_fail.size() << std::endl;  
     
-    config = XBot::ConfigOptionsFromParamServer();
+    config = XBot::Utils::ConfigOptionsFromParamServer();
     _model = XBot::ModelInterface::getModel(config);
     
 }
@@ -1043,7 +1043,7 @@ bool FootStepPlanner::check_state_valid(XBot::ModelInterface::ConstPtr model)
 {
     if(_model != model)
     {
-        _model->syncFrom(*model, XBot::Sync::Position);
+        _model->syncFrom(*model, XBot::ControlMode::POSITION);
     }
 
     bool valid = true;
@@ -1076,7 +1076,7 @@ bool FootStepPlanner::check_state_valid(XBot::ModelInterface::ConstPtr model)
         {
             if(q[i] < qmin[i] || q[i] > qmax[i])
             {
-                std::cout << _model->getEnabledJointNames().at(i) <<
+                std::cout << _model->getJointNames().at(i) <<
                              ": " << qmin[i] << " <= " << q[i] <<
                              " <= " << qmax[i] << "\n";
             }
@@ -1200,7 +1200,7 @@ bool FootStepPlanner::publish_trajectory_service(std_srvs::Empty::Request& req, 
             t += ros::Duration(0.01);
         }
         
-    trj.joint_names.assign(_model->getEnabledJointNames().data(), _model->getEnabledJointNames().data() + _model->getEnabledJointNames().size());
+    trj.joint_names.assign(_model->getJointNames().data(), _model->getJointNames().data() + _model->getJointNames().size());
     
     _xbotcore_trj_publisher.publish(trj); 
     _trj_publisher.publish(trj);
@@ -1227,13 +1227,13 @@ bool FootStepPlanner::image_service ( std_srvs::Empty::Request& req, std_srvs::E
     int iter = 0;
     double dt = 0.01;
     
-    _model->eigenToMap(_qhome, jmap);
+    _model->qToMap(_qhome, jmap);
     _ci->setReferencePosture(jmap);
     velocityLim_map = jmap;
     velocity_map = jmap;
     
     _start_model->getVelocityLimits(velocityLim);
-    _start_model->eigenToMap(velocityLim, velocityLim_map);
+    _start_model->vToMap(velocityLim, velocityLim_map);
     
     XBot::Cartesian::Planning::NSPG::Ptr goal_sampler;               
     goal_sampler = std::make_shared<XBot::Cartesian::Planning::NSPG>(_solver, _vc_context);

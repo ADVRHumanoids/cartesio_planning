@@ -4,7 +4,7 @@
 #include <Eigen/Geometry>
 #include <Eigen/Dense>
 
-#include <XBotInterface/ModelInterface.h>
+#include <xbot2_interface/xbotinterface2.h>
 #include <cartesio_planning/SetGroundCheck.h>
 #include <sensor_msgs/JointState.h>
 

@@ -2,8 +2,9 @@
 #define VALIDITY_CHECKER_FACTORY_H
 
 #include <functional>
-#include <XBotInterface/ModelInterface.h>
+#include <xbot2_interface/xbotinterface2.h>
 #include <ros/ros.h>
+#include <yaml-cpp/yaml.h>
 
 namespace XBot { namespace Cartesian { namespace Planning {
 
