@@ -110,7 +110,7 @@ bool PositionCartesianSolver::solve()
                 break;
             }
 
-            _model->sum(q, step_size*dq);
+            q = _model->sum(qcurr, step_size*dq);
             //q = qcurr + step_size*dq;
             _model->setJointPosition(q);
             _model->update();
