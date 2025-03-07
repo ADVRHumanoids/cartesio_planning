@@ -3,7 +3,7 @@ solver_options:
     back_end: "qpoases"
 
 stack:
-    - ["l_sole", "r_sole", "l_ball_tip", "r_ball_tip"]
+    - ["l_sole", "r_sole"] #, "l_ball_tip", "r_ball_tip"]
     #- ["Waist"]
 
 constraints: ["JointLimits"]

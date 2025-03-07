@@ -181,6 +181,7 @@ void PlannerExecutor::init_load_planner()
     Eigen::VectorXd qmin, qmax;
     _model->getJointLimits(qmin, qmax);
 
+
     Eigen::VectorXd qdotlims; //[rad/sec]
     _model->getVelocityLimits(qdotlims);
 
@@ -200,9 +201,6 @@ void PlannerExecutor::init_load_planner()
      * **/
     if(_model->isFloatingBase())
     {
-        qmax.head<6>() << 1.0, 1.0, 1.0, 100*M_PI, 100*M_PI, 100*M_PI;
-        qmin.head<6>() << -qmax.head<6>();
-
         YAML_PARSE_OPTION(_planner_config["state_space"],
                 floating_base_pos_min,
                 std::vector<double>,
@@ -244,6 +242,18 @@ void PlannerExecutor::init_load_planner()
             }
 
         }
+
+
+        Eigen::VectorXd qmin_(_model->getNq()), qmax_(_model->getNq());
+        qmin_.head<3>() << qmin.head<3>();
+        qmax_.head<3>() << qmax.head<3>();
+        qmin_[3] = qmin_[4] = qmin_[5] = qmin_[6] = -1.;
+        qmax_[3] = qmax_[4] = qmax_[5] = qmax_[6] =  1.;
+        qmin_.tail(qmin_.size()-7) << qmin.tail(qmin.size()-6);
+        qmax_.tail(qmin_.size()-7) << qmax.tail(qmin.size()-6);
+
+        qmin = qmin_;
+        qmax = qmax_;
 
     }
     
@@ -508,25 +518,37 @@ bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
     Eigen::VectorXd q;
     Eigen::VectorXd qmin, qmax;
     _model->getJointPosition(q);
-    _planner->getBounds(qmin, qmax);
-    const double q_tol = 1e-3;
+    //_planner->getBounds(qmin, qmax); //this are n+7 and n+7, see creation of the planner!
+    _model->getJointLimits(qmin, qmax);
 
-    if((q.array() < qmin.array() - q_tol).any() || (q.array() > qmax.array() + q_tol).any())
+    if(!_model->checkJointLimits(q))
     {
         valid = false;
         std::cout << "Invalid state, violates bounds" << std::endl;
 
-        for(int i = 0; i < _model->getJointNum(); i++)
+        Eigen::VectorXd dq(_model->getNv());
+        _model->difference(q, _model->getNeutralQ(), dq);
+        for(int i = 0; i < dq.size(); i++)
         {
-            if(q[i] < qmin[i] || q[i] > qmax[i])
+            if(dq[i] < qmin[i] || dq[i] > qmax[i])
             {
-                std::cout << _model->getJointNames().at(i) <<
-                             ": " << qmin[i] << " <= " << q[i] <<
-                             " <= " << qmax[i] << "\n";
+                if(i > 5)
+                {
+                    std::cout << _model->getJointNames().at(i-5) <<
+                        ": " << qmin[i] << " <= " << dq[i] <<
+                        " <= " << qmax[i] << "\n";
+                }
+                else
+                {
+                    std::cout << "base["<<i<<"]" <<
+                        ": " << qmin[i] << " <= " << dq[i] <<
+                        " <= " << qmax[i] << "\n";
+                }
             }
         }
         std::cout.flush();
     }
+
 
     if(!_manifold)
     {
@@ -768,10 +790,13 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
     ROS_INFO("Enforcing bounds...");
     enforce_bounds(qstart);
     enforce_bounds(qgoal);
-    std::cout<<"...done!"<<std::endl;
+    ROS_INFO("...done!");
 
+    ROS_INFO("Setting start and goal states...");
     _planner->setStartAndGoalStates(qstart, qgoal, goal_thrs);
+    ROS_INFO("...done!");
 
+    ROS_INFO("Start solver...");
     _planner->solve(time, planner_type);
 
 
