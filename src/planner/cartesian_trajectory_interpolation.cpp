@@ -7,13 +7,13 @@ CartesianTrajectoryInterpolation::CartesianTrajectoryInterpolation()
     auto cfg = XBot::Utils::ConfigOptionsFromParamServer();
     _model = XBot::ModelInterface::getModel(cfg);
 
-    _interpolator = std::make_shared<TrajectoryInterpolation>(_model->getJointNum());
+    _interpolator = std::make_shared<TrajectoryInterpolation>(_model->getNq());
 }
 
 CartesianTrajectoryInterpolation::CartesianTrajectoryInterpolation(XBot::ModelInterface::Ptr model):
 _model(model)
 {
-    _interpolator = std::make_shared<TrajectoryInterpolation>(_model->getJointNum());
+    _interpolator = std::make_shared<TrajectoryInterpolation>(_model->getNq());
 }
 
 double CartesianTrajectoryInterpolation::compute(const std::vector<Eigen::VectorXd>& trajectory, std::vector<double> * time_point_vec)
