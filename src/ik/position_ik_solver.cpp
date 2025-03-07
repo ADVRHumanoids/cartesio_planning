@@ -169,7 +169,7 @@ void PositionCartesianSolver::getError(Eigen::VectorXd& error) const
 
 void PositionCartesianSolver::getJacobian(Eigen::MatrixXd & J) const
 {
-    J.setZero(_n_task, _model->getJointNum());
+    J.setZero(_n_task, _model->getNv());
 
     int jac_idx = 0;
     for(auto pair : _task_map)
