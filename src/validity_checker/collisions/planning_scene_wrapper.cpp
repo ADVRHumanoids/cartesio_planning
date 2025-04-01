@@ -101,7 +101,7 @@ void PlanningSceneWrapper::startMonitor()
 
     // this starts monitored planning scene publisher
     _monitor->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
-    
+
     // AllowedCollisionMatrix definition. Entries can be added anywhere in the code simply
     // with acm.setEntry(std::string name1, std::string name2, bool allowed)
     acm = _monitor->getPlanningScene()->getAllowedCollisionMatrix();
@@ -218,7 +218,7 @@ bool PlanningSceneWrapper::updateOctomap()
     pcl::octree::OctreePointCloudVoxelCentroid<pcl::PointXYZ> octree(resolution);
     octomap::OcTree final_octree(resolution);
     std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > voxel_centers;
-    
+
     for(auto pc : _point_clouds)
     {
         if(!pc)
@@ -408,6 +408,7 @@ void PlanningSceneWrapper::update()
 
     // retrieve robot state data struct
     auto& robot_state = _monitor->getPlanningScene()->getCurrentStateNonConst();
+    auto& world = _monitor->getPlanningScene()->getWorldNonConst();
 
     // retrieve modelinterface state
     XBot::JointNameMap q;
@@ -420,55 +421,18 @@ void PlanningSceneWrapper::update()
         auto jmodel = jpair.second; // urdf::Joint model
         auto jtype = jmodel->type; // joint type
 
-        if(jtype == urdf::Joint::REVOLUTE  ||
-                jtype == urdf::Joint::PRISMATIC ||
-                jtype == urdf::Joint::CONTINUOUS)
+        if(jtype == urdf::Joint::REVOLUTE || jtype == urdf::Joint::PRISMATIC /**|| jtype == urdf::Joint::CONTINUOUS**/)
         {
             robot_state.setJointPositions(jname, {q.at(jname)}); // joint value is a simple scalar
         }
         else if(jtype == urdf::Joint::FLOATING) // joint value is actually a pose (3 + 4 values)
         {
-            std::string parent_link = jmodel->parent_link_name;
-            std::string child_link = jmodel->child_link_name;
 
-            // transform from parent link to child link
-            Eigen::Affine3d p_T_c; 
-            _model->getPose(child_link, parent_link, p_T_c);
-            
-            // transform from parent link to joint predecessor frame
-            Eigen::Affine3d p_T_j; 
-            p_T_j.setIdentity();
-            p_T_j.translation().x() = jmodel->parent_to_joint_origin_transform.position.x;
-            p_T_j.translation().y() = jmodel->parent_to_joint_origin_transform.position.y;
-            p_T_j.translation().z() = jmodel->parent_to_joint_origin_transform.position.z;
-            
-            Eigen::Quaterniond p_q_j(
-                jmodel->parent_to_joint_origin_transform.rotation.w,
-                jmodel->parent_to_joint_origin_transform.rotation.x,
-                jmodel->parent_to_joint_origin_transform.rotation.y,
-                jmodel->parent_to_joint_origin_transform.rotation.z
-                               );
-            
-            p_T_j.linear() = p_q_j.toRotationMatrix();
-            
-            // joint transform
-            Eigen::Affine3d Tj = p_T_j.inverse() * p_T_c; 
+            Eigen::VectorXd qvec;
+            _model->getJointPosition(qvec);
 
-            Eigen::Quaterniond Tj_rotation(Tj.linear());
-
-            std::vector<double> jpos =
-            {
-                Tj.translation().x(),
-                Tj.translation().y(),
-                Tj.translation().z(),
-                Tj_rotation.x(),
-                Tj_rotation.y(),
-                Tj_rotation.z(),
-                Tj_rotation.w()
-            };
-
-            robot_state.setJointPositions(jname, jpos);
-            robot_state.update();
+            std::vector<double> fb = std::vector<double>(qvec.data(), qvec.data() + 7);
+            robot_state.setJointPositions(jname, fb);
 
         }
         else if(jtype == urdf::Joint::FIXED)
@@ -481,8 +445,10 @@ void PlanningSceneWrapper::update()
         }
 
     }
+    robot_state.update();
 
     _monitor->triggerSceneUpdateEvent(planning_scene_monitor::PlanningSceneMonitor::UPDATE_STATE);
+
 }
 
 bool PlanningSceneWrapper::checkCollisions() const
@@ -491,8 +457,8 @@ bool PlanningSceneWrapper::checkCollisions() const
 
     collision_detection::CollisionRequest collision_request;
 
-    collision_detection::CollisionResult collision_result;  
-    
+    collision_detection::CollisionResult collision_result;
+
     _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
 
     return collision_result.collision;
