@@ -497,7 +497,9 @@ bool PlannerExecutor::check_state_valid(XBot::ModelInterface::ConstPtr model)
 {
     if(_model != model)
     {
-        _model->syncFrom(*model, XBot::ControlMode::POSITION);
+        //_model->syncFrom(*model, XBot::ControlMode::POSITION);
+        _model->setJointPosition(model->getJointPosition());
+        _model->update();
     }
 
     bool valid = true;
@@ -580,7 +582,9 @@ void PlannerExecutor::setStartState(const XBot::JointNameMap& q)
     {
         if(_model != _start_model)
         {
-            _model->syncFrom(*_start_model, XBot::ControlMode::POSITION);
+            //_model->syncFrom(*_start_model, XBot::ControlMode::POSITION);
+            _model->setJointPosition(_start_model->getJointPosition());
+            _model->update();
         }
         _manifold->reset(); // note: manifold is set according to start state
     }
@@ -600,7 +604,7 @@ void PlannerExecutor::on_start_state_recv(const sensor_msgs::JointStateConstPtr 
 
 
     setStartState(q);
-    run(); //To update models in RVIZ
+    //run(); //To update models in RVIZ
 }
 
 void PlannerExecutor::setGoalState(const XBot::JointNameMap& q)
@@ -637,7 +641,7 @@ void PlannerExecutor::on_goal_state_recv(const sensor_msgs::JointStateConstPtr &
     }
 
     setGoalState(q);
-    run(); //To update models in RVIZ
+    //run(); //To update models in RVIZ
 }
 
 bool PlannerExecutor::planner_service(cartesio_planning::CartesioPlanner::Request& req,
@@ -882,7 +886,6 @@ void PlannerExecutor::publish_and_check_start_and_goal_models(ros::Time time)
 
     _goal_viz->setRGBA(goal_color);
     _goal_viz->publishMarkers(time, red_links);
-
 }
 
 void PlannerExecutor::enforce_bounds(Eigen::VectorXd & q) const

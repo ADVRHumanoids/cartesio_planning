@@ -1043,7 +1043,9 @@ bool FootStepPlanner::check_state_valid(XBot::ModelInterface::ConstPtr model)
 {
     if(_model != model)
     {
-        _model->syncFrom(*model, XBot::ControlMode::POSITION);
+        //_model->syncFrom(*model, XBot::ControlMode::POSITION);
+        _model->setJointPosition(model->getJointPosition());
+        _model->update();
     }
 
     bool valid = true;
