@@ -4,7 +4,7 @@ using namespace XBot;
 using namespace XBot::Cartesian::Planning;
 
 const double PositionCartesianSolver::DEFAULT_ERR_TOL = 1e-4;
-const int PositionCartesianSolver::DEFAULT_MAX_ITER = 100;//60;
+const int PositionCartesianSolver::DEFAULT_MAX_ITER = 1000;//60;
 
 PositionCartesianSolver::PositionCartesianSolver(CartesianInterfaceImpl::Ptr ci):
     _n_task(0),
