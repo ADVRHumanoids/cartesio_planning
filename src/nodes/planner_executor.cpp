@@ -823,7 +823,27 @@ int PlannerExecutor::callPlanner(const double time, const std::string& planner_t
         double time = 0.;
         while(time <= _interpolator->getTrajectoryEndTime())
         {
-            trajectory.push_back(_interpolator->evaluate(time));
+
+            Eigen::VectorXd q = _interpolator->evaluate(time);
+
+            _model->setJointPosition(q);
+            _model->update();
+
+            bool is_goal_manifold = check_state_valid(_model);
+
+
+            if(!is_goal_manifold)
+            {
+                if(_manifold)
+                    _manifold->project(q);
+            }
+
+
+            trajectory.push_back(q);
+
+
+
+
             time += interpolation_time;
         }
     }
