@@ -1,7 +1,7 @@
 #ifndef UTILS_HXX
 #define UTILS_HXX
 
-#include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+#include <moveit/planning_scene_monitor/planning_scene_monitor.hpp>
 
 namespace utils
 {

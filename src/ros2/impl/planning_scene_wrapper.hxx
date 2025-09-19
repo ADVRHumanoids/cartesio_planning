@@ -11,7 +11,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
-#include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+#include <moveit/planning_scene_monitor/planning_scene_monitor.hpp>
 
 namespace XBot::Cartesian::Planning {
 

@@ -58,11 +58,10 @@ PlanningSceneWrapper::Impl::Impl(ModelInterface::ConstPtr model,
 
 void PlanningSceneWrapper::Impl::update()
 {
-    // acquire lock for thread-safe access to the planning scene
-    utils::MonitorLockguardWrite lock_w(_monitor); // RAII-style lock acquisition
+    planning_scene_monitor::LockedPlanningSceneRW ps(_monitor);
 
     // retrieve robot state data struct
-    auto& robot_state = _monitor->getPlanningScene()->getCurrentStateNonConst();
+    auto& robot_state = ps->getCurrentStateNonConst();
 
     // update planning scene from model
     for(const auto& jptr : _model->getJoints())
@@ -139,63 +138,63 @@ void PlanningSceneWrapper::Impl::update()
 
 bool PlanningSceneWrapper::Impl::checkCollisions() const
 {
-    utils::MonitorLockguardRead lock_r(_monitor);
+    planning_scene_monitor::LockedPlanningSceneRO ps(_monitor);
 
     collision_detection::CollisionRequest collision_request;
 
     collision_detection::CollisionResult collision_result;
 
-    _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
+    ps->checkCollision(collision_request, collision_result);
 
     return collision_result.collision;
 }
 
 bool PlanningSceneWrapper::Impl::checkSelfCollisions() const
 {
-    utils::MonitorLockguardRead lock_r(_monitor);
+    planning_scene_monitor::LockedPlanningSceneRO ps(_monitor);
 
     collision_detection::CollisionRequest collision_request;
     collision_detection::CollisionResult collision_result;
 
-    _monitor->getPlanningScene()->checkSelfCollision(collision_request, collision_result);
+    ps->checkSelfCollision(collision_request, collision_result);
 
     return collision_result.collision;
 }
 
 double PlanningSceneWrapper::Impl::computeCollisionDistance() const
 {
-    utils::MonitorLockguardRead lock_r(_monitor);
+    planning_scene_monitor::LockedPlanningSceneRO ps(_monitor);
 
     collision_detection::CollisionRequest collision_request;
     collision_request.distance = true;
 
     collision_detection::CollisionResult collision_result;
 
-    _monitor->getPlanningScene()->checkCollision(collision_request, collision_result);
+    ps->checkCollision(collision_request, collision_result);
 
     return collision_result.distance;
 }
 
 double PlanningSceneWrapper::Impl::computeSelfCollisionDistance() const
 {
-    utils::MonitorLockguardRead lock_r(_monitor);
+    planning_scene_monitor::LockedPlanningSceneRO ps(_monitor);
 
     collision_detection::CollisionRequest collision_request;
     collision_request.distance = true;
 
     collision_detection::CollisionResult collision_result;
 
-    _monitor->getPlanningScene()->checkSelfCollision(collision_request, collision_result);
+    ps->checkSelfCollision(collision_request, collision_result);
 
     return collision_result.distance;
 }
 
 std::vector<std::string> PlanningSceneWrapper::Impl::getCollidingLinks() const
 {
-    utils::MonitorLockguardRead lock_r(_monitor);
+    planning_scene_monitor::LockedPlanningSceneRO ps(_monitor);
 
     std::vector<std::string> links;
-    _monitor->getPlanningScene()->getCollidingLinks(links);
+    ps->getCollidingLinks(links);
 
     return links;
 }
@@ -336,6 +335,21 @@ void PlanningSceneWrapper::update()
 bool PlanningSceneWrapper::checkCollisions() const
 {
     return impl->checkCollisions();
+}
+
+bool PlanningSceneWrapper::checkSelfCollisions() const
+{
+    return impl->checkSelfCollisions();
+}
+
+double PlanningSceneWrapper::computeCollisionDistance() const
+{
+    return impl->computeCollisionDistance();
+}
+
+double PlanningSceneWrapper::computeSelfCollisionDistance() const
+{
+    return impl->computeSelfCollisionDistance();
 }
 
 std::vector<std::string> PlanningSceneWrapper::getCollidingLinks() const
