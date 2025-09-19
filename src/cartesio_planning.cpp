@@ -196,6 +196,7 @@ ompl::base::PlannerPtr Planner::Impl::make_planner(std::string planner_type)
         {"RRT", std::make_shared<ompl::geometric::RRT, SpaceInfoPtr>},
         {"RRTConnect", std::make_shared<ompl::geometric::RRTConnect, SpaceInfoPtr>},
         {"RRTstar", std::make_shared<ompl::geometric::RRTstar, SpaceInfoPtr>},
+        {"RRTsharp", std::make_shared<ompl::geometric::RRTsharp, SpaceInfoPtr>},
         {"PRM", std::make_shared<ompl::geometric::PRM, SpaceInfoPtr>},
         {"PRMstar", std::make_shared<ompl::geometric::PRMstar, SpaceInfoPtr>},
         {"InformedRRTstar", std::make_shared<ompl::geometric::InformedRRTstar, SpaceInfoPtr>},
