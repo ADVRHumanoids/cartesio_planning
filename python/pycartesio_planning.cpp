@@ -259,6 +259,12 @@ PYBIND11_MODULE(pycartesio_planning, m)
              py::arg("frame_id") = "world",
              py::arg("attach_to_link") = "",
              py::arg("touch_links") = std::vector<std::string>())
+        .def("checkCollisions", &PlanningSceneWrapper::checkCollisions)
+        .def("checkSelfCollisions", &PlanningSceneWrapper::checkSelfCollisions)
+        .def("computeCollisionDistance", &PlanningSceneWrapper::computeCollisionDistance)
+        .def("computeSelfCollisionDistance", &PlanningSceneWrapper::computeSelfCollisionDistance)
+        .def("getCollidingLinks", &PlanningSceneWrapper::getCollidingLinks)
+        
         ;
 
     py::class_<PlanningSceneChecker, StateValidityChecker, PlanningSceneChecker::Ptr>(mros, "PlanningSceneChecker")
